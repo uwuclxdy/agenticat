@@ -1,6 +1,6 @@
 ---
 name: clean-code
-description: Clean code principles and best practices covering naming conventions, function design, error handling, comments, and architecture. Use this skill whenever the user asks you to write, review, or refactor code and wants it to follow clean code standards. Also trigger when the user mentions "clean code", "code quality", "readability", "refactor for clarity", "naming conventions", "function size", "code smells", or asks for a code review with best practices in mind. Apply these principles proactively when writing or reviewing code, even if the user doesn't explicitly ask for "clean code."
+description: Language-agnostic clean code principles (examples in JS/TS & Java) for writing, reviewing, or refactoring code — naming, functions, error handling, comments, architecture.
 ---
 
 # Clean Code Principles
@@ -257,6 +257,178 @@ Throw exceptions instead of returning error codes. Isolate try/catch blocks into
 
 Error codes bury the "happy path" under nested error checking. Shared enums require massive recompilations when changed. Violating DRY (Don't Repeat Yourself) guarantees silent bugs when you update logic in one place but forget the others.
 
+### 4.3 Write Try-Catch-Finally First
+
+Define the error-handling structure before the business logic, so the function's contract — what it expects and what it throws — is fixed up front.
+
+**Do:**
+- Write the `try-catch-finally` skeleton first, define the custom exception you expect to throw, then fill the `try` block with business logic.
+  - Good:
+    ```javascript
+    function withdraw(accountId, amount) {
+      try {
+        // business logic added here later
+      } catch (e) {
+        throw new TransactionFailed(e);
+      } finally {
+        // cleanup (e.g., release locks)
+      }
+    }
+    ```
+
+**Don't:**
+- Write the business logic first and slap a `try/catch` around it as an afterthought.
+
+Writing the `try/catch` first creates a clear contract: every caller immediately knows which exceptions the function can throw and which it handles, so failures don't cascade into breaks across the codebase.
+
+### 4.4 Separate Error Handling from Business Logic
+
+Keep the algorithm and its error handling in separate functions, using exceptions instead of nested `if`-statements that return error codes.
+
+**Do:**
+- Extract the algorithm into its own function that throws, and keep a separate function whose only job is to catch.
+  - Good:
+    ```javascript
+    function sendMessage(msg) {
+      try {
+        deliverMessage(msg); // error handling knows nothing about the algorithm
+      } catch (error) {
+        notifySender(msg.token, error);
+      }
+    }
+
+    function deliverMessage(msg) {
+      // algorithm knows nothing about error handling
+      const sender = verifySession(msg.token);
+      const channel = resolveChannel(msg.to);
+      const content = moderate(msg.text);
+      broadcast(channel, sender, content);
+    }
+    ```
+
+**Don't:**
+- Interleave error checking and algorithm steps with deeply nested `if/else` that returns error codes.
+  - Bad:
+    ```javascript
+    function sendMessage(msg) {
+      const sender = verifySession(msg.token);
+      if (sender !== null) {
+        const channel = resolveChannel(msg.to);
+        if (channel.active) {
+          // ... more nesting ...
+          return "sent";
+        } else { return "closed"; }
+      } else { return "expired"; }
+    }
+    ```
+
+When error handling wraps every step of an algorithm, the algorithm disappears. Your eyes ping-pong between logic and failure branches, and you can read neither clearly.
+
+### 4.5 The Law of Demeter
+
+A method should only call methods on its immediate dependencies ("friends"), never navigate through them to reach the internals of "strangers."
+
+**Do:**
+- Tell the immediate object what you need it to do directly.
+  - Good: `let bufferOutputStream = ctxt.createScratchFileStream(classFileName);`
+
+**Don't:**
+- Chain method calls to navigate deep into an object's internal structure.
+  - Bad:
+    ```javascript
+    let outputDir = ctxt.getOptions()
+                        .getScratchDir()
+                        .getAbsolutePath();
+    ```
+
+Method chains expose the internal structure of your dependencies and couple your code to their hidden navigation path. When that internal structure changes, your code breaks.
+
+### 4.6 Avoid Hybrid Structures (Objects vs. Data Structures)
+
+Keep objects (which hide data and expose behavior) strictly separate from data structures (which expose data and have no behavior); never blend the two.
+
+**Do:**
+- Use pure data structures (DTOs, clean active records) to hold data, and put business logic in separate objects.
+  - Good:
+    ```java
+    class ProductDTO {        // pure data structure
+      public String name;
+      public double price;
+    }
+
+    class Pricing {           // pure object (behavior)
+      double applyDiscount(ProductDTO p, double pct) { ... }
+    }
+    ```
+
+**Don't:**
+- Build "hybrid" classes that carry private data with getters/setters *and* significant business logic.
+  - Bad:
+    ```java
+    class Product {
+      private double price;
+      double getPrice() { return price; }
+      void setPrice(double p) { price = p; }
+
+      // business logic trapped inside a data structure
+      double applyDiscount(double pct) {
+        return price * (1 - pct / 100);
+      }
+    }
+    ```
+
+Hybrids are the worst of both worlds. Like objects, they make it hard to add new functions; like data structures, they make it hard to add new types. You pay both taxes and reap neither benefit.
+
+### 4.7 Data/Object Anti-Symmetry
+
+Choose procedural code (data structures + separate procedures) when you expect to add new operations, and object-oriented code when you expect to add new types.
+
+**Do:**
+- Use data structures with separate procedure classes when new *functions* arrive frequently.
+  - Good:
+    ```java
+    class Square { public double side; }                 // data structure
+    class Geometry {
+      double area(Object shape) { ... }                  // add perimeter(), diagonal()... freely
+    }
+    ```
+- Use objects where each type owns its behavior when new *types* arrive frequently.
+  - Good:
+    ```java
+    interface Shape { double area(); }
+    class Square implements Shape { public double area() { ... } }  // add Triangle freely
+    ```
+
+**Don't:**
+- Reflexively treat everything as an object. With objects, adding one new function forces you to modify every single class.
+
+What is easy for procedural code (add functions without touching data structures) is hard for OO code, and what is easy for OO code (add types without touching existing functions) is hard for procedural code. Pick the paradigm that matches how the code will actually evolve.
+
+### 4.8 Data Abstraction
+
+Hide how data is stored by exposing abstract behavior, not getters/setters that mirror the exact stored fields.
+
+**Do:**
+- Expose behavior that represents the concept abstractly.
+  - Good:
+    ```java
+    public interface Vehicle {
+      double getPercentFuelRemaining();
+    }
+    ```
+
+**Don't:**
+- Blindly add getters/setters that reveal exactly how the data is stored.
+  - Bad:
+    ```java
+    public interface Vehicle {
+      double getFuelTankCapacityInGallons();
+      double getGallonsOfGasoline();
+    }
+    ```
+
+The whole point of private variables is the freedom to change how data is stored. Expose the exact shape of the data through getters/setters and you surrender that freedom, coupling every caller to your internal representation.
+
 ---
 
 ## 5. Comments
@@ -406,9 +578,13 @@ A variable declared too early is mental baggage the reader has to carry in their
 | **Functions** | Small functions, one thing each, single level of abstraction | Massive functions mixing high-level decisions with low-level API calls |
 | **Arguments** | Zero or one arg; group 3+ into an object | Long arg lists, boolean flags, output arguments, hidden side effects |
 | **Control flow** | Commands (do things) or Queries (answer things), never both | Functions that mutate state and return values simultaneously |
-| **Errors** | Throw exceptions; catch in dedicated handler functions | Return error codes forcing nested `if/else`; global error enums |
+| **Errors** | Throw exceptions; write the try-catch-finally skeleton first; keep error handling in its own function, separate from the algorithm | Return error codes forcing nested `if/else`; global error enums; bolt try/catch on as an afterthought |
 | **Duplication** | Extract shared logic into a single authoritative place (DRY) | Copy-pasting switch statements or API boilerplate across files |
 | **Types** | Polymorphism via interfaces/factories for type-dependent behavior | Repeated `switch(type)` blocks scattered across functions |
+| **Coupling** | Ask immediate dependencies to act directly (Law of Demeter) | Chain calls (`a.getB().getC().getD()`) to navigate internal structure |
+| **Objects vs. data** | Pure data structures (DTOs) hold data; behavior lives in separate objects | Hybrid classes carrying both getters/setters and business logic |
+| **Paradigm choice** | Procedural when adding operations, OO when adding types (anti-symmetry) | Forcing everything into objects regardless of how the code evolves |
+| **Data abstraction** | Expose abstract behavior that hides how data is stored | Getters/setters that mirror the exact stored fields |
 | **Comments** | Explain *why*, warnings, specific plain-text TODOs, public API docs | Explain *what* code does, mumbling comments, HTML-formatted comments |
 | **Version control** | Rely on `git log` for history and authorship; delete dead code | Commented-out code, authorship tags, journal logs, closing brace comments |
 | **File structure** | Headline function at top, callers above callees, related utilities grouped | Random function order, scrolling endlessly to find implementations |
