@@ -1,6 +1,6 @@
 ---
 name: clean-code
-description: Language-agnostic clean code principles (examples in JS/TS & Java) for writing, reviewing, or refactoring code — naming, functions, error handling, comments, architecture.
+description: Language-agnostic principles (naming, functions, error handling, comments, formatting, readability, duplication, maintainability) for writing, reviewing, or refactoring.
 ---
 
 # Clean Code Principles
