@@ -1,6 +1,6 @@
 <div align="center">
 
-# crosskit
+# agenticat
 
 **Curated agents + skills for AI coding harnesses — one repo, installable everywhere.**
 
@@ -18,18 +18,18 @@ Skills teach a model a procedure; agents are ready-made subagents with scoped to
 
 | harness | agents | skills |
 |---|---|---|
-| Claude Code | `/plugin marketplace add uwuclxdy/crosskit` then `/plugin install crosskit@crosskit` | same plugin, or cherry-pick: `npx skills add uwuclxdy/crosskit --skill <name>` |
-| Gemini CLI | `gemini extensions install https://github.com/uwuclxdy/crosskit --auto-update` | `npx skills add uwuclxdy/crosskit -a gemini` |
-| opencode | `git clone https://github.com/uwuclxdy/crosskit && cd crosskit && ./install.sh --to opencode` | `npx skills add uwuclxdy/crosskit -a opencode` |
-| Codex CLI | `./install.sh --to codex` (after clone, as above) | `npx skills add uwuclxdy/crosskit -a codex` |
-| Cursor | reads `agents/` as claude format — copy files into `.claude/agents/` or `.cursor/agents/` | `npx skills add uwuclxdy/crosskit -a cursor` |
-| anything else | no subagent support → skip agents | `npx skills add uwuclxdy/crosskit` (73+ harnesses) |
+| Claude Code | `/plugin marketplace add uwuclxdy/agenticat` then `/plugin install agenticat@agenticat` | same plugin, or cherry-pick: `npx skills add uwuclxdy/agenticat --skill <name>` |
+| Gemini CLI | `gemini extensions install https://github.com/uwuclxdy/agenticat --auto-update` | `npx skills add uwuclxdy/agenticat -a gemini` |
+| opencode | `git clone https://github.com/uwuclxdy/agenticat && cd agenticat && ./install.sh --to opencode` | `npx skills add uwuclxdy/agenticat -a opencode` |
+| Codex CLI | `./install.sh --to codex` (after clone, as above) | `npx skills add uwuclxdy/agenticat -a codex` |
+| Cursor | reads `agents/` as claude format — copy files into `.claude/agents/` or `.cursor/agents/` | `npx skills add uwuclxdy/agenticat -a cursor` |
+| anything else | no subagent support → skip agents | `npx skills add uwuclxdy/agenticat` (73+ harnesses) |
 
 Cherry-pick agents by name: `./install.sh --to opencode probe-agent web-researcher`. List everything: `./install.sh --list`.
 
 ## Update
 
-- Claude Code: `/plugin update crosskit` (every commit is a new version)
+- Claude Code: `/plugin update agenticat` (every commit is a new version)
 - Gemini CLI: automatic with `--auto-update`
 - opencode / Codex: `./install.sh --update` (pulls, reconverts what you installed)
 - skills: `npx skills update`
@@ -81,7 +81,7 @@ Claude Code format is the single source of truth. Native installers (Claude Code
 | [wshobson/agents](https://github.com/wshobson/agents) | much larger catalog (194 agents); pre-generates per-harness artifacts via make, checked in |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | the installer CLI this repo relies on for skills; not a content collection |
 
-crosskit stays deliberately small: fewer, heavily-used artifacts over volume.
+agenticat stays deliberately small: fewer, heavily-used artifacts over volume.
 
 ## FAQ
 
@@ -89,7 +89,7 @@ crosskit stays deliberately small: fewer, heavily-used artifacts over volume.
 Clone this repo and run `./install.sh --to opencode` — it converts the frontmatter (tools list → boolean map, model alias → provider id) and writes to `~/.config/opencode/agents/`.
 
 **Can I install just one skill without the rest?**
-`npx skills add uwuclxdy/crosskit --skill <name>` installs exactly one.
+`npx skills add uwuclxdy/agenticat --skill <name>` installs exactly one.
 
 **Do the agents work outside Claude Code?**
 Yes: opencode, Gemini CLI, Codex CLI and Cursor (see Install). Harnesses without custom-subagent support can still use all skills.
