@@ -69,13 +69,13 @@ All defs are canonical Claude Code frontmatter (`name`, `description`, `tools`, 
 
 ### External skills
 
-Strong third-party skills are linked, not vendored. Install them from upstream with each project's own tooling:
+These live in their own repos. Pull just the skill you want with `npx skills`; the `--skill` flag cherry-picks so the rest of each collection stays out:
 
 | skill(s) | source | install |
 |---|---|---|
-| `systematic-debugging`, `test-driven-development`, `verification-before-completion` (and more) | [obra/superpowers](https://github.com/obra/superpowers) (MIT) | `/plugin marketplace add obra/superpowers-marketplace` then `/plugin install superpowers@superpowers-marketplace` |
-| `rust-skills` (265 Rust rules) | [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT) | `npx add-skill leonardomso/rust-skills` (per its README) |
-| `webapp-testing` (Playwright frontend testing) | [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0) | `/plugin marketplace add anthropics/skills` then `/plugin install example-skills@anthropic-agent-skills` (bundle of 11) |
+| `systematic-debugging`, `test-driven-development`, `verification-before-completion` (and more) | [obra/superpowers](https://github.com/obra/superpowers) (MIT) | `npx skills add obra/superpowers --skill <name>` |
+| `rust-skills` (265 Rust rules) | [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT) | `npx skills add leonardomso/rust-skills` |
+| `webapp-testing` (Playwright frontend testing) | [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0) | `npx skills add anthropics/skills --skill webapp-testing` |
 
 ## How it stays in sync
 
