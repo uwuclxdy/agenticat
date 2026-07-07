@@ -7,8 +7,8 @@
 Works with Claude Code, opencode, Gemini CLI, Codex CLI, Cursor and 70+ skill-compatible agents.
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-15-green)](#skills)
-[![agents](https://shields.uwuclxdy.dev/badge/agents-8-green)](#agents)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-10-green)](#skills)
+[![agents](https://shields.uwuclxdy.dev/badge/agents-9-green)](#agents)
 
 </div>
 
@@ -27,6 +27,8 @@ Skills teach a model a procedure; agents are ready-made subagents with scoped to
 
 Cherry-pick agents by name: `./install.sh --to opencode probe-agent web-researcher`. List everything: `./install.sh --list`.
 
+Gemini's extension-bundled subagents are a preview feature (google-gemini/gemini-cli); verify against your installed version.
+
 ## Update
 
 - Claude Code: `/plugin update agenticat` (every commit is a new version)
@@ -43,6 +45,7 @@ Cherry-pick agents by name: `./install.sh --to opencode probe-agent web-research
 | `doc-coverage-audit` | sonnet | deletion-safety check: what a source doc contains that target docs don't cover |
 | `docs-extractor` | sonnet | digests a file/doc set into a structured brief against your question template, keeping raw bytes out of the caller's context |
 | `spec-propagation` | opus | folds a decided spec/changelog block into a design doc while preserving its voice |
+| `threat-modeling-expert` | opus | STRIDE + attack-tree threat modeling for a system/feature; writes only the threat-model doc |
 | `probe-agent` | haiku | runs a command, returns a compact pass/fail probe instead of the full log |
 | `web-researcher` | sonnet | single-topic web research: multi-query search, source fetch, cited markdown brief |
 | `webapp-tester` | sonnet | drives a local web app with Playwright, reports pass/fail with screenshots + console logs |
@@ -60,14 +63,19 @@ All defs are canonical Claude Code frontmatter (`name`, `description`, `tools`, 
 | `todo` | task-inbox format for `docs/todo.md`: punch-lists from audits, checkbox specs from ideas, every task executable by a fresh agent |
 | `askama` | conventions and reference for the askama Rust templating crate |
 | `cargo-toml-optimization` | Cargo.toml / .cargo tuning: profiles, features, workspaces, build speed |
-| `rust-skills` | 265 Rust rules across 26 categories: ownership, errors, async, unsafe, API design, perf |
 | `rust-call-graph` | visualize Rust function call graphs (who-calls / what-calls) via LSP |
 | `rust-trait-explorer` | explore Rust trait implementations (who implements what) via LSP |
-| `systematic-problem-solving` | root-cause investigation + principles-first reasoning before committing to a fix |
-| `test-driven-development` | failing test before implementation, for any feature or bugfix |
 | `threat-modeling` | STRIDE, attack trees, security-requirement extraction, mitigation mapping |
-| `verification-before-completion` | evidence before "done": run the checks, confirm the output |
-| `webapp-testing` | Playwright toolkit for verifying frontend behavior in local web apps |
+
+### External skills
+
+Strong third-party skills are linked, not vendored. Install them from upstream with each project's own tooling:
+
+| skill(s) | source | install |
+|---|---|---|
+| `systematic-debugging`, `test-driven-development`, `verification-before-completion` (and more) | [obra/superpowers](https://github.com/obra/superpowers) (MIT) | `/plugin marketplace add obra/superpowers-marketplace` then `/plugin install superpowers@superpowers-marketplace` |
+| `rust-skills` (265 Rust rules) | [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT) | `npx add-skill leonardomso/rust-skills` (per its README) |
+| `webapp-testing` (Playwright frontend testing) | [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0) | `/plugin marketplace add anthropics/skills` then `/plugin install example-skills@anthropic-agent-skills` (bundle of 11) |
 
 ## How it stays in sync
 
@@ -96,10 +104,9 @@ Yes: opencode, Gemini CLI, Codex CLI and Cursor (see Install). Harnesses without
 
 ## Credits
 
-- `rust-skills` is [leonardomso's rust-skills](https://github.com/leonardomso/rust-skills) (MIT, license bundled), vendored with upstream metadata intact.
-- `webapp-testing` is [Anthropic's](https://github.com/anthropics/skills) (Apache-2.0, license bundled).
 - `clean-code` condenses videos from [s4.codes](https://www.tiktok.com/@s4.codes) (described with Gemini, distilled with Claude Opus).
+- External skills (see above) are linked to their upstream repos, which carry their own attribution and licenses.
 
 ## License
 
-MIT, except vendored skills that keep their bundled upstream license (`webapp-testing`: Apache-2.0).
+MIT. Linked external skills install from upstream and keep their own licenses.
