@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
-// crosskit agent converter/installer for harnesses without a native agent installer.
-// claude code -> /plugin install crosskit@crosskit ; gemini -> gemini extensions install <repo>
+// agenticat agent converter/installer for harnesses without a native agent installer.
+// claude code -> /plugin install agenticat@agenticat ; gemini -> gemini extensions install <repo>
 // this script covers the gap: opencode + codex (cursor reads claude format natively).
 //
 // usage:
@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url))); // repo root (bin/..)
 const AGENTS_DIR = join(REPO, "agents");
-const MANIFEST = ".crosskit.json";
+const MANIFEST = ".agenticat.json";
 
 // claude alias -> opencode provider/model id. edit when models rotate.
 const MODEL_MAP: Record<string, string> = {
@@ -134,7 +134,7 @@ function update(project: boolean) {
     const m = JSON.parse(readFileSync(mf, "utf8"));
     install([target], m.agents, project);
   }
-  if (!found) console.log("no crosskit manifest found; nothing to update (install first)");
+  if (!found) console.log("no agenticat manifest found; nothing to update (install first)");
 }
 
 // --- args

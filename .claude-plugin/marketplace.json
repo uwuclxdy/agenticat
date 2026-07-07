@@ -1,13 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "crosskit",
+  "name": "agenticat",
   "description": "Curated cross-harness agents + skills collection.",
   "owner": {
     "name": "uwuclxdy"
   },
   "plugins": [
     {
-      "name": "crosskit",
+      "name": "agenticat",
       "source": "./",
       "category": "productivity"
     }

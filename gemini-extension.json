@@ -1,5 +1,5 @@
 {
-  "name": "crosskit",
+  "name": "agenticat",
   "version": "0.1.0",
   "description": "Curated cross-harness agents + skills. Subagents load from agents/; skills install separately via npx skills."
 }
