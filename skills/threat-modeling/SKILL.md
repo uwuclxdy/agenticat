@@ -46,4 +46,4 @@ The python classes in the references are templates to read and adapt per session
 
 ## Delegating
 
-For a standalone modeling run, spawn the `threat-modeling-expert` agent (`~/.claude/agents/threat-modeling-expert.md`). It re-reads this skill every run; the workflow above stays the only copy of the method.
+For a standalone modeling run, spawn the `threat-modeling-expert` agent. It re-reads this skill every run; the workflow above stays the only copy of the method.

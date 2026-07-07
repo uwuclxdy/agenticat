@@ -13,10 +13,10 @@ Generate name candidates and verify availability across registries before a rena
    - what the thing does, in one line
    - which registries matter: crates.io, AUR, PyPI, npm, GitHub, KDE store, domain — only the relevant ones
    - rename cost: unpublished (cheap, anything goes) vs already public (flag every rename consequence)
-2. **Generate ~10 candidates.** Balance two axes the user has asked for before:
+2. **Generate ~10 candidates.** Balance two axes:
    - *explicit*: name states the function (`kate-markdown-preview` over `katdown`)
-   - *brandable*: short, lowercase, occasionally punny/furry (`raawr`, `sealie`, `clauth`)
-   Mark each candidate with which axis it leans toward. Reserve companion names too when relevant (`raawr` + `raawrd` + `raawr-mcp`).
+   - *brandable*: short, lowercase, occasionally punny (`flit`, `nook`, `perch`)
+   Mark each candidate with which axis it leans toward. Reserve companion names too when relevant (`flit` + `flitd` + `flit-mcp`).
 3. **Check availability in parallel.** Fan out searches (web + registry pages) per candidate:
    - exact match on each relevant registry
    - general web collision: existing project, product, or company with the same name in the same space
