@@ -96,8 +96,10 @@ Yes: opencode, Gemini CLI, Codex CLI and Cursor (see Install). Harnesses without
 
 ## Credits
 
-`clean-code` condenses videos from [s4.codes](https://www.tiktok.com/@s4.codes) (described with Gemini, distilled with Claude Opus).
+- `rust-skills` is [leonardomso's rust-skills](https://github.com/leonardomso/rust-skills) (MIT, license bundled), vendored with upstream metadata intact.
+- `webapp-testing` is [Anthropic's](https://github.com/anthropics/skills) (Apache-2.0, license bundled).
+- `clean-code` condenses videos from [s4.codes](https://www.tiktok.com/@s4.codes) (described with Gemini, distilled with Claude Opus).
 
 ## License
 
-MIT
+MIT, except vendored skills that keep their bundled upstream license (`webapp-testing`: Apache-2.0).
