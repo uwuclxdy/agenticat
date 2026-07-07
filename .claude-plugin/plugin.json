@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "crosskit",
+  "description": "Curated cross-harness agents + skills: code reviewers, docs auditors, research and testing agents, Rust/TDD/testing skills.",
+  "author": {
+    "name": "uwuclxdy"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/uwuclxdy/crosskit",
+  "repository": "https://github.com/uwuclxdy/crosskit",
+  "keywords": ["agents", "skills", "subagents", "claude-code", "opencode", "gemini-cli", "codex"]
+}
