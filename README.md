@@ -1,18 +1,12 @@
-<div align="center">
-
 # agenticat
 
-**Curated agents + skills for AI coding harnesses — one repo, installable everywhere.**
-
-Works with Claude Code, opencode, Gemini CLI, Codex CLI, Cursor and 70+ skill-compatible agents.
+**Curated agents + skills for AI coding harnesses: one repo, installable everywhere.**
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
 [![skills](https://shields.uwuclxdy.dev/badge/skills-10-green)](#skills)
 [![agents](https://shields.uwuclxdy.dev/badge/agents-9-green)](#agents)
 
-</div>
-
-Skills teach a model a procedure; agents are ready-made subagents with scoped tools and a tuned prompt. Both live here in Claude Code's format (the richest), install through each harness's own tooling, and get converted only where a harness has no native support.
+Skills teach a model a procedure; agents are ready-made subagents with scoped tools and a tuned prompt. Both live here in Claude Code's format, install through each harness's own tooling, converted only where a harness has no native support.
 
 ## Install
 
@@ -22,12 +16,10 @@ Skills teach a model a procedure; agents are ready-made subagents with scoped to
 | Gemini CLI | `gemini extensions install https://github.com/uwuclxdy/agenticat --auto-update` | `npx skills add uwuclxdy/agenticat -a gemini` |
 | opencode | `git clone https://github.com/uwuclxdy/agenticat && cd agenticat && ./install.sh --to opencode` | `npx skills add uwuclxdy/agenticat -a opencode` |
 | Codex CLI | `./install.sh --to codex` (after clone, as above) | `npx skills add uwuclxdy/agenticat -a codex` |
-| Cursor | reads `agents/` as claude format — copy files into `.claude/agents/` or `.cursor/agents/` | `npx skills add uwuclxdy/agenticat -a cursor` |
+| Cursor | reads `agents/` as claude format; copy files into `.claude/agents/` or `.cursor/agents/` | `npx skills add uwuclxdy/agenticat -a cursor` |
 | anything else | no subagent support → skip agents | `npx skills add uwuclxdy/agenticat` (73+ harnesses) |
 
-Cherry-pick agents by name: `./install.sh --to opencode probe-agent web-researcher`. List everything: `./install.sh --list`.
-
-Gemini's extension-bundled subagents are a preview feature (google-gemini/gemini-cli); verify against your installed version.
+Cherry-pick agents by name: `./install.sh --to opencode probe-agent web-researcher`. List everything: `./install.sh --list`. Gemini's extension-bundled subagents are a preview feature; verify against your installed version.
 
 ## Update
 
@@ -50,7 +42,7 @@ Gemini's extension-bundled subagents are a preview feature (google-gemini/gemini
 | `web-researcher` | sonnet | single-topic web research: multi-query search, source fetch, cited markdown brief |
 | `webapp-tester` | sonnet | drives a local web app with Playwright, reports pass/fail with screenshots + console logs |
 
-All defs are canonical Claude Code frontmatter (`name`, `description`, `tools`, `model`). The converter maps tools to opencode's boolean map and Codex's `sandbox_mode` (agents without Write/Edit stay read-only).
+Defs are canonical Claude Code frontmatter (`name`, `description`, `tools`, `model`). The converter maps tools to opencode's boolean map and Codex's `sandbox_mode` (agents without Write/Edit stay read-only).
 
 ## Skills
 
@@ -69,7 +61,7 @@ All defs are canonical Claude Code frontmatter (`name`, `description`, `tools`, 
 
 ### External skills
 
-These live in their own repos. Pull just the skill you want with `npx skills`; the `--skill` flag cherry-picks so the rest of each collection stays out:
+Strong third-party skills live in their own repos. Pull just the one you want with `npx skills`; the `--skill` flag cherry-picks so the rest of each collection stays out:
 
 | skill(s) | source | install |
 |---|---|---|
@@ -77,35 +69,10 @@ These live in their own repos. Pull just the skill you want with `npx skills`; t
 | `rust-skills` (265 Rust rules) | [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT) | `npx skills add leonardomso/rust-skills` |
 | `webapp-testing` (Playwright frontend testing) | [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0) | `npx skills add anthropics/skills --skill webapp-testing` |
 
-## How it stays in sync
-
-Claude Code format is the single source of truth. Native installers (Claude Code plugin, Gemini extension, `npx skills`) read the repo as-is; `bin/install-agents.ts` (bun, zero deps) generates opencode markdown and Codex TOML on install. No generated content is checked in — conversion happens on the consumer's machine at install time.
-
-## Alternatives
-
-| project | difference |
-|---|---|
-| [anthropics/skills](https://github.com/anthropics/skills) | official skill collection; skills only, Claude Code-centric |
-| [wshobson/agents](https://github.com/wshobson/agents) | much larger catalog (194 agents); pre-generates per-harness artifacts via make, checked in |
-| [vercel-labs/skills](https://github.com/vercel-labs/skills) | the installer CLI this repo relies on for skills; not a content collection |
-
-agenticat stays deliberately small: fewer, heavily-used artifacts over volume.
-
-## FAQ
-
-**How do I install a Claude Code subagent in opencode?**
-Clone this repo and run `./install.sh --to opencode` — it converts the frontmatter (tools list → boolean map, model alias → provider id) and writes to `~/.config/opencode/agents/`.
-
-**Can I install just one skill without the rest?**
-`npx skills add uwuclxdy/agenticat --skill <name>` installs exactly one.
-
-**Do the agents work outside Claude Code?**
-Yes: opencode, Gemini CLI, Codex CLI and Cursor (see Install). Harnesses without custom-subagent support can still use all skills.
-
 ## Credits
 
 - `clean-code` condenses videos from [s4.codes](https://www.tiktok.com/@s4.codes) (described with Gemini, distilled with Claude Opus).
-- External skills (see above) are linked to their upstream repos, which carry their own attribution and licenses.
+- External skills link to their upstream repos, which carry their own attribution and licenses.
 
 ## License
 
