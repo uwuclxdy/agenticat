@@ -1,6 +1,6 @@
 ---
 name: cargo-toml-optimization
-description: "Optimize or tune a Rust Cargo.toml or .cargo/config.toml: profiles, dependencies, features, workspaces, build speed."
+description: Tune a Rust Cargo.toml or .cargo/config.toml (profiles, dependencies, features, workspaces, build speed).
 ---
 
 # Cargo.toml optimization
