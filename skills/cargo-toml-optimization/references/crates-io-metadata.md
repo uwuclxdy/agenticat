@@ -1,7 +1,7 @@
 # crates.io Cargo.toml Metadata Reference
-> _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
+> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-## Source (for future changes)
+## Source (for Future Changes)
 
 - https://crates.io/category_slugs (authoritative slug list, rendered from categories.toml)
 - https://doc.rust-lang.org/cargo/reference/manifest.html (Cargo manifest field rules)
@@ -11,11 +11,11 @@ https://github.com/rust-lang/crates.io/blob/main/src/boot/categories.toml
 
 ---
 
-## Valid crates.io categories
+## Valid crates.io Categories
 
 All slugs below are sourced from `src/boot/categories.toml` in the rust-lang/crates.io repository. Use the exact `slug` string in `Cargo.toml`. Nested slugs use `::` as separator (e.g. `development-tools::testing`).
 
-### Top-level categories
+### Top-Level Categories
 
 | slug | human name | description |
 |------|-----------|-------------|
@@ -78,7 +78,7 @@ All slugs below are sourced from `src/boot/categories.toml` in the rust-lang/cra
 | `wasm` | WebAssembly | Crates for use when targeting WebAssembly, or for manipulating WebAssembly |
 | `web-programming` | Web programming | Crates to create applications for the web |
 
-### Nested subcategory slugs
+### Nested Subcategory Slugs
 
 | slug | human name | description |
 |------|-----------|-------------|
@@ -131,7 +131,7 @@ All slugs below are sourced from `src/boot/categories.toml` in the rust-lang/cra
 
 ---
 
-## keywords rules
+## keywords Rules
 
 Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -150,7 +150,7 @@ keywords = ["gamedev", "graphics", "opengl"]
 
 ---
 
-## categories rules
+## categories Rules
 
 Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -173,7 +173,7 @@ Categories that don't exactly match a known slug must be corrected before publis
 
 Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
-**Status: deprecated.** crates.io no longer displays badges from `[badges]` on its website. The field is still accepted by Cargo but has no visible effect on crates.io.
+crates.io no longer renders badges from `[badges]` on its website. Cargo still parses the field with no warning; it is not labeled deprecated anywhere in the manifest reference (only the `status = "deprecated"` maintenance value below uses that word).
 
 Only one badge type remains documented:
 
@@ -181,7 +181,7 @@ Only one badge type remains documented:
 |-----------|---------------|----------------|
 | `maintenance` | `status` | see below |
 
-### maintenance status values
+### maintenance status Values
 
 | value | meaning |
 |-------|---------|
@@ -200,7 +200,7 @@ maintenance = { status = "actively-developed" }
 
 ---
 
-## publish field
+## publish Field
 
 Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -225,13 +225,13 @@ publish = ["my-private-registry"]
 
 ---
 
-## crates.io publish requirements
+## crates.io publish Requirements
 
 Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
 All fields below are required or enforced by crates.io at publish time.
 
-### required fields
+### Required Fields
 
 | field | constraint |
 |-------|-----------|
@@ -240,18 +240,7 @@ All fields below are required or enforced by crates.io at publish time.
 | `description` | plain text (not Markdown); must be set; no character limit documented |
 | `license` OR `license-file` | one of the two must be present; `license` must be a valid SPDX 2.3 expression (e.g. `"MIT OR Apache-2.0"`); `license-file` is a path to a license text file |
 
-### optional fields (with crates.io-specific limits when present)
+### Optional Fields (with crates.io-Specific Limits when Present)
 
-| field | constraint |
-|-------|-----------|
-| `keywords` | max 5; each max 20 chars, ASCII, alphanumeric start, `[a-zA-Z0-9_\-+]` chars only |
-| `categories` | max 5; each must exactly match a slug from crates.io/category_slugs |
-
-### SPDX license expression examples
-
-```
-MIT
-Apache-2.0
-MIT OR Apache-2.0
-LGPL-2.1-only AND MIT AND BSD-2-Clause
-```
+`keywords` and `categories` also enforce publish-time limits; see the keywords Rules and categories Rules
+tables above.

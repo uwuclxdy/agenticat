@@ -1,13 +1,13 @@
-# rustc Codegen Options (`-C` flags) — Cargo Reference
+# rustc Codegen Options (`-C` Flags) Reference
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-## Source (for future changes)
+## Source (for Future Changes)
 
 - https://doc.rust-lang.org/rustc/codegen-options/index.html
 
 ---
 
-## Codegen options
+## Codegen Options
 
 Every `-C` flag accepted by rustc. "Cargo field" column: named `[profile.*]` key where one exists; otherwise `rustflags` via `.cargo/config.toml` or `RUSTFLAGS`.
 
@@ -16,8 +16,8 @@ Every `-C` flag accepted by rustc. "Cargo field" column: named `[profile.*]` key
 | `opt-level` | `0` `1` `2` `3` `s` `z` | Codegen pass depth. `0`=none, `1`=basic, `2`=default release, `3`=all passes, `s`=size, `z`=aggressive size | `[profile.*] opt-level = 3` |
 | `lto` | `fat`/`true` (default when enabled), `thin`, `false` | LTO mode. `fat`=full cross-crate, `thin`=parallel incremental LTO | `[profile.*] lto = "thin"` |
 | `codegen-units` | integer ≥ 1 | Parallel LLVM codegen shards. Lower = fewer units, more inlining/merging, slower compile. Default: 16 (non-incremental), 256 (incremental) | `[profile.*] codegen-units = 1` |
-| `panic` | `abort`, `immediate-abort`, `unwind` | Panic mode. `abort` skips unwinder, smaller binary; `immediate-abort` traps immediately without panic hook | `[profile.*] panic = "abort"` |
-| `debuginfo` | `0`/`none`, `line-directives-only`, `line-tables-only`, `1`/`limited`, `2`/`full` | Debug info verbosity. `2` = full DWARF; `line-tables-only` = minimal for profilers | `[profile.*] debug = 2` (maps 0/1/2 → `none`/`limited`/`full`) |
+| `panic` | `abort`, `unwind`, `immediate-abort` (nightly-only) | Panic mode. `abort` skips unwinder, smaller binary; `immediate-abort` traps immediately without a panic hook — requires `-Zunstable-options` on nightly, not stabilized as of 2026-07 | `[profile.*] panic = "abort"` |
+| `debuginfo` | `0`/`none`, `line-directives-only`, `line-tables-only`, `1`/`limited`, `2`/`full` | Debug info verbosity. `2` = full DWARF; `line-tables-only` = minimal for profilers | `[profile.*] debug = 2` (maps 0/1/2 -> `none`/`limited`/`full`) |
 | `split-debuginfo` | `off`, `packed`, `unpacked` | Where debug sections land. `packed` = separate `.dSYM`/`.pdb`; `unpacked` = per-object files | `[profile.*] split-debuginfo = "packed"` |
 | `strip` | `none`, `debuginfo`, `symbols` | Strip debug sections or all symbols from output binary | `[profile.*] strip = "symbols"` |
 | `debug-assertions` | `y`/`n` | Turns on `debug_assert!` / `cfg(debug_assertions)`. On by default in dev profile | `[profile.*] debug-assertions = false` |
@@ -33,7 +33,7 @@ Every `-C` flag accepted by rustc. "Cargo field" column: named `[profile.*]` key
 | `link-args` | space-separated string | Append multiple flags at once | `rustflags = ["-C", "link-args=-Wl,--as-needed -Wl,-z,now"]` |
 | `link-self-contained` | `y`/`n`, or `+component`/`-component` | Use Rust-bundled CRT objects / libc instead of system copies. Fine-grained: `+crt-objects`, `+libc`, `+unwind`, etc. | `rustflags = ["-C", "link-self-contained=+crt-objects"]` |
 | `linker-plugin-lto` | `y`/`n`, or path to LTO plugin | Defer LTO to the linker (used when mixing Rust with C/C++ toolchains that accept LTO plugins) | `rustflags = ["-C", "linker-plugin-lto"]` |
-| `linker-features` | `+lld` / `-lld` | Switch linker features on/off, e.g. use the bundled LLD | `rustflags = ["-C", "linker-features=+lld"]` |
+| `linker-features` | `+lld` / `-lld` | Switch linker features on/off, e.g. use the bundled LLD. **Unstable**: requires `-Z unstable-options` on nightly even alone | `rustflags = ["-C", "linker-features=+lld"]` |
 | `relocation-model` | `static`, `pic`, `pie`, `dynamic-no-pic`, `ropi`, `rwpi`, `ropi-rwpi`, `default` | Position-independence model. `pic` needed for shared libs; `pie` for hardened executables | `rustflags = ["-C", "relocation-model=pie"]` |
 | `code-model` | `tiny`, `small`, `kernel`, `medium`, `large` | Address range constraints for code/data. `small` is default on x86-64 | `rustflags = ["-C", "code-model=large"]` |
 | `force-frame-pointers` | `y`/`n` | Always emit frame pointer register. Helps profilers (perf, dtrace) at slight perf cost | `rustflags = ["-C", "force-frame-pointers=yes"]` |
@@ -69,28 +69,21 @@ Every `-C` flag accepted by rustc. "Cargo field" column: named `[profile.*]` key
 
 ---
 
-## Profile field → `-C` flag map
+## Profile Field -> `-C` Flag Map
+
+Most fields map to the same-named flag (the main table's "how to set from Cargo" column covers them). The
+non-obvious cases:
 
 | `[profile.*]` field | emitted `-C` flag | notes |
 |--------------------|--------------------|-------|
-| `opt-level` | `-C opt-level=<N>` | accepts `0`-`3`, `"s"`, `"z"` |
-| `lto` | `-C lto=<value>` | `true`/`"fat"` → fat LTO; `"thin"` → thin LTO; `false` → off |
-| `codegen-units` | `-C codegen-units=<N>` | 1 forces single unit, best inlining; Cargo defaults to 16 for release |
-| `panic` | `-C panic=<mode>` | `"abort"` or `"unwind"` (default) |
-| `debug` | `-C debuginfo=<level>` | `0`=none, `1`=limited, `2`=full; accepts `true`/`false` too |
-| `split-debuginfo` | `-C split-debuginfo=<mode>` | `"off"`, `"packed"`, `"unpacked"` |
-| `strip` | `-C strip=<mode>` | `"none"`, `"debuginfo"`, `"symbols"` |
-| `debug-assertions` | `-C debug-assertions=<y/n>` | on by default in `dev`, off in `release` |
-| `overflow-checks` | `-C overflow-checks=<y/n>` | on by default in `dev`, off in `release` |
-| `rpath` | `-C rpath=<y/n>` | off by default |
-| `incremental` | `-C incremental=<path>` | Cargo computes the path; setting `incremental = true/false` enables or suppresses it |
-| `embed-bitcode` | `-C embed-bitcode=<y/n>` | Cargo sets this automatically based on `lto`; manual override via `rustflags` |
+| `debug` | `-C debuginfo=<level>` | field is renamed; `0`=none, `1`=limited, `2`=full; accepts `true`/`false` too |
+| `embed-bitcode` | `-C embed-bitcode=<y/n>` | no profile field; Cargo sets it automatically based on `lto`, override via `rustflags` |
 
 ---
 
-## `target-cpu` and `target-feature` in depth
+## `target-cpu` and `target-feature` in Depth
 
-### Discovering valid values
+### Discovering Valid Values
 
 ```sh
 # List all recognized CPU names for the current target
@@ -107,12 +100,12 @@ Both commands accept `--target <triple>` to query a cross-compile target.
 Detects the host CPU at compile time and activates all its supported extensions. Produces the fastest code for the build machine but the binary will SIGILL on CPUs lacking those features. Never use for distributed binaries.
 
 ```toml
-# .cargo/config.toml — local dev only
+# .cargo/config.toml (local dev only)
 [build]
 rustflags = ["-C", "target-cpu=native"]
 ```
 
-### Common `target-feature` flags
+### Common `target-feature` Flags
 
 | feature | effect |
 |---------|--------|
@@ -131,7 +124,7 @@ rustflags = ["-C", "target-cpu=native"]
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --target x86_64-unknown-linux-musl
 ```
 
-### PGO workflow
+### PGO Workflow
 
 PGO requires two compile passes plus a profdata merge step.
 
@@ -164,17 +157,15 @@ Combine with `-C lto=thin` and `-C codegen-units=1` for maximum effect.
 
 ## Setting `rustflags`
 
-### Precedence (highest to lowest)
+### Precedence
 
-1. `CARGO_ENCODED_RUSTFLAGS` environment variable (null-separated, exact, no shell splitting)
-2. `RUSTFLAGS` environment variable (space-separated, shell-split)
-3. `[target.<triple>].rustflags` in `.cargo/config.toml`
-4. `[target.<cfg(...)>].rustflags` in `.cargo/config.toml`
-5. `[build].rustflags` in `.cargo/config.toml`
+Four mutually exclusive sources, first match wins, no merging across tiers: `CARGO_ENCODED_RUSTFLAGS`
+env > `RUSTFLAGS` env > target tier (`[target.<triple>].rustflags` + matching
+`[target.'cfg(...)'].rustflags`, joined) > `[build].rustflags` fallback (dropped the moment any target
+entry applies). Full breakdown: `config.md` under `[build]`. Host-artifact interaction: the
+cross-compilation caveat below.
 
-Higher entries completely override lower ones. They do not merge.
-
-### Array form in `.cargo/config.toml`
+### Array Form in `.cargo/config.toml`
 
 Prefer the array form to avoid shell quoting issues with values containing spaces:
 
@@ -189,22 +180,24 @@ rustflags = ["-C", "link-arg=-fuse-ld=lld", "-C", "force-frame-pointers=yes"]
 
 Each flag and its value must be **separate array elements** when the flag takes a value. Combining them (`"-C target-cpu=native"` as one string) works too but may break on older Cargo versions.
 
-### Cross-compilation caveat
+### Cross-Compilation Caveat
 
-`[target.<triple>].rustflags` only applies to artifacts compiled targeting that triple. Build scripts (`build.rs`) and procedural macros are host artifacts; they are compiled for the host triple regardless of `--target`. To affect host build artifacts, set `[host].rustflags` (Cargo 1.70+) or use a separate `[target.<host-triple>]` block.
+`[target.<triple>].rustflags` only applies to artifacts compiled targeting that triple. Build scripts (`build.rs`) and procedural macros are host artifacts; they are compiled for the host triple regardless of `--target`. To affect host build artifacts on stable, use a separate `[target.<host-triple>]` block scoped to the host's own triple.
+
+`[host].rustflags` also exists for this, but it is **nightly-only**: it requires the `-Z host-config` and `-Z target-applies-to-host` command-line flags, plus `target-applies-to-host = false` in the Cargo config file (passing `-Zhost-config` also flips that default to `false`).
 
 ```toml
-# Cargo 1.70+: flags for host-compiled artifacts (build scripts, proc-macros)
+# nightly-only: cargo +nightly -Ztarget-applies-to-host -Zhost-config build --target <triple>
 [host]
 rustflags = ["-C", "opt-level=2"]
 ```
 
 ### `CARGO_ENCODED_RUSTFLAGS` vs `RUSTFLAGS`
 
-Use `CARGO_ENCODED_RUSTFLAGS` in scripts when flag values may contain spaces (e.g. paths). Values are `\x1f` (unit separator, ASCII 31) delimited, no shell interpretation:
+Use `CARGO_ENCODED_RUSTFLAGS` in scripts when flag values may contain spaces (e.g. paths). Values are `\x1f` (unit separator, ASCII 31) delimited, no shell interpretation. Double quotes don't expand `\x1f`; use ANSI-C quoting (`$'...'`) so bash emits the real byte:
 
 ```sh
-export CARGO_ENCODED_RUSTFLAGS="-Clink-arg=-Wl,-rpath,/opt/mylib\x1f-Ctarget-cpu=native"
+export CARGO_ENCODED_RUSTFLAGS=$'-Clink-arg=-Wl,-rpath,/opt/mylib\x1f-Ctarget-cpu=native'
 ```
 
 `RUSTFLAGS` is simpler but spaces inside individual flag values will be misinterpreted as flag boundaries.

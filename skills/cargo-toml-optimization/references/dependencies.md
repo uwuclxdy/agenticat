@@ -1,38 +1,26 @@
-# Cargo dependency specification & overriding
+# Cargo Dependency Specification & Overriding
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 Sources: [specifying-dependencies](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html) | [overriding-dependencies](https://doc.rust-lang.org/cargo/reference/overriding-dependencies.html)
 
 ---
 
-## Version requirement syntax
+## Version Requirement Syntax
 
 All examples from the [official reference](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html).
 
-### Caret `^` (default; bare version = caret)
+### Caret `^` (Default; Bare Version = Caret)
 
-Allows SemVer-compatible updates. Left-most non-zero component is pinned.
+Bare version = caret: SemVer-compatible updates, left-most non-zero component pinned (`1.2.3`/`^1.2.3` -> `>=1.2.3, <2.0.0`). The 0.x rows are the non-obvious ones:
 
 | Spec | Resolves to |
 |------|-------------|
-| `1.2.3` / `^1.2.3` | `>=1.2.3, <2.0.0` |
-| `1.2` / `^1.2` | `>=1.2.0, <2.0.0` |
 | `0.2.3` | `>=0.2.3, <0.3.0` |
 | `0.0.3` | `>=0.0.3, <0.0.4` |
 
-**Opt-lever**: default; allows patch+minor upgrades per major. Keeps things up-to-date without breaking changes.
-
 ### Tilde `~`
 
-Allows patch-level changes only (when minor is given).
-
-| Spec | Resolves to |
-|------|-------------|
-| `~1.2.3` | `>=1.2.3, <1.3.0` |
-| `~1.2` | `>=1.2.0, <1.3.0` |
-| `~1` | `>=1.0.0, <2.0.0` |
-
-**Opt-lever**: tighter than caret; useful when a minor bump risks ABI or behavioral change.
+Patch-level only when minor is given (`~1.2` -> `>=1.2.0, <1.3.0`); `~1` -> `>=1.0.0, <2.0.0`. Tighter than caret; useful when a minor bump risks ABI/behavioral change.
 
 ### Wildcard `*`
 
@@ -44,7 +32,7 @@ Allows patch-level changes only (when minor is given).
 
 **Warning**: crates.io rejects bare `*`; use only for path/git deps or internal tooling.
 
-### Comparison operators
+### Comparison Operators
 
 ```toml
 foo = ">= 1.2.0"
@@ -56,18 +44,14 @@ foo = ">= 1.2, < 1.5"  # multiple requirements (comma-separated)
 
 **Opt-lever**: `= x.y.z` hard-pins, guaranteeing reproducibility at the cost of no security patches. Combine `>=` + `<` to express bounded ranges without locking to a single version.
 
-### Multiple requirements
-
-Comma-separated in one string: `">= 1.2, < 1.5"`. Cargo intersects them.
-
-### Pre-releases
+### Pre-Releases
 
 Excluded by default. Must be explicit: `"1.0.0-alpha"` (then alpha/beta/rc and final 1.x all match).
 Do not use pre-release versions in stable library crates.
 
 ---
 
-## Dependency sections
+## Dependency Sections
 
 | Section | When pulled in | Propagated to dependents? | Notes |
 |---------|---------------|--------------------------|-------|
@@ -81,9 +65,9 @@ Target-gated variants: `[target.'cfg(...)'.dev-dependencies]` and `[target.'cfg(
 
 ---
 
-## Source kinds
+## Source Kinds
 
-### crates.io (default registry)
+### crates.io (Default Registry)
 
 ```toml
 [dependencies]
@@ -116,7 +100,7 @@ hello_utils = { path = "hello_utils", version = "0.1.0" }  # version required wh
 
 Path must point at the directory containing `Cargo.toml`. Does not traverse up.
 
-### Alternative registries
+### Alternative Registries
 
 ```toml
 [dependencies]
@@ -125,7 +109,7 @@ some-crate = { version = "1.0", registry = "my-registry" }
 
 Registry must be configured in `.cargo/config.toml`.
 
-### Multiple locations (local + registry fallback)
+### Multiple Locations (Local + Registry Fallback)
 
 ```toml
 bitflags = { path = "my-bitflags", version = "1.0" }
@@ -135,7 +119,7 @@ bitflags = { path = "my-bitflags", version = "1.0" }
 
 ---
 
-## Dependency keys
+## Dependency Keys
 
 | Key | Type | Purpose | Opt-relevance |
 |-----|------|---------|---------------|
@@ -155,7 +139,7 @@ bitflags = { path = "my-bitflags", version = "1.0" }
 
 ---
 
-## Target-specific dependencies
+## Target-Specific Dependencies
 
 ```toml
 [target.'cfg(windows)'.dependencies]
@@ -181,36 +165,18 @@ Supports `not`, `any`, `all` cfg operators. Custom targets: use base filename of
 
 ---
 
-## Workspace inheritance
+## Workspace Inheritance
 
-```toml
-# workspace Cargo.toml
-[workspace.dependencies]
-serde = { version = "1.0", features = ["derive"] }
-cc = "1.0.3"
+A member pulls a shared dep with `{ workspace = true }` from `[workspace.dependencies]`. It may add
+`optional` and extra `features` (additive; cannot remove workspace-level features); it cannot override
+`version`, `default-features`, `git`, `path`, or `registry`. Centralizes version pins and
+`default-features = false`, preventing multi-version bloat across members.
 
-# member Cargo.toml
-[dependencies]
-serde = { workspace = true, features = ["rc"] }   # features are ADDITIVE
-
-[build-dependencies]
-cc = { workspace = true }
-
-[dev-dependencies]
-rand = { workspace = true, optional = true }
-```
-
-**What members can add on top of workspace definition:**
-- `optional`
-- `features` (additive only; cannot remove workspace-level features)
-
-**What members cannot override:** `version`, `default-features`, `git`, `path`, `registry`.
-
-**Opt-lever**: centralizes version pins, preventing accidental multi-version bloat in member crates. Single source of truth for `default-features = false` too.
+Worked example + `[workspace.package]` field inheritance: `references/workspaces.md`.
 
 ---
 
-## Dependency renaming (`package` key)
+## Dependency Renaming (`package` Key)
 
 ```toml
 [dependencies]
@@ -230,9 +196,9 @@ log-debug = ["bar/log-debug"]   # NOT foo/log-debug
 
 ---
 
-## Overriding dependencies
+## Overriding Dependencies
 
-### `[patch]` (recommended)
+### `[patch]` (Recommended)
 
 Overrides a source (registry or git URL) with a local path or different git ref. Applied transitively.
 
@@ -258,7 +224,7 @@ serde2 = { git = "https://github.com/example/serde.git", package = "serde", bran
 
 **Opt-lever**: `[patch]` is the primary tool for dependency deduplication. If two crates pull in different minor versions of the same dep, patch the older one to the newer. Cargo unifies them and cuts compile time + binary size. Hot-swapping a dep for a local fork during profiling/debugging works here too, without touching `[dependencies]`.
 
-### `[replace]` (deprecated)
+### `[replace]` (Deprecated)
 
 ```toml
 [replace]
@@ -267,7 +233,7 @@ serde2 = { git = "https://github.com/example/serde.git", package = "serde", bran
 
 Requires exact `name:version`. Cannot change dep graph structure, cannot specify features. Use `[patch]` instead.
 
-### `paths` override (`.cargo/config.toml`)
+### `paths` Override (`.cargo/config.toml`)
 
 ```toml
 paths = ["/absolute/path/to/uuid"]

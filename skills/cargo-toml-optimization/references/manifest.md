@@ -40,27 +40,16 @@
 | `autoexamples` | Auto-discover `examples/*.rs` | `true` | Bool | OPT | | `false` disables; Rust 1.27+ |
 | `autotests` | Auto-discover `tests/*.rs` | `true` | Bool | OPT | | `false` disables; Rust 1.27+ |
 | `autobenches` | Auto-discover `benches/*.rs` | `true` | Bool | OPT | | `false` disables; Rust 1.27+ |
-| `resolver` | Dependency resolver version | inferred from edition/workspace | `"1"` \| `"2"` | OPT | | **Critical**: v2 gives proper feature unification; 2021+ edition defaults to v2; [ref](https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions) |
+| `resolver` | Dependency resolver version | inferred from edition/workspace | `"1"` \| `"2"` \| `"3"` | OPT | | **Critical**: v2 gives proper feature unification; v3 adds MSRV-aware version selection; 2021+ edition defaults to v2, 2024+ defaults to v3; [ref](https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions) |
 
 ---
 
 ## Include/Exclude Pattern Syntax
 
-Patterns follow gitignore style. Auto-excluded always: sub-packages (dirs with `Cargo.toml`), `target/`, hidden dot-files (outside git), git-ignored files.
-Always included regardless: `Cargo.toml`, minimized `Cargo.lock`, `license-file` target.
-
-| Pattern | Behavior |
-|---------|----------|
-| `foo` | Matches `foo` anywhere (equivalent to `**/foo`) |
-| `/foo` | Matches `foo` only in package root |
-| `foo/` | Matches directory `foo` anywhere |
-| `*.html` | Glob over all `.html` files |
-| `foo?` | Glob: matches `food`, not `foo` |
-| `[ab]` / `[a-z]` | Character ranges |
-| `**/foo/bar` | `bar` under `foo` in any subdirectory |
-| `foo/**` | All files inside `foo` recursively |
-| `a/**/b` | Matches `a/b`, `a/x/b`, `a/x/y/b`, etc. |
-| `!pattern` | Negation in `include` lists |
+Patterns follow gitignore-style globbing. Cargo-specific behavior on top of that: sub-packages (dirs
+holding their own `Cargo.toml`), `target/`, hidden dot-files outside git and git-ignored files are
+auto-excluded no matter what; `Cargo.toml`, a minimized `Cargo.lock` and the `license-file` target
+stay included regardless. In an `include` list, `!pattern` negates (re-excludes) an earlier match.
 
 ---
 
@@ -79,8 +68,8 @@ Single table only. Source: https://doc.rust-lang.org/cargo/reference/cargo-targe
 | `bench` | Include in `cargo bench` | `true` | OPT | |
 | `doc` | Include in `cargo doc` | `true` | OPT | |
 | `proc-macro` | Mark as procedural macro | `false` | OPT | Automatically sets `crate-type = ["proc-macro"]` |
-| `harness` | libtest test runner on/off | `true` | OPT | `false` requires custom `main()`. **Critical: controls artifact type and link behavior.** See table below |
-| `crate-type` | Output artifact type(s) | `["lib"]` | OPT | See crate-type table below |
+| `harness` | libtest test runner on/off | `true` | OPT | `false` disables the built-in libtest runner; requires a custom `main()` |
+| `crate-type` | Output artifact type(s) | `["lib"]` | OPT | **Controls artifact type and link behavior.** See table below |
 | `edition` | Rust edition override | Inherits `[package].edition` | | Deprecated; avoid per-target override |
 
 ### `[[bin]]` Fields
@@ -142,7 +131,7 @@ Repeatable. Source: https://doc.rust-lang.org/cargo/reference/cargo-targets.html
 
 ---
 
-## `crate-type` Values (Critical: controls artifact type and link behavior)
+## `crate-type` Values (Critical: Controls Artifact Type and Link Behavior)
 
 Source: https://doc.rust-lang.org/cargo/reference/cargo-targets.html#the-crate-type-field
 
@@ -193,31 +182,23 @@ Availability: `autobins`/`autoexamples`/`autotests`/`autobenches` since Rust 1.2
 
 ## Publishing Requirements (crates.io)
 
-Minimum required:
-- `name`
-- `version`
-- `description`
-- `license` OR `license-file`
-
-Additional constraints:
-- Name: ASCII only, max 64 chars, no reserved/Windows special names
-- `keywords`: max 5, max 20 chars each, alphanumeric start, ASCII only
-- `categories`: max 5, must match [official slugs](https://crates.io/category_slugs)
-
----
+Minimum required: `name`, `version`, `description`, `license` OR `license-file`. Field limits (name /
+keywords / categories) live in `crates-io-metadata.md`.
 
 ## Build/Publish Impact: Key Fields
 
+Why each field matters for build speed or publish size (detail in the tables above):
+
 | Field | Why it matters |
 |-------|----------------|
-| `resolver = "2"` | Proper feature unification; avoids building deps with wrong features; critical for workspaces |
-| `rust-version` | Locks MSRV; influences resolver and lint behavior |
-| `edition` | 2021/2024 give better language ergonomics and default resolver v2 |
-| `crate-type` | Controls artifact type; `cdylib` vs `rlib` vs `staticlib` has major size/portability tradeoffs |
-| `include` / `exclude` | Controls published package size; `include` is the more explicit and recommended approach |
-| `required-features` | Skips building targets when features absent; reduces unnecessary compile work |
-| `build = false` | Eliminates build script overhead when none is needed |
-| `links` | Prevents duplicate native library linking in the dep graph |
-| `autolib`/`autobins`/etc. | Disabling when targets are explicit avoids scanning filesystem; minor speedup |
-| `harness = false` | Allows custom test runners (Criterion, custom benchers on stable) |
-| `test = false` / `bench = false` | Skips compilation of targets that don't need testing/benchmarking |
+| `resolver = "2"` | correct feature unification; wrong features built otherwise |
+| `rust-version` | locks MSRV; shapes resolver + lint behavior |
+| `edition` | 2021/2024 give better ergonomics, default resolver v2 |
+| `crate-type` | `cdylib` vs `rlib` vs `staticlib`: major size/portability tradeoffs |
+| `include` / `exclude` | controls published package size (`include` is the explicit, recommended one) |
+| `required-features` | skips targets whose features are absent; less needless compile work |
+| `build = false` | drops build-script overhead when none is needed |
+| `links` | prevents duplicate native-lib linking in the dep graph |
+| `autolib` / `autobins` / etc. | disabling when targets are explicit avoids filesystem scanning |
+| `harness = false` | custom test runners (criterion, custom benchers on stable) |
+| `test = false` / `bench = false` | skips compiling targets that need no testing or benchmarking |

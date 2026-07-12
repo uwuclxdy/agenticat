@@ -1,5 +1,5 @@
-# .cargo/config.toml reference
-> _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
+# .cargo/config.toml Reference
+> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 **Official source:** https://doc.rust-lang.org/cargo/reference/config.html
 
@@ -9,16 +9,18 @@
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `Cargo.toml` | workspace/package root | **package manifest**: deps, features, profile definitions, workspace membership |
+| `Cargo.toml` | workspace/package root | package manifest: deps, features, profile definitions, workspace membership |
 | `.cargo/config.toml` | any ancestor dir or `$CARGO_HOME` | **toolchain/environment config**: compiler flags, linkers, source overrides, env vars |
 
-`Cargo.toml` defines *what to build*. `.cargo/config.toml` defines *how to build it*. Profile *definitions* live in `Cargo.toml`; profile *overrides* can appear in both.
+`Cargo.toml` defines what to build. `.cargo/config.toml` defines how to build it. Profile definitions live in `Cargo.toml`; profile overrides can appear in both.
 
 ---
 
 ## File Hierarchy & Precedence
 
-Cargo walks up from cwd, loads every `.cargo/config.toml` it finds. Merges all; deeper = higher precedence.
+Cargo walks up from **cwd** (the invocation's current directory, not the workspace root), loading every
+`.cargo/config.toml` it finds along that ancestor chain up to the filesystem root, then `$CARGO_HOME`.
+Merges all; deeper = higher precedence.
 
 ```
 <cwd>/.cargo/config.toml          ← highest priority
@@ -27,7 +29,7 @@ Cargo walks up from cwd, loads every `.cargo/config.toml` it finds. Merges all; 
 $HOME/.cargo/config.toml          ← $CARGO_HOME, lowest priority
 ```
 
-**Full precedence stack (high → low):**
+**Full precedence stack (high -> low):**
 1. `--config KEY=VALUE` CLI flags (left-to-right, rightmost wins per key)
 2. `CARGO_*` environment variables
 3. Config files (deeper dir overrides ancestor)
@@ -36,8 +38,11 @@ $HOME/.cargo/config.toml          ← $CARGO_HOME, lowest priority
 **Format notes:**
 - `.cargo/config` (no `.toml`) still accepted for backward compat, but deprecated
 - TOML format only; no JSON or YAML
-- Arrays are **concatenated** (not replaced), with higher-precedence items appended later
-- Workspace invocation: Cargo does NOT read config from individual member crate dirs. Only searches workspace root upward.
+- Arrays are concatenated, not replaced, with higher-precedence items appended later
+- Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member
+  directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same
+  command from the workspace root does NOT (the member dir is never an ancestor of the root).
+  Workspace membership itself adds nothing to config discovery — only cwd's own ancestor chain matters.
 
 **`[include]`**: load additional config files inline:
 ```toml
@@ -66,10 +71,17 @@ Included files load first; the including file wins on conflict.
 | `incremental` | bool | from profile | `CARGO_INCREMENTAL` / `CARGO_BUILD_INCREMENTAL` | override profile incremental setting globally |
 | `dep-info-basedir` | path | none | `CARGO_BUILD_DEP_INFO_BASEDIR` | strip path prefix from dep-info files (for build systems that watch deps) |
 
-**rustflags precedence (high → low):**
-`CARGO_ENCODED_RUSTFLAGS` > `RUSTFLAGS` > `[target.<triple>].rustflags` > `[build].rustflags`
+**rustflags precedence — four mutually exclusive sources, first match wins (they do not merge across
+tiers):**
+1. `CARGO_ENCODED_RUSTFLAGS` env
+2. `RUSTFLAGS` env
+3. Target tier: all matching `[target.<triple>].rustflags` **and** `[target.'cfg(...)'].rustflags`
+   entries, joined into one list (triple entry first, then each matching cfg entry in config-file
+   order; multiple matching cfg entries also merge with each other)
+4. `[build].rustflags` — fallback only, used when no target-tier entry matches; dropped entirely the
+   moment one does
 
-**Note on `--target`:** when cross-compiling, `[build].rustflags` only reaches the target compiler. Build scripts and proc-macros (host artifacts) are not affected.
+**Note on `--target`:** when cross-compiling, target-tier rustflags only reach the target compiler. Build scripts and proc-macros (host artifacts) are not affected.
 
 **`rustc-wrapper` vs `rustc-workspace-wrapper`:** both active at once nest as:
 ```
@@ -78,7 +90,7 @@ $RUSTC_WRAPPER $RUSTC_WORKSPACE_WRAPPER $RUSTC <args>
 
 ---
 
-## High-impact Build Speed Levers
+## High-Impact Build Speed Levers
 
 ### 1. sccache
 
@@ -92,7 +104,7 @@ rustc-wrapper = "sccache"
 - Install: `cargo install sccache` or distro package
 - `rustc-workspace-wrapper` for workspace-only caching (leaves dep caching to wrapper)
 
-### 2. Faster linkers (mold / lld)
+### 2. Faster Linkers (mold / lld)
 
 Linking is often the biggest incremental build bottleneck. Two approaches:
 
@@ -114,36 +126,40 @@ rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 rustflags = ["-C", "linker=clang", "-C", "link-arg=-fuse-ld=mold"]
 ```
 
-**mold** (fastest on Linux, MIT license):
+mold (fastest on Linux, MIT license):
 ```toml
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 ```
 
-**lld** (LLVM linker; Linux/macOS/Windows; ships with rustup as `rust-lld` since ~1.71):
+lld (LLVM linker; Linux/macOS/Windows; bundled in the rustup toolchain as `rust-lld` for years; default
+linker on x86_64-linux since 1.90):
+
+`linker = "rust-lld"` alone does **not** work on `x86_64-unknown-linux-gnu`: rust-lld does run (rustc
+uses its own bundled copy at `<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld` even though
+it isn't on `PATH`), but it's invoked as a bare ld-flavor linker with none of the system library search
+paths a cc driver normally injects, so the link fails: `rust-lld: error: unable to find library -lc`.
+Use one of these stable alternatives instead:
+
 ```toml
+# (a) clang driver + system lld (needs clang + lld installed)
 [target.x86_64-unknown-linux-gnu]
-linker = "rust-lld"
-```
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
-### 3. target-cpu=native
-
-Emit instructions for the exact CPU running the build:
-```toml
-[build]
-rustflags = ["-C", "target-cpu=native"]
-```
-
-Or scoped to a specific target triple:
-```toml
+# (b) default cc/gcc driver + rustup's bundled lld (no extra deps)
 [target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "target-cpu=native"]
+rustflags = [
+    "-C", "link-arg=-B<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld",
+    "-C", "link-arg=-fuse-ld=lld",
+]
 ```
 
-**Warning:** binaries are non-portable. Do not use for distributed builds or cross-compilation. CI artifacts built with `native` will crash on older CPUs.
+(`-C linker-features=+lld -C link-self-contained=+linker` looks like a modern stable replacement but
+is not: on current stable it still requires `-Z unstable-options`, i.e. nightly.)
 
-### 4. Shared target-dir
+### 3. Shared target-dir
 
 Avoid recompiling common dependencies per-project:
 ```toml
@@ -160,7 +176,7 @@ build-dir = "{cargo-cache-home}/build/{workspace-path-hash}"
 
 `build-dir` template vars let multiple workspaces share a central build cache without collisions.
 
-### 5. jobs tuning
+### 4. jobs Tuning
 
 ```toml
 [build]
@@ -169,7 +185,27 @@ jobs = -1  # all CPUs
 jobs = 8
 ```
 
-Useful to **reduce** jobs on machines with low RAM (each rustc invocation peaks ~1GB).
+Useful to reduce jobs on machines with low RAM (each rustc invocation peaks ~1GB).
+
+---
+
+## Runtime-Speed Lever: `target-cpu=native`
+
+Not a build-speed lever — if anything it slows compilation (deeper codegen passes to exploit the extra
+instructions) in exchange for faster generated code:
+
+```toml
+[build]
+rustflags = ["-C", "target-cpu=native"]
+```
+
+Or scoped to a specific target triple:
+```toml
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=native"]
+```
+
+**Warning:** binaries are non-portable. Do not use for distributed builds or cross-compilation. CI artifacts built with `native` will crash on older CPUs.
 
 ---
 
@@ -194,7 +230,11 @@ linker = "arm-none-eabi-gcc"
 runner = ["qemu-arm", "-cpu", "cortex-m4"]
 ```
 
-**Precedence when both triple and cfg match:** `[target.<triple>]` wins over `[target.'cfg(...)']`.
+**Precedence when both a triple and a cfg() table match** differs by key:
+- `linker` / `runner`: `[target.<triple>]` wins over `[target.'cfg(...)']` (it's an error if more than
+  one `cfg()` table's `linker` matches).
+- `rustflags` / `rustdocflags`: entries from every matching triple + cfg table are **joined together**
+  (see the rustflags precedence note under `[build]` above) — neither one "wins".
 
 **Build script override** (`target.<triple>.<links-key>`): skip build script entirely and supply its output directly:
 ```toml
@@ -207,7 +247,7 @@ rustc-link-search = ["/usr/lib"]
 
 ## [profile.\<name\>] Overrides in config.toml
 
-Profile definitions belong in `Cargo.toml`; `config.toml` can **override** any profile field. Config overrides win over `Cargo.toml` profile settings.
+Profile definitions belong in `Cargo.toml`; `config.toml` can override any profile field. Config overrides win over `Cargo.toml` profile settings.
 
 ```toml
 [profile.release]
@@ -227,22 +267,13 @@ opt-level = 0
 codegen-units = 256
 ```
 
-| Key | Values | Build/binary impact |
-|-----|--------|----------------------|
-| `opt-level` | 0-3, `"s"`, `"z"` | core speed/size tradeoff |
-| `lto` | `false`, `"thin"`, `"fat"`, `true` | link-time inlining; `"thin"` = good speed/time balance |
-| `codegen-units` | int | lower = better codegen, slower compile |
-| `incremental` | bool | false in release = smaller, reproducible builds |
-| `panic` | `"unwind"`, `"abort"` | `"abort"` reduces binary size, faster panic path |
-| `strip` | `"none"`, `"debuginfo"`, `"symbols"` | reduces binary size for distribution |
-| `debug` | 0-2, bool | debug info level |
-| `rpath` | bool | embed library search path |
+Every profile field, with values and build impact, lives in `references/profiles.md`.
 
 ---
 
 ## [registries] / [registry] / [source]
 
-### [registry] — default registry config
+### [registry] (Default)
 
 ```toml
 [registry]
@@ -250,7 +281,7 @@ default = "crates-io"
 global-credential-providers = ["cargo:token"]
 ```
 
-### [registries.\<name\>] — named registry
+### [registries.\<name\>] (Named Registry)
 
 ```toml
 [registries.my-registry]
@@ -263,7 +294,7 @@ credential-provider = "cargo:token"
 protocol = "sparse"  # "sparse" (default, fast) or "git" (full clone)
 ```
 
-### [source] — source replacement and vendoring
+### [source] (Source Replacement and Vendoring)
 
 **Vendoring for offline/reproducible CI:**
 ```toml
@@ -370,7 +401,7 @@ TMPDIR = { value = "/fast/ramdisk", force = true }
 OPENSSL_DIR = { value = "vendor/openssl", relative = true }
 ```
 
-- `relative = true` paths are resolved relative to the **parent dir of `.cargo/`** (i.e., the project root)
+- `relative = true` paths are resolved relative to the parent dir of `.cargo/` (i.e., the project root)
 - Default behavior: skip if var already exists in environment
 - `force = true`: overwrite existing env var
 
@@ -393,7 +424,7 @@ Useful for: vendored library paths, tool version pins, reproducible CI env.
 
 ---
 
-## Other Sections (complete)
+## Other Sections (Complete)
 
 | Section | Key purpose |
 |---------|-------------|
@@ -409,13 +440,11 @@ Useful for: vendored library paths, tool version pins, reproducible CI env.
 
 ---
 
-## Canonical config.toml Templates
+## Canonical .cargo/config.toml Templates
 
-### Fast local dev (Linux x86_64)
+### Fast Local Incremental dev Builds (Linux x86_64)
 
 ```toml
-# .cargo/config.toml — fast incremental dev builds
-
 [build]
 rustc-wrapper = "sccache"
 jobs = -1            # all CPUs
@@ -428,11 +457,9 @@ rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 incremental = true
 ```
 
-### Release / CI (fast linker + native CPU)
+### Release / CI (Fast Linker + Native CPU)
 
 ```toml
-# .cargo/config.toml — CI release builds
-
 [build]
 rustc-wrapper = "sccache"
 
@@ -448,11 +475,9 @@ lto = "thin"
 codegen-units = 1
 ```
 
-### Offline vendored CI
+### Offline Vendored CI
 
 ```toml
-# .cargo/config.toml — fully offline, vendor/ checked in
-
 [source.crates-io]
 replace-with = "vendored-sources"
 

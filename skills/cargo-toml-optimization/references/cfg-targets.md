@@ -1,5 +1,5 @@
 # Rust `cfg(...)` Reference: Cargo Target Configuration
-> _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
+> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 > Authoritative source for `[target.'cfg(...)'.dependencies]` in `Cargo.toml`
 > and `[target.'cfg(...)']` in `.cargo/config.toml`.
@@ -9,14 +9,14 @@
 
 ---
 
-## Source (for future changes)
+## Source (for Future Changes)
 
 - https://doc.rust-lang.org/reference/conditional-compilation.html
 - https://doc.rust-lang.org/rustc/platform-support.html
 
 ---
 
-## cfg keys and values
+## cfg Keys and Values
 
 ### `target_arch`
 
@@ -138,7 +138,8 @@ Disambiguates the ABI or C library. Empty string when no disambiguation is neede
 
 ### `target_abi`
 
-Further ABI disambiguation inside `target_env`. Added in Rust 1.61.
+Further ABI disambiguation inside `target_env`. Stabilized in Rust 1.78.0 (unstable `cfg_target_abi`
+feature gate since ~1.51).
 
 | value | description |
 |---|---|
@@ -273,7 +274,7 @@ Target features that can be enabled at compile time; the list below covers commo
 
 ### `target_has_atomic`
 
-Bit widths with hardware atomic load, store, and compare-and-swap instructions.
+Bit widths with hardware atomic load/store and compare-and-swap instructions.
 
 | value | meaning |
 |---|---|
@@ -334,30 +335,16 @@ async = ["tokio"]
 
 Usage in code: `#[cfg(feature = "serde")]`
 
-Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is valid but avoid it; prefer `[dependencies] serde = { optional = true }` instead.
+Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported** — Cargo warns
+"Found `feature = ...` in `target.'cfg(...)'.dependencies`. This key is not supported for selecting
+dependencies and will not work as expected," and the entry silently never matches. Use
+`[dependencies] serde = { optional = true }` + `[features]` instead.
 
 ---
 
-## cfg expression operators
+## cfg Expression Operators
 
-cfg predicates can be combined with boolean operators. These work in `#[cfg(...)]`, `cfg!(...)`, `#[cfg_attr(...)]`, and Cargo's `[target.'cfg(...)']` table keys.
-
-| operator | syntax | semantics |
-|---|---|---|
-| `all()` | `all(pred1, pred2, ...)` | All predicates must be true (logical AND) |
-| `any()` | `any(pred1, pred2, ...)` | At least one predicate must be true (logical OR) |
-| `not()` | `not(pred)` | Predicate must be false (logical NOT); takes exactly one argument |
-
-Predicates can be:
-- A bare key: `unix`, `windows`, `test`, `debug_assertions`
-- A key=value pair: `target_os = "linux"`, `target_arch = "aarch64"`
-- A nested operator expression
-
-Operators can be nested arbitrarily:
-```
-all(target_os = "linux", any(target_arch = "x86_64", target_arch = "aarch64"))
-not(any(target_os = "windows", target_os = "macos"))
-```
+Combine predicates with `all(...)` (AND), `any(...)` (OR), `not(...)` (NOT, exactly one arg); nestable. Work in `#[cfg(...)]`, `cfg!(...)`, `#[cfg_attr(...)]` and Cargo's `[target.'cfg(...)']` table keys.
 
 **Cargo table usage:**
 
@@ -390,11 +377,11 @@ rustflags = ["-C", "target-cpu=cortex-m4"]
 
 ---
 
-## Common target triples
+## Common Target Triples
 
 Triple format: `<arch>-<vendor>-<os>[-<env>]`
 
-### Tier 1 — Guaranteed to work (full std, tested on every PR)
+### Tier 1: Guaranteed to Work (Full std, Tested on Every PR)
 
 | triple | arch | os | env | notes |
 |---|---|---|---|---|
@@ -407,7 +394,7 @@ Triple format: `<arch>-<vendor>-<os>[-<env>]`
 | `aarch64-pc-windows-msvc` | aarch64 | windows | msvc | ARM64 Windows |
 | `aarch64-apple-darwin` | aarch64 | macos | | Apple Silicon, macOS 11+ |
 
-### Tier 2 with host tools — Guaranteed to build, binary releases available
+### Tier 2 with Host Tools: Guaranteed to Build, Binary Releases Available
 
 | triple | arch | os | env | notes |
 |---|---|---|---|---|
@@ -427,7 +414,7 @@ Triple format: `<arch>-<vendor>-<os>[-<env>]`
 | `wasm32-wasip1` | wasm32 | wasi | | WASI Preview 1 (was wasm32-wasi) |
 | `wasm32-wasip2` | wasm32 | wasi | | WASI Preview 2 (component model) |
 
-### Tier 2 without host tools — std available, limited testing
+### Tier 2 Without Host Tools: std Available, Limited Testing
 
 | triple | arch | os | env | notes |
 |---|---|---|---|---|
@@ -455,7 +442,7 @@ Triple format: `<arch>-<vendor>-<os>[-<env>]`
 | `x86_64-unknown-fuchsia` | x86_64 | fuchsia | | Google Fuchsia |
 | `x86_64-fortanix-unknown-sgx` | x86_64 | none | sgx | Intel SGX enclaves |
 
-### Tier 3 notable — Embedded / special purpose
+### Tier 3 Notable: Embedded / Special Purpose
 
 | triple | arch | os | env | notes |
 |---|---|---|---|---|
@@ -485,31 +472,7 @@ Triple format: `<arch>-<vendor>-<os>[-<env>]`
 
 ---
 
-## cfg expression syntax quick reference
-
-```
-# in Cargo.toml
-[target.'cfg(EXPR)'.dependencies]
-
-# EXPR can be:
-unix                                        # bare key (boolean)
-target_os = "linux"                         # key = "value"
-all(pred, pred, ...)                        # AND
-any(pred, pred, ...)                        # OR
-not(pred)                                   # NOT (single argument only)
-
-# nested:
-all(unix, not(target_os = "macos"))
-any(target_arch = "x86_64", target_arch = "aarch64")
-all(target_os = "linux", any(target_env = "gnu", target_env = "musl"))
-not(any(windows, target_os = "macos"))
-```
-
-Cargo evaluates these expressions against the cfg keys rustc reports for the target being compiled.
-
----
-
-## Listing them yourself
+## Listing Them Yourself
 
 ```bash
 # All known target triples

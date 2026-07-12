@@ -5,7 +5,7 @@ Sources: [workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html)
 
 ---
 
-## WORKSPACES
+## Workspaces
 
 ### `[workspace]` Table Fields
 
@@ -25,9 +25,9 @@ default-members = ["crates/cli"]
 resolver = "2"
 ```
 
-### `[workspace.package]` — Inheritable Package Fields
+### `[workspace.package]`: Inheritable Package Fields
 
-Requires Rust **1.64+**. Members inherit with `field.workspace = true`.
+Requires Rust 1.64+. Members inherit with `field.workspace = true`.
 
 | Inheritable Field |
 |---|
@@ -37,7 +37,7 @@ Requires Rust **1.64+**. Members inherit with `field.workspace = true`.
 | `categories`, `keywords` |
 | `publish`, `include`, `exclude` |
 
-`license-file` and `readme` paths are relative to the **workspace root**, not the member crate.
+`license-file` and `readme` paths are relative to the workspace root, not the member crate.
 
 ```toml
 # root Cargo.toml
@@ -56,12 +56,12 @@ rust-version.workspace = true
 license.workspace = true
 ```
 
-### `[workspace.dependencies]` — Shared Dependencies
+### `[workspace.dependencies]`: Shared Dependencies
 
-Requires Rust **1.64+**.
+Requires Rust 1.64+.
 
 - Cannot mark workspace deps as `optional`
-- `features` declared here are **additive** with member-level features (member can add more, not subtract)
+- `features` declared here are additive with member-level features (member can add more, not subtract)
 - Members choose dep kind (normal / build / dev) at the member level
 
 ```toml
@@ -82,11 +82,11 @@ cc.workspace = true
 tokio.workspace = true
 ```
 
-> Centralizing versions in `[workspace.dependencies]` pins all members to the **same version**, cutting duplicate compiles of the same crate at different semver-compatible versions. One of the biggest compile-time wins in a workspace.
+> Centralizing versions in `[workspace.dependencies]` pins all members to the same version, cutting duplicate compiles of the same crate at different semver-compatible versions. One of the biggest compile-time wins in a workspace.
 
-### `[workspace.lints]` — Shared Lint Config
+### `[workspace.lints]`: Shared Lint Config
 
-Requires Rust **1.74+**.
+Requires Rust 1.74+.
 
 ```toml
 # root Cargo.toml
@@ -106,14 +106,14 @@ workspace = true
 A workspace root with no `[package]` table. Use when the repo has no single "main" crate.
 
 ```toml
-# root Cargo.toml — virtual manifest
+# root Cargo.toml: virtual manifest
 [workspace]
 members = ["crates/*"]
 resolver = "2"           # required: no edition to infer from
 ```
 
 Behavior differences from root-package workspace:
-- `cargo build` at root builds **all** members (not just root pkg)
+- `cargo build` at root builds all members (not just root pkg)
 - No `[lib]` / `[[bin]]` / `[dependencies]` in this file
 
 ### Shared Resources
@@ -122,13 +122,13 @@ Behavior differences from root-package workspace:
 |---|---|
 | `Cargo.lock` | Single file at workspace root, shared by all members |
 | `target/` | Default shared output dir at workspace root; all members compile into it |
-| `[patch]`, `[replace]`, `[profile.*]` | **Only** the root manifest is read; member-level entries are silently ignored |
+| `[patch]`, `[replace]`, `[profile.*]` | **Only** the root manifest is read; member-level entries are warned and ignored (Cargo prints e.g. `profiles for the non root package will be ignored`), not silently dropped |
 
 > The shared `target/` reuses incremental compilation artifacts for all workspace crates. No redundant rebuilds when a shared dep changes.
 
 ---
 
-## RESOLVER
+## Resolver
 
 ### Versions at a Glance
 
@@ -150,11 +150,11 @@ resolver = "2"
 resolver = "2"
 ```
 
-The resolver version is **workspace-global**. The value in a dependency's own `Cargo.toml` is ignored; only the top-level package/workspace value applies.
+The resolver version is workspace-global. The value in a dependency's own `Cargo.toml` is ignored; only the top-level package/workspace value applies.
 
 ### Feature Unification: v1 vs v2
 
-#### Resolver v1 (over-unification)
+#### Resolver v1 (Over-Unification)
 
 All features on any dependency, regardless of context (normal, build, dev, target-specific), are merged into one unified set. A feature set in `[build-dependencies]` bleeds into the normal lib build.
 
@@ -167,7 +167,7 @@ log = { version = "0.4", features = ["std"] }
 # v1: log built with "std" for BOTH build script AND library
 ```
 
-#### Resolver v2 (isolated feature sets)
+#### Resolver v2 (Isolated Feature Sets)
 
 Three isolation scenarios:
 
@@ -199,7 +199,7 @@ features = ["fileapi"]
 
 > Switching `resolver = "1"` to `"2"` is often the single biggest correctness and binary-size win. Dev/test-only features stop inflating production builds. Build-script features stop forcing heavier compilation in the library target.
 
-#### Resolver v3 additions
+#### Resolver v3 Additions
 
 Inherits all v2 isolation behavior. Additional change: `resolver.incompatible-rust-versions` defaults to `fallback` instead of `allow`.
 
@@ -212,13 +212,13 @@ Inherits all v2 isolation behavior. Additional change: `resolver.incompatible-ru
 incompatible-rust-versions = "fallback"
 ```
 
-### How `Cargo.lock` is Generated
+### How `Cargo.lock` Is Generated
 
-The resolver runs **twice**:
+The resolver runs twice:
 1. First pass: all workspace features unioned; generates `Cargo.lock` with all optional deps present
 2. Second pass: actual features from CLI/config; determines what gets compiled
 
-This means `Cargo.lock` entries include optional deps even if you never activate them; the second pass prunes what actually compiles.
+This means `Cargo.lock` entries include optional deps even if you never activate them. The second pass prunes that list down to what compiles.
 
 ### Compile-Time + Correctness Impact Summary
 
@@ -248,7 +248,7 @@ CARGO_LOG=cargo::core::resolver=trace cargo update
 
 ---
 
-## FEATURES
+## Features
 
 ### `[features]` Table
 
@@ -260,11 +260,11 @@ derive = ["dep:serde_derive"]
 full = ["std", "derive"]   # feature dependencies
 ```
 
-- Features are **additive**: enabling any combination must be safe
-- Removing a feature or removing it from `default` is a **SemVer-breaking change**
+- Features are additive: enabling any combination must be safe
+- Removing a feature or removing it from `default` is a SemVer-breaking change
 - crates.io: ASCII alphanumeric, `_`, `-`, `+` only; max 300 features per crate
 
-### Optional Dependencies → Implicit Features
+### Optional Dependencies -> Implicit Features
 
 ```toml
 [dependencies]
@@ -274,7 +274,7 @@ gif = { version = "0.11", optional = true }
 
 Activates `cfg(feature = "gif")` in code. Turned on via `--features gif`.
 
-### `dep:<name>` — Suppress Implicit Feature
+### `dep:<name>`: Suppress Implicit Feature
 
 ```toml
 [dependencies]
@@ -287,13 +287,13 @@ avif = ["dep:ravif", "dep:rgb"]
 # callers must use --features avif, not --features ravif
 ```
 
-Required Rust **1.60+**.
+Required Rust 1.60+.
 
 > Use `dep:` to prevent leaking internal optional dep names as public feature API. Cuts feature surface and prevents accidental activation.
 
 ### Weak Dependency Features (`?/`)
 
-Activates a feature on a dep **only if that dep is already pulled in**:
+Activates a feature on a dep only if that dep is already pulled in:
 
 ```toml
 [dependencies]
@@ -305,7 +305,7 @@ serde = ["dep:serde", "rgb?/serde"]
 # rgb/serde is enabled only if rgb is independently activated
 ```
 
-Required Rust **1.60+**.
+Required Rust 1.60+.
 
 ### Feature Dependencies
 
@@ -346,17 +346,10 @@ Better: split into separate crates, use runtime config, or use `cfg-if` for prec
 
 ### Feature Unification in the Dependency Graph
 
-When multiple packages depend on the same crate with different features, Cargo builds it **once** with the **union** of all requested features.
-
-```
-foo requires: log with "serde"
-bar requires: log with "std"
-result: log built with both "serde" AND "std"
-```
-
-This is why `resolver = "2"` matters: it scopes unification to avoid dev/build contexts contaminating the production build.
-
-A feature activated by package A does **not** activate that feature in package B's own code; it only affects how the shared dependency is built.
+When multiple packages depend on the same crate with different features, Cargo builds it once with the
+union of all requested features (resolver v2 scopes that unification per context, see above). A feature
+activated by package A does not activate it in package B's own code; it only changes how the shared
+dependency is built.
 
 ### CLI Flags
 
@@ -387,26 +380,9 @@ required-features = ["unstable"]
 # bin is skipped if "unstable" not activated, instead of erroring
 ```
 
-### `[workspace.dependencies]` + Features Interaction
-
-When a member inherits a workspace dep and adds features:
-
-```toml
-# workspace
-[workspace.dependencies]
-serde = { version = "1", default-features = false, features = ["derive"] }
-
-# member
-[dependencies]
-serde = { workspace = true, features = ["std"] }
-# result: serde built with ["derive", "std"] (additive merge)
-```
-
-Members **cannot** subtract features declared at workspace level.
-
 ---
 
-## OPTIMIZATION CHEATSHEET
+## Optimization Cheatsheet
 
 | Goal | Action |
 |---|---|

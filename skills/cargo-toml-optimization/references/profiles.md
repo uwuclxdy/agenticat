@@ -1,8 +1,8 @@
-# cargo profiles reference
+# cargo Profiles Reference
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 > Source: https://doc.rust-lang.org/cargo/reference/profiles.html
-> Profiles alter compiler settings per build mode. **Only the workspace root `Cargo.toml` is read**; profile settings in dependency manifests are ignored.
+> Profiles alter compiler settings per build mode. Only the workspace root `Cargo.toml` is read; profile settings in dependency manifests are ignored.
 
 ---
 
@@ -116,7 +116,7 @@ Controls `-C panic`. Affects unwind table generation and binary size.
 | `"abort"` | Kills the program immediately; smaller binaries |
 
 Restrictions:
-- Tests, benchmarks, build scripts. Proc macros always use `"unwind"` regardless of this setting.
+- Tests, benchmarks, build scripts, and proc macros ignore the `panic` setting (the `rustc` test harness currently requires `unwind` behavior).
 - With `"abort"`, all test dependencies are still built with `"unwind"`.
 - Unstable `panic-abort-tests` flag exists to override test behavior.
 - Some targets (e.g. nvptx) force `"abort"` unconditionally.
@@ -219,7 +219,7 @@ cargo build --profile dev-opt
 | `cargo install --debug` | `dev` |
 | `--profile NAME` | custom/named |
 
-Selected profile applies to **all** targets (lib, bin, example, test, bench).
+Selected profile applies to all targets (lib, bin, example, test, bench).
 
 ---
 
@@ -241,13 +241,13 @@ opt-level = 2
 opt-level = 2
 ```
 
-### Build Override (build scripts + proc macros)
+### Build Override (Build Scripts + Proc Macros)
 
 Build scripts and proc macros default to `opt-level = 0` in all profiles for fast compilation.
 
 ```toml
 [profile.dev.build-override]
-opt-level = 3
+opt-level = 3            # they run faster but compile slower
 codegen-units = 1
 ```
 
@@ -264,7 +264,7 @@ codegen-units = 256
 
 Warning: a crate used as both a normal dep and a build dep may compile twice when `build-override` is set.
 
-### Override Precedence (first match wins)
+### Override Precedence (First Match Wins)
 
 1. `[profile.NAME.package."exact-name"]`
 2. `[profile.NAME.package."*"]`
@@ -272,7 +272,7 @@ Warning: a crate used as both a normal dep and a build dep may compile twice whe
 4. `[profile.NAME]`
 5. Cargo built-in defaults
 
-### Generics caveat
+### Generics Caveat
 
 Generic functions instantiate in the crate that uses them. Raising `opt-level` on a dep won't improve how those monomorphized generics compile in your crate. Use `opt-level = 1` on all deps for a practical dev speedup without losing monomorphization sharing:
 
@@ -283,15 +283,12 @@ opt-level = 1
 
 ---
 
-## Workspace Root Restriction
-
-Profile settings are **only read from the workspace root** `Cargo.toml`. Any `[profile.*]` in a member crate or dependency is silently ignored.
-
----
-
 ## Cheat-Sheet
 
-### (a) Max runtime speed
+Fuller variants of SKILL.md's inline profiles: these add `debug-assertions = false` +
+`overflow-checks = false`, which SKILL omits. Benchmark size choices; `"z"` is not always smallest.
+
+### (a) Max Runtime Speed
 
 ```toml
 [profile.release]
@@ -304,11 +301,7 @@ debug-assertions = false
 overflow-checks = false
 ```
 
-Slow link time, single-threaded codegen. Use `lto = "thin"` + `codegen-units = 4` for a faster build that's 90% as effective.
-
----
-
-### (b) Min binary size
+### (b) Min Binary Size
 
 ```toml
 [profile.release]
@@ -321,11 +314,7 @@ debug-assertions = false
 overflow-checks = false
 ```
 
-If `"z"` isn't smaller, try `"s"` or `3`. Size varies per crate; run `cargo-bloat` to find large contributors.
-
----
-
-### (c) Fast compile / iteration
+### (c) Fast Compile / Iteration
 
 ```toml
 [profile.dev]
@@ -338,14 +327,10 @@ codegen-units = 256
 opt-level = 1           # deps get light passes; helps generics perf
 
 [profile.dev.build-override]
-opt-level = 3           # build scripts compile fast, proc macros don't slow you down
+opt-level = 3           # build scripts + proc macros run faster; they take longer to compile
 ```
 
-Use `mold`/`lld` linker, split workspace into smaller crates.
-
----
-
-### (d) Good release default (balanced)
+### (d) Good Release Default (Balanced)
 
 ```toml
 [profile.release]
@@ -358,5 +343,3 @@ debug-assertions = false
 overflow-checks = false
 incremental = false
 ```
-
-`lto = "thin"` + `codegen-units = 4` gives near-fat-LTO inlining quality with ~2x faster link time. `strip = "debuginfo"` trims binary without losing symbol names for crash reports.

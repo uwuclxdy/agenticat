@@ -1,36 +1,16 @@
-# cargo: conceptual overview, build cache & key commands
+# cargo: Conceptual Overview, Build Cache & Key Commands
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 > Sources: [Cargo Guide](https://doc.rust-lang.org/cargo/guide/), [Build Cache Reference](https://doc.rust-lang.org/cargo/reference/build-cache.html), [Build Scripts Reference](https://doc.rust-lang.org/cargo/reference/build-scripts.html), [cargo-tree](https://doc.rust-lang.org/cargo/commands/cargo-tree.html), [Timings Reference](https://doc.rust-lang.org/cargo/reference/timings.html)
 
 ---
 
-## What Cargo Is
-
-Cargo is Rust's official package manager and build tool. It solves:
-- manual `rustc` invocation complexity as deps grow
-- dependency fetching + transitive resolution
-- reproducible builds on any machine and in CI
-- standardized project conventions (`cargo build` works everywhere)
-
-> "Once you know how to build one Cargo-based project, you know how to build all of them."
-> ([Why Cargo Exists](https://doc.rust-lang.org/cargo/guide/why-cargo-exists.html))
-
----
-
 ## Build Pipeline
 
-Cargo's conceptual stages on `cargo build`:
-
-| Stage | What happens |
-|---|---|
-| **Parse** | Read `Cargo.toml` manifest(s); validate structure |
-| **Resolve** | Compute dependency graph satisfying all version constraints; write/read `Cargo.lock` |
-| **Fetch** | Download missing crates from registry (crates.io) or git sources into `~/.cargo/registry` / `~/.cargo/git` |
-| **Compile** | Invoke `rustc` for each unit in dependency order; run `build.rs` scripts before their package |
-| **Link** | Combine compiled artifacts; produce final binary/lib in `target/<profile>/` |
-
-Cargo maximises parallelism by compiling independent crates concurrently. The critical path (longest chain of sequential deps) is the main build-time bottleneck; see `--timings` below.
+`cargo build` runs five stages: parse manifests, resolve the dep graph (write/read `Cargo.lock`), fetch
+missing crates, compile each unit in dependency order (`build.rs` runs before its package), link. Cargo
+compiles independent crates in parallel; the real bottleneck is the critical path, the longest chain of
+sequential deps. See `--timings` below.
 
 ---
 
@@ -38,34 +18,24 @@ Cargo maximises parallelism by compiling independent crates concurrently. The cr
 
 Source: [Cargo.toml vs Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
 
-| | `Cargo.toml` | `Cargo.lock` |
-|---|---|---|
-| **Author** | You (human-written) | Cargo (auto-generated) |
-| **Purpose** | Declares intent: what deps + version constraints | Records exact resolved versions + hashes |
-| **Version spec** | Flexible (`"^1.0"`, `">=0.5, <1.0"`) | Pinned (`1.5.3`, commit SHA) |
-| **Manual edit?** | Yes | No; run `cargo update` instead |
+`Cargo.toml` is your hand-written intent (flexible version constraints); `Cargo.lock` is Cargo's exact
+resolved pins. Edit the lock via `cargo update`, never by hand.
 
-### When to commit Cargo.lock
+### When to Commit Cargo.lock
+
+Guidance changed 2023-08: the old "libraries don't commit `Cargo.lock`" convention is superseded.
+Whether to commit it now depends on the package's own needs, not on binary-vs-library — committing it
+is a reasonable default/starting point even for a library (a dependent's own resolution still governs
+what it builds; the committed lock only pins your own dev/CI runs). Regardless of the choice, CI should
+regularly test against the latest dependency versions.
 
 | Project type | Commit Cargo.lock? | Reason |
 |---|---|---|
 | **Binary / application** | **Yes** | Reproducible deployments; deterministic CI |
-| **Library (published crate)** | Convention says no (but not wrong to) | Downstream controls resolution; lock would be ignored anyway by dependents |
+| **Library (published crate)** | Either; committing is a reasonable default | A dependent's own resolution still governs its build; test against latest deps in CI either way |
 | **Workspace with binaries** | **Yes** | Same as binary |
 
-### SemVer Resolution
-
-- `"1.2.3"` → shorthand for `"^1.2.3"` → `>=1.2.3, <2.0.0`
-- `"0.1.12"` → `>=0.1.12, <0.2.0` (pre-1.0: minor is breaking)
-- Cargo picks the highest version satisfying all constraints in the graph
-- Two semver-incompatible versions of the same crate CAN coexist in the graph (e.g., `rand 0.7` + `rand 0.8`), bloating binaries and slowing builds
-
-### Updating
-
-```bash
-cargo update            # re-resolve all, staying inside semver bounds
-cargo update regex      # update only the `regex` package
-```
+Source: [Change in Guidance on Committing Lockfiles](https://blog.rust-lang.org/2023/08/29/committing-lockfiles/) (2023-08-29); current wording in the [Cargo FAQ](https://doc.rust-lang.org/cargo/faq.html).
 
 ---
 
@@ -73,7 +43,7 @@ cargo update regex      # update only the `regex` package
 
 Source: [Build Cache Reference](https://doc.rust-lang.org/cargo/reference/build-cache.html)
 
-### Directory layout
+### Directory Layout
 
 ```
 target/
@@ -89,7 +59,7 @@ target/
   <triple>/release/
 ```
 
-### Internal (build-dir) layout
+### Internal (build-dir) Layout
 
 ```
 <build-dir>/debug/
@@ -98,7 +68,7 @@ target/
   build/              # build script outputs (OUT_DIR per package)
 ```
 
-### Cache invalidation triggers
+### Cache Invalidation Triggers
 
 Cargo rebuilds a crate when any of these change:
 - source files (`.rs`) of that crate
@@ -120,19 +90,10 @@ Incremental compilation (`incremental/`) further caches inside a single crate re
 | `--target-dir` CLI flag | Per-invocation override |
 | `CARGO_BUILD_BUILD_DIR` / `build.build-dir` | Separate intermediate artifacts from final artifacts |
 
-### Sharing cache between workspaces
+### Sharing Cache Between Workspaces
 
-sccache shares compiled artifacts between projects; configure it via:
-
-```bash
-cargo install sccache
-export RUSTC_WRAPPER=sccache
-# or in .cargo/config.toml:
-# [build]
-# rustc-wrapper = "sccache"
-```
-
-sccache caches based on inputs; hits skip recompilation entirely. CI benefits most since each run starts cold.
+`sccache` (`RUSTC_WRAPPER` / `build.rustc-wrapper`) caches compiled artifacts by input hash and shares
+them across projects and CI runs. Setup plus backends: `config.md`.
 
 ### cargo clean
 
@@ -147,23 +108,26 @@ Cost: next build starts cold. Only do this when diagnosing cache corruption or a
 
 ## Key Commands (Build + Diagnostics)
 
-### Core build commands
+### Core Build Commands
 
-| Command | Purpose | Notes |
-|---|---|---|
-| `cargo build` | Debug build | `target/debug/`, unoptimized, fast compile |
-| `cargo build --release` | Release build | `target/release/`, optimized (`opt-level=3`), slow compile |
-| `cargo check` | Type-check only, no codegen | Fastest feedback loop; no binary produced |
-| `cargo run` | Build + run binary | Accepts `-- <args>` for program args |
-| `cargo test` | Build + run tests | Compiles test binary with `#[test]` runner |
-| `cargo bench` | Build + run benchmarks | Requires `#[bench]` or criterion; uses release profile |
-| `cargo doc` | Generate rustdoc HTML | Output in `target/doc/` |
-| `cargo update` | Re-resolve deps inside semver constraints | Updates `Cargo.lock` |
-| `cargo clean` | Delete target/ artifacts | Forces cold rebuild |
+The non-obvious ones (`build`/`build --release`/`run`/`test`/`doc`/`update`/`clean` do what their names say):
 
-### Build + size diagnostics: measure first
+| Command | Notes |
+|---|---|
+| `cargo check` | Type-check only, no codegen; fastest feedback loop, produces no binary |
+| `cargo bench` | Uses the **release** profile; needs `#[bench]` (nightly) or criterion |
 
-#### 1. cargo build --timings (compile-time profiling)
+### Updating
+
+```bash
+cargo update                    # re-resolve all deps, stay inside semver bounds
+cargo update -p regex           # re-resolve only `regex` (+ its deps)
+cargo update -p regex --precise 1.2.3   # force `regex` to an exact version
+```
+
+### Build + Size Diagnostics: Measure First
+
+#### 1. cargo build --timings (Compile-Time Profiling)
 
 ```bash
 cargo build --timings
@@ -177,11 +141,11 @@ What the report shows:
 - Timestamped copies kept for comparing before/after
 
 Diagnose with it:
-- Find crates on the **critical path** (lone sequential bottleneck = best parallelism gain)
-- Spot crates built **multiple times** at different versions
+- Find crates on the critical path (lone sequential bottleneck = best parallelism gain)
+- Spot crates built multiple times at different versions
 - Identify crates with expensive but unused features enabled
 
-#### 2. cargo tree (dependency graph inspection)
+#### 2. cargo tree (Dependency Graph Inspection)
 
 ```bash
 cargo tree                  # full dep tree
@@ -199,7 +163,7 @@ cargo tree --depth 2        # limit display depth
 
 Fix: align dep versions in `Cargo.toml`, or use `[patch]` in workspace root.
 
-#### 3. cargo-bloat (binary size analysis)
+#### 3. cargo-bloat (Binary Size Analysis)
 
 Third-party tool, not in stdlib:
 
@@ -215,10 +179,9 @@ Diagnose with it:
 - Which functions are unexpectedly large (generics monomorphization)
 - Whether a dep's features include unused heavy code
 
-#### 4. Nightly self-profiling
+#### 4. Nightly Self-Profiling
 
 ```bash
-cargo +nightly build -Z timings       # same as --timings but nightly-gated extended version
 cargo +nightly rustc -- -Z self-profile  # rustc-level profiling (measureme output)
 ```
 
@@ -230,16 +193,12 @@ Self-profile output needs `measureme`'s `summarize` or `crox` tools to analyze. 
 
 Source: [Build Scripts Reference](https://doc.rust-lang.org/cargo/reference/build-scripts.html)
 
-A `build.rs` file at the package root is compiled and run **before** the package itself.
+A `build.rs` file at the package root is compiled and run ahead of the package itself.
 
-### What they do
+### Key stdout Instructions
 
-- Compile C/C++ native libraries (via `cc` crate)
-- Link system libraries (`cargo::rustc-link-lib=openssl`)
-- Code generation (proto, parsers)
-- OS/target-triple detection
-
-### Key stdout instructions
+Build scripts compile native C/C++ libs (via the `cc` crate), link system libraries, run code generation
+(proto, parsers), and detect the target triple. Cargo reads their stdout for these directives:
 
 | Instruction | Effect |
 |---|---|
@@ -250,7 +209,7 @@ A `build.rs` file at the package root is compiled and run **before** the package
 | `cargo::rerun-if-changed=PATH` | Only re-run if PATH changes |
 | `cargo::rerun-if-env-changed=NAME` | Only re-run if env var changes |
 
-### Build dependencies
+### Build Dependencies
 
 ```toml
 [build-dependencies]
@@ -259,9 +218,9 @@ cc = "1.0"
 
 Build scripts can ONLY access `[build-dependencies]`, not `[dependencies]` or `[dev-dependencies]`.
 
-### Performance relevance
+### Performance Relevance
 
-By default, Cargo re-runs `build.rs` on any package file change. **Always add `rerun-if-changed` triggers** to avoid unnecessary re-runs:
+By default, Cargo re-runs `build.rs` on any package file change. Add `rerun-if-changed` triggers to avoid unnecessary re-runs:
 
 ```rust
 fn main() {
@@ -291,7 +250,7 @@ edition = "2024"   # 2015 | 2018 | 2021 | 2024
 | 2024 | Latest | Default for `cargo new`; edition-specific syntax changes |
 
 Key points:
-- Editions are **per-package**, not per-workspace; mixed editions in one workspace are fine
+- Editions are set per-package, not per-workspace; mixed editions in one workspace are fine
 - Editions never break dependency compatibility; a 2015 crate can depend on a 2024 crate
 - `cargo fix --edition` automates most migration steps
 - Edition affects all targets in the package (bins, tests, benches, examples)

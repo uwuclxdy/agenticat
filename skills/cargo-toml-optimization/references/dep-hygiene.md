@@ -1,46 +1,41 @@
-# Trimming unused, duplicate & heavy dependencies
+# Trimming Unused, Duplicate & Heavy Dependencies
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 > Cutting dead and duplicate deps is the most direct way to shrink a `Cargo.toml`'s compile time and
 > binary size. Built-in `cargo tree` finds duplicates; external tools find unused and risky deps.
 
-## Find duplicate versions (built-in, no install)
+## Find Duplicate Versions (Built-in, No Install)
 
 ```bash
 cargo tree -d           # crates compiled at 2+ semver-incompatible versions
 cargo tree -i <crate>   # what pulls a crate in
 ```
 
-Each duplicate adds compile time plus binary size and can cause type-mismatch errors across crate
-boundaries. Collapse them by aligning version requirements, or with `[patch]` / `[workspace.dependencies]`
+Each duplicate costs compile time and binary size; sometimes it trips type-mismatch errors at a crate
+boundary too. Collapse them by aligning version requirements, or with `[patch]` / `[workspace.dependencies]`
 at the workspace root.
 
-### Collapse a duplicate by pinning to the transitive major
+### Collapse a Duplicate by Pinning to the Transitive Major
 
-When one copy is your own direct dep and the other arrives transitively (you request `reqwest = "0.13"`
-while `lancedb` pulls `0.12`), pin your requirement back to the transitive crate's major so both unify.
-Confirm the dup is collapsible first:
+When one copy is your own direct dep and the other arrives transitively at an older major, pin your
+requirement back to that major so both unify: you ask for `foo = "0.13"`, a dependency pulls `foo 0.12`,
+so you request `"0.12"` and the graph resolves to one copy. Collapsible only when every active requirer
+already shares one major. `[patch]` can't rescue the case where it doesn't: a patch only applies when
+its version satisfies the existing requirement's semver range, so a non-optional requirer stuck on the
+other major still resolves to its own separate copy. Real options at that point: get the requirer
+updated to the new major, fork/patch the requirer itself, or accept the duplicate. Confirm with:
 
 ```bash
 cargo metadata --format-version 1   # inspect each requirer's `req` + `optional` flag
 ```
 
-Collapsible when every *active* requirer already shares one major. Any requirer of the *other* major must
-be `optional = true` and left dormant by your feature set; a non-optional one forces a `[patch]` instead.
+The collapse survives `cargo update` (it stays inside existing `^` ranges) and returns only when a
+transitive dep bumps majors or a feature flip wakes a dormant optional requirer. `cargo tree -d`
+catches either case.
 
-**The collapse survives `cargo update`.** Update re-resolves inside existing `^` ranges without flipping
-optional deps on, so it never crosses the `0.12 → 0.13` boundary by itself. The dup returns only when you
-*manually* bump the transitive dep to a new major that moved, or enable a feature that wakes a dormant
-`optional` requirer of the other major. `cargo tree -d` flags either case immediately, so a one-line
-requirement realign fixes it. Guard the specific crate in CI:
+## Find Unused Dependencies
 
-```bash
-cargo tree -d -e normal | grep -q '^<crate> v' && { echo "<crate> split into two majors"; exit 1; }
-```
-
-## Find unused dependencies
-
-### cargo-machete (fast, heuristic)
+### cargo-machete (Fast, Heuristic)
 
 ```bash
 cargo install cargo-machete
@@ -56,7 +51,7 @@ cargo machete --fix      # strip the unused entries
 ignored = ["winapi"]
 ```
 
-### cargo-udeps (precise, needs nightly)
+### cargo-udeps (Precise, Needs Nightly)
 
 ```bash
 cargo install cargo-udeps
@@ -68,7 +63,7 @@ cargo +nightly udeps --all-targets
 
 Run machete in CI for speed; reach for udeps when machete's result looks wrong.
 
-## Audit + ban (cargo-deny)
+## Audit + Ban (cargo-deny)
 
 ```bash
 cargo install cargo-deny
@@ -88,7 +83,7 @@ Four independent checks, configured in `deny.toml`:
 `bans` doubles as a dedupe guard: set `multiple-versions = "deny"` to fail CI when a crate resolves to
 more than one version.
 
-## Keeping versions current
+## Keeping Versions Current
 
 ```bash
 cargo update                 # re-resolve inside existing semver bounds
@@ -96,7 +91,7 @@ cargo install cargo-edit     # adds the `cargo upgrade` subcommand
 cargo upgrade --dry-run      # bump the version requirements themselves in Cargo.toml
 ```
 
-## Official sources
+## Official Sources
 
 - cargo-tree: <https://doc.rust-lang.org/cargo/commands/cargo-tree.html>
 - cargo-machete: <https://github.com/bnjbvr/cargo-machete>
