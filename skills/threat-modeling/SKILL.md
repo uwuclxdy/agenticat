@@ -1,20 +1,23 @@
 ---
 name: threat-modeling
-description: Threat modeling with STRIDE, attack trees, security-requirement extraction, and mitigation/control mapping. Use for security reviews and hardening.
+description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, and mitigation/control mapping. Use for security reviews and hardening."
+metadata:
+  author: uwuclxdy
+  version: "1.0"
 ---
 
-# Threat modeling
+# Threat Modeling
 
-Architecture-level threat analysis. Pick the one reference the task needs; don't load all four.
+This threat-models a system's components and data flows, not its code. Pick the one reference the task needs; don't load all four.
 
 | Task | File |
 |---|---|
 | Identify threats per component/interaction (STRIDE questionnaires, DFD trust-boundary analysis, threat-model doc template) | `references/stride.md` |
-| Map attack paths (OR/AND node model, tree builder, Mermaid/PlantUML export, path + coverage analysis) | `references/attack-trees.md` |
-| Turn threats into requirements (STRIDE→requirement patterns, compliance mapping with PCI-DSS/HIPAA/GDPR/OWASP-ASVS control IDs, user-story generation) | `references/requirements.md` |
-| Choose and prioritize controls (standard-controls library, defense-in-depth layering, budget-constrained selection, roadmap) | `references/mitigations.md` |
+| Map attack paths (OR/AND node model, path + coverage analysis, worked account-takeover example) | `references/attack-trees.md` |
+| Turn threats into requirements (STRIDE -> requirement patterns, compliance mapping with PCI-DSS/HIPAA/GDPR/OWASP-ASVS control IDs) | `references/requirements.md` |
+| Choose and prioritize controls (standard-controls library, defense-in-depth layering, coverage + gap analysis) | `references/mitigations.md` |
 
-## Core model
+## Core Model
 
 STRIDE categories and the property each violates:
 
@@ -29,7 +32,7 @@ STRIDE categories and the property each violates:
 
 Attack trees: root = attacker goal; OR nodes (any child suffices), AND nodes (all children required), leaves = concrete attack steps with cost/skill/likelihood attributes. Cheapest complete path = priority defense target.
 
-Control categories, in layering order: preventive (stop), detective (notice), corrective (recover), plus deterrent and compensating. A threat is covered when at least one preventive AND one detective control apply.
+Control categories, in layering order: preventive (stop), detective (notice), corrective (recover). Deterrent and compensating controls sit outside that order. A threat counts as covered only when both a preventive control and a detective control apply.
 
 ## Workflow
 
@@ -40,10 +43,10 @@ Control categories, in layering order: preventive (stop), detective (notice), co
 5. Build attack trees for the critical paths (`references/attack-trees.md`).
 6. Score and prioritize (likelihood × impact).
 7. Extract requirements and map controls (`references/requirements.md`, `references/mitigations.md`).
-8. Document residual risks; revisit on architecture changes.
+8. Document residual risks; revisit when components, trust boundaries, or data flows change.
 
-The python classes in the references are templates to read and adapt per session, not a library to install.
+The reference tables and templates are material to read and adapt per session, not a library to install.
 
 ## Delegating
 
-For a standalone modeling run, spawn the `threat-modeling-expert` agent. It re-reads this skill every run; the workflow above stays the only copy of the method.
+For a standalone modeling run, if the `threat-modeling-expert` agent is installed, spawn it; otherwise follow the Workflow above directly.
