@@ -7,15 +7,7 @@
 //
 // cross-platform: runs under bun on linux / mac / windows. zero deps (native fetch).
 //
-// usage:
-//   bun name-check.ts <name> [<name>...] [options]
-//   options:
-//     --registry a,b,c   check only these (default: all). ids + aliases below.
-//     --tld com,io,...   domain tlds to probe (default: com,dev,io,app,ai)
-//     --timeout <sec>    per-request timeout (default 12)
-//     --table            human matrix instead of compact json (default)
-//     --list             print known registry ids + exit
-//     -h, --help
+// usage/flags: run `bun name-check.ts --help` (see the HELP const below), or --list for registry ids.
 
 const VERSION = "1.0.0";
 const UA = `agenticat-name-check/${VERSION} (+https://github.com/uwuclxdy/agenticat)`;
@@ -50,6 +42,17 @@ function httpResult(status: number, link: string): Result {
   return { status: "unknown", note: `http ${status}` };
 }
 
+// crates.io public sparse-index path. CDN-served, unthrottled, no auth, unlike
+// the JSON API at /api/v1/crates/<n> which 503/500-rate-limits parallel fan-out.
+// layout matches cargo's own index lookup: 1/2-char names get a length bucket,
+// 3-char names go under first char, 4+ split first2 / chars3-4 / full.
+function crateIndexPath(name: string): string {
+  const n = name.toLowerCase();
+  if (n.length <= 2) return `${n.length}/${n}`;
+  if (n.length === 3) return `3/${n[0]}/${n}`;
+  return `${n.slice(0, 2)}/${n.slice(2, 4)}/${n}`;
+}
+
 type Check = (name: string, timeoutMs: number) => Promise<Result>;
 interface RegistryDef {
   id: string; // canonical id, also the short table header
@@ -58,7 +61,8 @@ interface RegistryDef {
   check: Check;
 }
 
-// github + crates want a UA or they 403; the global UA in get() covers both.
+// crates.io 403s without a UA (empirically confirmed); github doesn't, but the
+// global UA in get() is harmless there and still needed for crates.io.
 const REGISTRIES: RegistryDef[] = [
   {
     id: "npm",
@@ -76,7 +80,7 @@ const REGISTRIES: RegistryDef[] = [
     id: "crates",
     aliases: ["crate", "crates.io", "rust"],
     link: (n) => `https://crates.io/crates/${n}`,
-    check: async (n, t) => httpResult((await get(`https://crates.io/api/v1/crates/${encodeURIComponent(n)}`, t)).status, `https://crates.io/crates/${n}`),
+    check: async (n, t) => httpResult((await get(`https://index.crates.io/${crateIndexPath(n)}`, t, { Accept: "text/plain" })).status, `https://crates.io/crates/${n}`),
   },
   {
     id: "rubygems",
@@ -199,9 +203,14 @@ function resolveRegistryIds(spec: string[] | undefined): string[] {
   }
   const out: string[] = [];
   for (const raw of spec.flatMap((s) => s.split(",")).map((s) => s.trim().toLowerCase())) {
-    if (!raw) continue;
+    if (!raw || raw === "domain") continue; // "domain" is handled separately via includeDomain, not a registry id
     const id = byAlias.get(raw);
-    if (id && !out.includes(id)) out.push(id);
+    if (id) {
+      if (!out.includes(id)) out.push(id);
+    } else if (!out.includes(raw)) {
+      console.error(`name-check: unknown registry "${raw}" — see --list for known ids/aliases`);
+      out.push(raw);
+    }
   }
   return out;
 }
@@ -210,7 +219,7 @@ async function checkName(name: string, ids: string[], includeDomain: boolean, tl
   const defById = new Map(REGISTRIES.map((r) => [r.id, r]));
   const entries = await Promise.all(
     ids.map(async (id) => {
-      const def = defById.get(id)!;
+      const def = defById.get(id);
       const result = def === undefined ? ({ status: "unknown", note: "unknown registry" } as Result) : await def.check(name, timeoutMs).catch((e): Result => ({ status: "unknown", note: errMsg(e) }));
       return [id, result] as const;
     }),
@@ -232,8 +241,6 @@ function printList(): void {
 const SYM: Record<Status, string> = { free: "✓", taken: "✗", unknown: "?" };
 
 function renderTable(reports: Record<string, NameReport>, ids: string[], includeDomain: boolean): void {
-  const header = ["name", ...ids];
-  if (includeDomain) header.push("domains");
   const nameW = Math.max(4, ...Object.keys(reports).map((n) => n.length));
   const colW = ids.map((id) => Math.max(id.length, 2));
   const head =

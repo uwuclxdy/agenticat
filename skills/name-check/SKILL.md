@@ -1,38 +1,39 @@
 ---
 name: name-check
-description: Brainstorm and suggest project names, check and verify availability.
+description: "Suggest project/crate/plugin names and verify availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains). Use before naming, renaming, or publishing anything."
+metadata:
+  author: uwuclxdy
+  version: "1.0"
 ---
 
-# name-check
-
-Generate name candidates and verify availability across registries before a rename or release.
+# Name Check
 
 ## Procedure
 
-1. **Scope first.** Establish from context (ask if unsure):
+1. **Scope first** (before a rename or release). Establish from context (ask if unsure):
    - what the thing does, in one line
    - which registries matter: crates.io, AUR, PyPI, npm, GitHub, KDE store, domain... 
    Check only relevant registries depending on the project.
    - rename cost: unpublished (cheap, anything goes) vs already public (flag every rename consequence)
 2. **Generate 10-30 candidates.** Brainstorm and balance three axes:
-   - *explicit*: name states the function (`kate-markdown-preview` over `katdown`)
-   - *brandable*: short, lowercase, occasionally punny (`flit`, `nook`, `perch`)
-   - *specific*: what you think would fit the best, take all user directions into account
+   - explicit: name states the function (`kate-markdown-preview` over `katdown`)
+   - brandable: short, lowercase, occasionally punny (`flit`, `nook`, `perch`)
+   - user-fit: closest to the user's stated direction
    Mark each candidate with which axis it leans toward. Reserve companion names too when relevant (`flit` + `flitd` + `flit-mcp`).
 3. **Check availability in parallel.** Fan out searches (web + registry pages) per candidate:
    - exact match on each relevant registry
    - general web collision: existing project, product, or company with the same name in the same space
    - near-collisions worth flagging (one-letter-off popular project, trademark-adjacent)
-4. **Report as a table:**
+4. **Report as a table** with these columns:
 
-| candidate | npm | GitHub | web collision | note |
-|---|---|---|---|---|---|
+| candidate | <one column per relevant registry> | web collision | note |
+|---|---|---|---|
 
    `free` / `taken (link)` / `near: <what>` per cell. End with one recommendation and why.
 
 ## Helper
 
-`name-check.ts` (same dir as the skill, requires `bun`) runs the deterministic registry axis in one pass to spare manual fetching from you:
+`name-check.ts` (same dir as the skill, requires `bun`) runs the deterministic registry axis in one pass to spare you the manual fetching:
 
 `bun name-check.ts <name> [<name>...] [--table] [--registry npm,crates,...] [--tld com,io]`
 
