@@ -1,15 +1,18 @@
 ---
 name: maud
-description: "Conventions and reference for the maud Rust HTML macro crate."
+description: "Maud Rust HTML macro crate (html!, 0.27): splices, control flow, escaping, framework feature flags. Use when writing or debugging Maud templates or wiring up web-framework integration."
+metadata:
+  author: uwuclxdy
+  version: "1.0"
 ---
 
-# Maud (Rust HTML macro)
+# Maud (Rust HTML Macro)
 
-Maud is a compile-time HTML templating library built around one procedural macro, `html!`. There are no template files. Markup lives inline in Rust source, gets parsed at compile time, and produces type-checked Rust code that builds a string. This skill targets **maud 0.27.x** (latest 0.27.0, released 2025-02-02).
+> _Captured 2026-07-10 (maud 0.27.0). To update: re-verify against maud.lambda.xyz + docs.rs/maud, then diff for changes._
 
-Maud runs on **stable Rust and nightly**. Error messages are slightly better on nightly, so a common workflow is nightly for development and stable for CI/deploy. Maud became stable-Rust-capable in 0.22.1 (2020-11-02); before that it needed nightly-only compiler features. MSRV is not documented.
+Maud is a compile-time HTML macro (`html!`); markup lives inline in Rust, type-checked at compile time. This skill targets **maud 0.27.x** (0.27.0, released 2025-02-02).
 
-> How it works: `html! { ... }` is an expression that evaluates to a `Markup` value. Everything inside is Rust. Control flow and interpolation carry a `@` or `(...)` marker so the macro can tell code from markup.
+Maud runs on **stable Rust and nightly** (better error messages on nightly). Stable-Rust-capable since 0.22.1 (2020-11-02); earlier it needed nightly-only compiler features. MSRV is not documented.
 
 ---
 
@@ -21,24 +24,6 @@ Maud runs on **stable Rust and nightly**. Error messages are slightly better on 
 [dependencies]
 maud = "0.27"
 ```
-
-The book's own example uses `maud = "*"`. Pin a real version in production.
-
-### Minimal example
-
-```rust
-use maud::html;
-
-fn main() {
-    let name = "Lyra";
-    let markup = html! {
-        p { "Hi, " (name) "!" }
-    };
-    println!("{}", markup.into_string());
-}
-```
-
-Output: `<p>Hi, Lyra!</p>`
 
 ---
 
@@ -73,37 +58,25 @@ let n = 42;
 html! { p { (display(n)) } };
 ```
 
-Note: `Markup`/`PreEscaped` does not implement `Display` (checked against docs.rs 0.27; it implements `Render`, not `Display`). Convert to `String` with `.into_string()` when you need the raw string. There is no `html_to!` / write-into-buffer macro (`html_debug!` was removed in 0.25.0). To write into an existing buffer, use the `Render` trait's `render_to` (see §9).
+Note: `Markup`/`PreEscaped` has no `Display` impl (checked against docs.rs 0.27; it implements `Render`, not `Display`). Convert to `String` with `.into_string()` when you need the raw string. There is no `html_to!` / write-into-buffer macro (`html_debug!` was removed in 0.25.0). To write into an existing buffer, use the `Render` trait's `render_to` (see §9).
 
 ---
 
-## 3. Web framework integration
+## 3. Web Framework Integration
 
-Enable a framework feature flag and `Markup` implements that framework's response trait. Returning `Markup` from a handler then just works.
+Turn on the matching feature flag from the table below and `Markup` implements the corresponding trait. A handler can then just return `Markup` directly.
 
-| Framework | Trait `Markup` implements | Feature flag |
-|---|---|---|
-| Actix-web | `actix_web::Responder` | `actix-web` |
-| Axum | `IntoResponse` | `axum` |
-| Rocket | Rocket's `Responder` | `rocket` |
-| Warp | `warp::Reply` | `warp` |
-| Poem | `poem::IntoResponse` | `poem` |
-| Tide | `From<PreEscaped<String>>` for `tide::Response` | `tide` |
-| Submillisecond | `IntoResponse` | `submillisecond` (new in 0.27.0) |
-| Rouille | none | manual, see below |
-
-### Feature flags (maud 0.27.0)
-
-| Flag | Effect / dep pulled |
-|---|---|
-| `default` | nothing enabled |
-| `actix-web` | `Responder` impl (`actix-web-dep` + `futures-util`) |
-| `axum` | `IntoResponse` impl (`axum-core` `^0.5` + `http` `^1`) |
-| `rocket` | `Responder` impl (`rocket` `^0.5`) |
-| `warp` | `Reply` impl (`warp` `^0.3.6`) |
-| `poem` | `IntoResponse` impl (`poem` `^3`) |
-| `tide` | `From<PreEscaped<String>>` for `tide::Response` (`tide` `^0.16.0`) |
-| `submillisecond` | `IntoResponse` impl (`submillisecond` `^0.4.1`) |
+| Framework | Feature flag | Trait `Markup` implements | Dep pins |
+|---|---|---|---|
+| default | — | — | nothing enabled |
+| Actix-web | `actix-web` | `actix_web::Responder` | `actix-web-dep` + `futures-util` |
+| Axum | `axum` | `IntoResponse` | `axum-core` `^0.5` + `http` `^1` |
+| Rocket | `rocket` | Rocket's `Responder` | `rocket` `^0.5` |
+| Warp | `warp` | `warp::Reply` | `warp` `^0.3.6` |
+| Poem | `poem` | `poem::IntoResponse` | `poem` `^3` |
+| Tide | `tide` | `From<PreEscaped<String>>` for `tide::Response` | `tide` `^0.16.0` |
+| Submillisecond | `submillisecond` (new in 0.27.0) | `IntoResponse` | `submillisecond` `^0.4.1` |
+| Rouille | manual, see below | none | — |
 
 Dependency version pins came from the docs.rs feature graph, single source. Verify against `Cargo.toml` if exact ranges matter.
 
@@ -111,15 +84,7 @@ Dependency version pins came from the docs.rs feature graph, single source. Veri
 maud = { version = "0.27", features = ["axum"] }
 ```
 
-### Handler examples
-
-Actix-web:
-```rust
-#[get("/")]
-async fn index() -> AwResult<Markup> {
-    Ok(html! { h1 { "Hello World!" } })
-}
-```
+### Handler Example
 
 Rocket:
 ```rust
@@ -129,9 +94,9 @@ fn hello(name: &str) -> Markup {
 }
 ```
 
-Axum, Tide, Poem, Submillisecond: return `Markup` directly from a sync or async handler. The trait impl converts it to the framework's response type.
+Actix-web and Tide handlers wrap the return in a `Result`: Actix `async fn index() -> AwResult<Markup> { Ok(html! { ... }) }`; Tide returns `Ok(html! { ... })` from a closure inferred as `tide::Result<impl Into<Response>>` (its feature adds `From<PreEscaped<String>>`, not `IntoResponse`, so a bare `-> Markup` handler won't compile). Axum, Poem, Submillisecond return `Markup` directly from a sync or async handler. The trait impl converts it to the response type each one expects.
 
-### Manual path (no feature flag)
+### Manual Path (No Feature Flag)
 
 Call `.into_string()` and wrap the string yourself.
 
@@ -142,19 +107,9 @@ Response::html(html! { h1 { "Hello, " (name) "!" } })
 
 ---
 
-## 4. Elements and nesting
+## 4. Elements and Nesting
 
-Elements with content use braces. Text and nested elements go inside.
-
-```rust
-html! {
-    h1 { "Poem" }
-    p {
-        strong { "Rock," }
-        " you are a rock."
-    }
-}
-```
+Elements with content use braces; text and nested elements go inside.
 
 Void elements end with `;` and take no body. Maud emits HTML5 syntax (`<br>`), not XHTML (`<br />`).
 
@@ -173,13 +128,7 @@ Elements and attributes with hyphens are supported (custom elements, `data-*`, A
 
 ### Text
 
-Plain double-quoted Rust string literals are bare expressions inside `html!`.
-
-```rust
-html! { "Oatmeal, are you crazy?" }
-```
-
-Raw string literals handle long or special-character text.
+Plain double-quoted Rust string literals are bare expressions inside `html!`. Raw string literals handle long or special-character text.
 
 ```rust
 html! {
@@ -215,7 +164,7 @@ html! {
 }
 ```
 
-### `#id` / `.class` shorthand
+### `#id` / `.class` Shorthand
 
 ```rust
 html! {
@@ -257,7 +206,7 @@ html! {
 }
 ```
 
-### Optional attribute values `attr=[Option<T>]`
+### Optional Attribute Values `attr=[Option<T>]`
 
 With `=`, a bracketed `Option` sets the attribute's value only when `Some`. `None` omits the attribute entirely. This differs from bare `[cond]`, which toggles presence.
 
@@ -273,7 +222,7 @@ html! {
 }
 ```
 
-### Dynamic names
+### Dynamic Names
 
 Splice a computed id with `#(...)`. Build a class from a literal plus splice inside `.{ }`.
 
@@ -289,7 +238,7 @@ html! {
 
 ---
 
-## 6. Splices and interpolation
+## 6. Splices and Interpolation
 
 `(expr)` inserts a runtime value into markup. HTML special characters in the value are escaped by default.
 
@@ -305,7 +254,7 @@ html! {
 }
 ```
 
-Any type implementing `maud::Render` can be spliced. Most primitives (`str`, `i32`, ...) implement it out of the box.
+Splice any type that has a `maud::Render` impl. Most primitives (`str`, `i32`, ...) already do.
 
 Block-expression splice for arbitrary Rust logic:
 
@@ -320,7 +269,7 @@ html! {
 }
 ```
 
-### Splices in attributes
+### Splices in Attributes
 
 Single value with `=`:
 
@@ -342,7 +291,7 @@ html! {
 
 ---
 
-## 7. Control structures
+## 7. Control Structures
 
 Every control keyword takes an `@` prefix. Bare `if` / `for` / `match` / `let` are not recognized as control flow inside `html!`. Braces are mandatory on every branch.
 
@@ -398,24 +347,16 @@ Present in the parser AST (`WhileExpr`), absent from the published book. No docu
 ### `@match`
 
 ```rust
-enum Princess { Celestia, Luna, Cadance, TwilightSparkle }
-
-let user = Princess::Celestia;
 html! {
     @match user {
-        Princess::Luna => {
-            h1 { "Super secret woona to-do list" }
-            ul { li { "Evil laugh" } }
-        },
-        Princess::Celestia => {
-            p { "Sister, please stop reading my diary." }
-        },
+        Princess::Luna => h1 { "Woona's here" },
+        Princess::Celestia | Princess::Cadance => p { "A princess." },
         _ => p { "Nothing to see here; move along." }
     }
 }
 ```
 
-Match arms accept full Rust patterns per the parser source: or-patterns (`A | B`), bindings, ranges, destructuring, guards (`pat if cond =>`). The book shows only basic arms, so verify guard / or-pattern arms by compiling.
+Reuses the `Princess` enum and `user` binding from `@if` above. Match arms accept full Rust patterns per the parser source: or-patterns (`A | B`, shown above), bindings, ranges, destructuring, guards (`pat if cond =>`). The book shows only basic arms, so verify guard / or-pattern arms by compiling.
 
 ### `@let`
 
@@ -435,9 +376,9 @@ html! {
 
 ---
 
-## 8. Escaping and raw HTML
+## 8. Escaping and Raw HTML
 
-Splices and text are escaped by default. Maud escapes exactly four characters: `&`, `<`, `>`, `"`. It does **not** escape single quotes.
+Splices and text are escaped by default. Maud escapes exactly four characters: `&`, `<`, `>`, `"`. Single quotes pass through unescaped.
 
 Bypass escaping with `maud::PreEscaped`, which renders its inner value verbatim.
 
@@ -449,24 +390,15 @@ html! {
 }
 ```
 
-```rust
-use maud::PreEscaped;
-let post = "<p>Pre-escaped</p>";
-html! {
-    h1 { "My super duper blog post" }
-    (PreEscaped(post))
-}
-```
-
 Only wrap content you have already sanitized. `PreEscaped` on untrusted input is an XSS hole. The `AsRef<str>` bound restriction on `PreEscaped` was removed in 0.26.0, so it wraps a wider range of inner types now.
 
 ---
 
-## 9. Custom rendering and composition
+## 9. Custom Rendering and Composition
 
-### The `Render` trait
+### The `Render` Trait
 
-Implement `maud::Render` to teach maud how to splice your own type. The trait has two methods, both with default impls that call each other:
+Write a `maud::Render` impl to teach maud how to splice your own type. The trait has two methods, both with default impls that call each other:
 
 ```rust
 pub trait Render {
@@ -484,9 +416,9 @@ pub trait Render {
 
 Override at least one. Overriding neither causes infinite recursion (each default calls the other). Override `render` for the simple case. Override `render_to` when you want to write straight into the output buffer, for example to append multiple pieces without an intermediate `Markup`.
 
-A `render_to` override is responsible for its own escaping. Raw writes into `buffer` are not escaped for you. Use `maud::Escaper` to escape while writing when you need it.
+A `render_to` override is responsible for its own escaping. Raw writes into `buffer` are not escaped for you. Need that inside one? Reach for `maud::Escaper`, it escapes as it writes.
 
-### Components are just functions
+### Components Are Just Functions
 
 A partial or component is a plain function returning `Markup`. Compose by splicing the call.
 
@@ -515,37 +447,22 @@ let markup = page("Home", html! { h1 { "Hello" } });
 
 Splicing a `Markup` value never re-escapes it, so nesting components is safe. Maud does not currently export a `RenderOnce` trait (it had one from 0.8.0 through 0.15.0, removed 2017-01-26); don't confuse the name with horrorshow's still-existing `RenderOnce` trait.
 
-### Rendering pre-sanitized HTML from a library
+---
 
-```rust
-use maud::{html, Markup, PreEscaped};
+## 10. Gotchas and Footguns
 
-fn render_markdown(raw: &str) -> Markup {
-    let safe_html = comrak_or_whatever(raw); // already-sanitized HTML string
-    html! { (PreEscaped(safe_html)) }
-}
-```
+Each is flagged inline at its section; §11 consolidates. Index:
+
+- Void `;` not self-close; control flow needs `@` (every branch braced) — §4, §7
+- `[cond]` (toggle) vs `attr=[Option<T>]` (value only when `Some`); attr concat needs `{ }` — §5, §6
+- Splices escape by default; `PreEscaped` is an XSS hole on untrusted input; only `&` `<` `>` `"` escaped (single quote not) — §6, §8
+- Rust 2021 `#` spacing (`input #pinkie;`) — §5
+- `Render` with neither method overridden recurses forever; a `render_to` override does its own escaping (`maud::Escaper`) — §9
+- `Markup` has no `Display` impl (`.into_string()` / `maud::display(x)`); no template files, no `html_to!` — §2
 
 ---
 
-## 10. Gotchas and footguns
-
-1. **Void elements need a trailing `;`, not a self-close.** `br;` renders `<br>`. Using `{}` on a void element is wrong.
-2. **Control flow needs `@`.** Bare `if` / `for` / `match` / `let` are not control flow inside `html!`. Every branch needs braces.
-3. **`[cond]` and `attr=[Option<T>]` are different forms.** Bare `[cond]` (no `=`) toggles a boolean attribute or class. `attr=[opt]` (with `=`) sets a value only when `Some`. Do not conflate them.
-4. **Attribute concatenation needs `{ }`.** `href=(a) (b)` does not concatenate. Wrap: `href={ (a) (b) }`.
-5. **Splices escape by default.** Passing already-HTML content through `(value)` shows it as literal text (double-escaped). Wrap known-safe HTML in `PreEscaped`.
-6. **`PreEscaped` is an XSS footgun.** It disables escaping entirely. Only ever wrap content you sanitized yourself.
-7. **Single quotes are not escaped.** Maud escapes `&`, `<`, `>`, `"` only. Do not rely on it inside single-quoted attribute contexts you build by hand.
-8. **Rust 2021 `#` spacing.** `input #pinkie;` needs the space before `#`. `input#pinkie;` only worked on older editions.
-9. **`Render` impl with neither method overridden recurses forever.** Override `render` or `render_to`.
-10. **A `render_to` override does its own escaping.** Writing raw strings into the buffer emits them unescaped. Use `maud::Escaper` if you need escaping there.
-11. **`Markup` does not implement `Display`.** Use `.into_string()` to get the string. Use `maud::display(x)` to render an arbitrary `Display` value inside a template.
-12. **No template files, no `html_to!` macro.** Everything is inline `html!`. To write into a buffer, use `Render::render_to`.
-
----
-
-## 11. Quick reference card
+## 11. Quick Reference Card
 
 ```
 Value:         html! { ... } -> Markup          Get String: .into_string()
