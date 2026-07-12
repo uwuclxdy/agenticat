@@ -1,23 +1,26 @@
 ---
 name: todo
-description: Author and normalize tasks in a repo's docs/todo.md — punch-lists from audit findings, checkbox specs from feature ideas, cleanup of raw user notes. Use when the user wants something added to the todo, dumps loose notes to capture, or asks to mark tasks resolved.
+description: "Author and normalize tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into executable tasks."
+metadata:
+  author: uwuclxdy
+  version: "1.0"
 ---
 
-# todo
+# Todo
 
-`docs/todo.md` is the per-repo task inbox. This skill defines how tasks get written into it, normalized, and marked resolved.
+`docs/todo.md` is the per-repo task inbox.
 
-## Core rule
+## Core Rule
 
-**Every task must be executable by a fresh agent with no session context.** Self-contained: current behavior, expected behavior, and a verify step. If a task needs a decision the user hasn't made, ask before writing it down — never park open questions inside a task.
+**Every task must be executable by a fresh agent with no session context.** Self-contained: current behavior, expected behavior, and a verify step. If a task needs a decision the user hasn't made, AskUserQuestion before writing it down (`AskUserQuestion` is Claude Code's question tool; other harnesses ship their own native tool: opencode's `question`, gemini-cli's `ask_user`, Codex CLI's `request_user_input`. Use it if present, else fall back to a plain numbered message). Never park open questions inside a task.
 
-Tasks state **what** needs to change and optionally **how** — never **where**. No `file:line`, no file paths; the executing agent locates the code itself, and locations rot faster than intent.
+Tasks say what needs to change and, sometimes, how. Never where. No `file:line`, no file paths. The executing agent locates the code itself since locations rot faster than intent.
 
 **Size tasks by scope.** Combine small related nits into one task; split anything too big for a single reviewable change into independent tasks. The unit is "one agent, one clean commit".
 
-## Two formats, picked by source
+## Two Formats, Picked by Source
 
-### Audit findings / bugs → punch-list
+### Audit Findings / Bugs -> Punch-List
 
 For audit results, contract violations, bug reports:
 
@@ -28,13 +31,13 @@ For audit results, contract violations, bug reports:
 
 ## <component / feature area>
 
-- [ ] <current behavior> → <required behavior>. <optional how. ordering note if other items cascade from it>
+- [ ] <current behavior> -> <required behavior>. <optional how. ordering note if other items cascade from it>
 ```
 
 - Group by component or feature area, not by severity.
-- Note cascade order explicitly ("fix first — X findings depend on it").
+- Note cascade order explicitly ("fix first: X findings depend on it").
 
-### Feature ideas / specs → checkbox spec
+### Feature Ideas / Specs -> Checkbox Spec
 
 For new features, enhancements, raw idea notes:
 
@@ -47,18 +50,17 @@ For new features, enhancements, raw idea notes:
 - [ ] <concrete, verifiable step>
 ```
 
-- Number tasks; subsection per surface touched.
-- Each checkbox is one reviewable change, not "implement the feature".
+- Number tasks; subsection per surface touched; one reviewable change per checkbox.
 
-## Normalizing raw notes
+## Normalizing Raw Notes
 
 When the user dumps loose notes ("inconsistent cursor..", "remove j/k"):
 
-1. Read the relevant code first — resolve each note to files and current behavior.
+1. Read the relevant code first. Resolve each note to specific files and current behavior.
 2. Ask clarifying questions for anything ambiguous (batch them, don't trickle).
 3. Rewrite as tasks in the matching format above. The original note text can be dropped once the task captures it fully.
 
-## Resolution bookkeeping
+## Resolution Bookkeeping
 
 - When `docs/` is gitignored (common for internal notes), resolved history lives **in the file**, not git.
 - On resolve: check the box or move the task under a `## Resolved` section with commit SHA + date + one line on what landed.
