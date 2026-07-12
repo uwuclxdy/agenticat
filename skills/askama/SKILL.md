@@ -1,17 +1,22 @@
 ---
 name: askama
-description: "Conventions and reference for the askama Rust templating crate."
+description: "Askama Rust templating (0.16): syntax, filters, inheritance, macros, web-framework integration via askama_web, rinja migration. Use when writing or debugging Askama templates or upgrading from older askama/rinja."
+metadata:
+  author: uwuclxdy
+  version: "1.0"
 ---
 
-# Askama (Rust templating)
+# Askama (Rust Templating)
 
-Askama is a compile-time, Jinja-like template engine for Rust. Templates are parsed at build time and generate type-checked Rust code. This skill targets the **unified askama crate, version 0.16.x** (MSRV 1.88, bumped from 1.81 in 0.15.0). Anything older than 0.13 wired web frameworks through dedicated `askama_*` crates that no longer exist; see the breaking-changes section if migrating.
+> _Captured 2026-07-10 (askama 0.16.0). To update: re-verify against the askama book + docs.rs/askama, then diff for changes._
 
-> Quick history Claude should know: Askama was forked into `rinja` in 2024, then the two projects re-unified as `askama` in early 2025. If the user mentions `rinja` or `rinja_axum`, those are deprecated — migrate to `askama` / `askama_web`.
+Askama is a compile-time, Jinja-like template engine for Rust. Templates are parsed at build time and generate type-checked Rust code. This skill targets the **unified askama crate, version 0.16.x** (MSRV 1.88, raised in 0.15.0 from 1.83; was 1.81 through 0.13.x, then 1.83 in 0.14.0). Anything older than 0.13 wired web frameworks through dedicated `askama_*` crates that no longer exist; see the breaking-changes section if migrating.
+
+> Quick history: Askama was forked into `rinja` in 2024, then the two projects re-unified as `askama` in early 2025. If the user mentions `rinja` or `rinja_axum`, those are deprecated. Migrate to `askama` / `askama_web`.
 
 ---
 
-## 1. Current state & setup
+## 1. Current State & Setup
 
 ### Cargo.toml
 
@@ -22,38 +27,32 @@ askama = "0.16"
 askama_web = { version = "0.16", features = ["axum-0.8"] }
 ```
 
-Do **not** depend on `askama_axum`, `askama_actix_web`, `askama_warp`, `askama_rocket`, `askama_gotham`, or `askama_tide`. They were removed in 0.13 and are dead crates.
+Do not depend on `askama_axum`, `askama_actix`, `askama_warp`, or `askama_rocket` (deprecated when 0.13 unified them), nor `askama_gotham` / `askama_tide` (never deprecated; just abandoned since 2023 on askama ^0.12). All dead now. There is no `askama_actix_web` crate.
 
-### Minimal example
+### Minimal Example
 
 `templates/hello.html`:
 ```
 Hello, {{ name }}!
 ```
 
-`src/main.rs`:
 ```rust
 use askama::Template;
 
 #[derive(Template)]
 #[template(path = "hello.html")]
-struct HelloTemplate<'a> {
-    name: &'a str,
-}
+struct HelloTemplate<'a> { name: &'a str }
 
-fn main() {
-    let hello = HelloTemplate { name: "world" };
-    println!("{}", hello.render().unwrap());
-}
+HelloTemplate { name: "world" }.render()? // -> Result<String, askama::Error>
 ```
 
 Templates live in `templates/` at the crate root (next to `Cargo.toml`) by default. Override via `askama.toml` (see §11).
 
 ---
 
-## 2. Rendering API — use the right method
+## 2. Rendering API: Use the Right Method
 
-Prefer these over `.to_string()` or `format!()` (100–200% slower due to dynamic dispatch):
+Prefer these over `.to_string()` or `format!()`, which route through a vtable at runtime and run 100-200% slower:
 
 | Method | Output | When to use |
 |---|---|---|
@@ -61,19 +60,19 @@ Prefer these over `.to_string()` or `format!()` (100–200% slower due to dynami
 | `tmpl.render_into(&mut writer)` | writes into `impl fmt::Write` | Reusing a buffer, nested rendering. |
 | `tmpl.write_into(&mut writer)` | writes into `impl io::Write` | Writing directly to a socket / file. |
 
-The `Template` trait also exposes `render_with_values(&dyn Values)` for runtime-injected values that aren't on the struct.
+The `Template` trait exposes `render_with_values(&dyn Values)` for runtime-injected values that aren't on the struct.
 
-Optional: `#[template(size_hint = 4096)]` preallocates the output buffer for `.render()`. No effect on the other methods.
+The derive auto-computes a `SIZE_HINT` const from the template's static text; `render()` / `render_with_values` preallocate their `String` with it (no effect on the caller-owned writers of `render_into` / `write_into`). There is no `size_hint` attribute; `#[template(size_hint = ...)]` is a compile error (`unsupported template attribute`). Override the hint only by hand-implementing `Template` with a custom `const SIZE_HINT`.
 
 **Removed in 0.13+**: `Template::EXTENSION` and `Template::MIME_TYPE` associated fields no longer exist. Do not reference them.
 
 ---
 
-## 3. Web framework integration
+## 3. Web Framework Integration
 
 **Two paths. Pick one.**
 
-### Path A — manual (simplest, no extra crate)
+### Path A: Manual (Simplest, No Extra Crate)
 
 Call `.render()` and wrap the string yourself.
 
@@ -82,16 +81,15 @@ Call `.render()` and wrap the string yourself.
 use axum::response::{Html, IntoResponse};
 
 async fn index() -> impl IntoResponse {
-    let tmpl = IndexTemplate { title: "Home" };
-    Html(tmpl.render().unwrap())
+    Html(IndexTemplate { title: "Home" }.render().unwrap())
 }
 ```
 
 For proper error handling, return `Result<Html<String>, AppError>` where `AppError: IntoResponse` and `AppError::from(askama::Error)` exists.
 
-### Path B — `askama_web` with `WebTemplate`
+### Path B: `askama_web` with `WebTemplate`
 
-One derive implements the framework's response trait automatically.
+One derive implements the response trait for whichever feature flag you turned on (see the list below).
 
 ```toml
 askama_web = { version = "0.16", features = ["axum-0.8"] }
@@ -112,7 +110,7 @@ async fn hello() -> HelloTemplate {
 
 Returns `200 OK`, `Content-Type: text/html; charset=utf-8`. Render errors become `500`.
 
-**Framework feature flags for askama_web**:
+**Per-target feature flags for askama_web**:
 - `axum-0.8` / `axum-0.7` / `axum-core-0.5` / `axum-core-0.4`
 - `actix-web-4`
 - `rocket-0.5`
@@ -120,24 +118,24 @@ Returns `200 OK`, `Content-Type: text/html; charset=utf-8`. Render errors become
 - `poem-3`
 - `trillium-0.2`
 - `cot-0.3` / `cot-0.4` / `cot-0.5` / `cot-0.6` / `cot_core-0.6`
-- `derive` (WebTemplate derive, on by default), `eprintln` and framework-specific logging helpers
+- `derive` (WebTemplate derive, on by default) and `eprintln`. Standalone logging-backend flags `log-0.4` / `tracing-0.1` (one of each, shared across all integrations)
 
 ---
 
-## 4. `#[template(...)]` attribute options
+## 4. `#[template(...)]` Attribute Options
 
 | Key | Example | Purpose |
 |---|---|---|
 | `path` | `path = "hello.html"` | File in templates dir. Extension drives escaping. |
 | `source` | `source = "Hi {{ name }}"` | Inline template; requires `ext`. |
-| `ext` | `ext = "html"` | Content-type hint; also `"jinja"` / `"jinja2"` aliases for editor syntax highlighting. |
+| `ext` | `ext = "html"` | Content-type hint; `"jinja"` / `"jinja2"` aliases for editor syntax highlighting. |
 | `escape` | `escape = "none"` or `"html"` | Override auto-escape. |
 | `whitespace` | `whitespace = "suppress"` | Per-template WS mode (`"preserve"` / `"suppress"` / `"minimize"`); overrides `askama.toml`. |
 | `syntax` | `syntax = "foo"` | Use a custom syntax defined in `askama.toml`. |
 | `config` | `config = "config.toml"` | Override config path (default `askama.toml`). |
 | `print` | `print = "code"` / `"ast"` / `"all"` / `"none"` | Compile-time debug: prints generated code to stdout. |
 | `block` | `block = "hello"` | Render just one block. Fields outside that block aren't required. Good for HTMX fragments. |
-| `blocks` | `blocks = ["title", "content"]` | Auto-generates sub-template structs, one per block. |
+| `blocks` | `blocks = ["title", "content"]` | Generates `as_<block>()` accessor methods on the struct, one per block. |
 | `in_doc` | `in_doc = true` | Source is in the struct's doc comment (inside an ```askama fenced block). Requires `ext`. |
 | `askama` | `askama = $crate::__askama` | Override the `askama` crate path. Needed when re-exporting from a macro-defining crate. |
 
@@ -147,73 +145,58 @@ Cannot combine `path` and `source`.
 
 ## 5. Expressions
 
-### Literals and types
-- String: `"foo"`, integer: `1`, boolean: `true`/`false`
+### Literals and Types
 - Struct construction: `{{ MyStruct { field1: 1, field2: "x" }.to_string() }}`
 - Tuple: `{{ (1, 2) }}`, array: `{{ [1, 2, 3] }}`, array-repeat (0.15): `{{ [0; 4] }}`
 - Struct expressions are values, not just via `.to_string()` (0.15): `{{ Point { x: 1, y: 2 } }}`
 
-### Variable access
-- `{{ name }}` — field on template struct
-- `{{ user.name }}` — dotted path (fields or methods)
-- `{{ crate::MAX_USERS }}` — use constants from your crate
+### Variable Access
+- `{{ name }}`: field on template struct
+- `{{ user.name }}`: dotted path (fields or methods)
+- `{{ crate::MAX_USERS }}`: use constants from your crate
 - Reading follows Rust borrow rules. Methods can be called; beware self-recursion.
 
-### Operators (mostly like Rust)
-- Arithmetic: `+ - * / %`
-- Comparison: `== != < > <= >=`
-- Logic: `&& || !`
+### Operators (Mostly like Rust)
 - **Bitwise are RENAMED** (to avoid filter-pipe conflict):
-  - `|` → `bitor`
-  - `&` → `bitand`
-  - `^` → `xor`
+  - `|` -> `bitor`
+  - `&` -> `bitand`
+  - `^` -> `xor`
   - Precedence unchanged.
   - `{% if my_bitset bitand 1 != 0 %}set!{% endif %}`
 - **Concat `~`**: `{{ a ~ b ~ c }}` is shorthand for `{{ a }}{{ b }}{{ c }}`. **Must have spaces around it** to disambiguate from whitespace control.
 - **`as` cast**: `{{ x as i64 }}`. Only primitive types. Automatically derefs `&&&bool` etc.
 
-### Function and method calls
-- `{{ method() }}` → `self.method()` (method on the template struct)
-- `{{ self::function() }}` → free function in the current module
-- `{{ super::b::f() }}` → function in another module
-- `{{ (closure)(12) }}` → calling a closure stored in a field — parens required
-- `{{ some_macro!(field) }}` → Rust macro; **Askama won't infer field references inside macro args** — you must pass them explicitly somehow or the macro will see the literal token.
+### Function and Method Calls
+- `{{ method() }}` -> `self.method()` (method on the template struct)
+- `{{ self::function() }}` -> free function in the current module
+- `{{ super::b::f() }}` -> function in another module
+- `{{ (closure)(12) }}` -> calling a closure stored in a field; parens required
+- `{{ some_macro!(field) }}` -> Rust macro. **Askama won't infer field references inside macro args.** Pass them explicitly, or the macro sees the literal token instead.
 
 ---
 
-## 6. Control flow
+## 6. Control Flow
 
 ### if / else if / else
-```
-{% if users.len() == 0 %}
-  No users
-{% else if users.len() == 1 %}
-  1 user
-{% else %}
-  {{ users.len() }} users
-{% endif %}
-```
+`{% if a %}…{% else if b %}…{% else %}…{% endif %}`
 
 ### for
-```
-{% for user in users %}
-  <li>{{ user.name }}</li>
-{% endfor %}
-```
+`{% for user in users %}<li>{{ user.name }}</li>{% endfor %}`
 
 - **Filter clause**: `{% for user in users if user.active %}`
 - **Else clause** (runs if iter was empty or all filtered out):
   ```
   {% for u in users %}...{% else %}No one here.{% endfor %}
   ```
-- **Loop variables** (only these — Askama does NOT implement Jinja's full set):
+- **Loop variables** (the complete list; Askama exposes fewer of them than Jinja does):
   - `loop.index` (1-based)
   - `loop.index0` (0-based)
   - `loop.first`
   - `loop.last`
-- No `loop.length`, `loop.cycle`, `loop.revindex`, `loop.changed`, `loop.previtem`, `loop.nextitem`. If you need these, compute in Rust or use modulo on `loop.index`.
+  - `loop.cycle([...])` (method call, array-literal arg): `{{ loop.cycle(["a", "b"]) }}` cycles per iteration
+- No `loop.length`, `loop.revindex`, `loop.changed`, `loop.previtem`, `loop.nextitem`. If you need these, compute in Rust or use modulo on `loop.index`.
 
-### match / when (for enums, Options, Results)
+### match / when (for Enums, Options, Results)
 ```
 {% match item %}
   {% when Some with ("foo") %}
@@ -225,13 +208,13 @@ Cannot combine `path` and `source`.
 {% endmatch %}
 ```
 - Tuple variants: `{% when Variant with (a, b) %}`
-- Struct variants (since 0.8): `{% when Variant { field } %}` or `{% when Variant { field: val } %}` to rename
-- Enum path variants: `{% when Self::Circle { radius } %}`. You can also `#[derive(Template)]` on the enum itself and give each variant its own `#[template(...)]`.
+- Struct variants: `{% when Variant { field } %}` or `{% when Variant { field: val } %}` to rename (with-less form since 0.11; 0.8 through 0.10 required the `with` keyword: `{% when Variant with { field } %}`)
+- Enum path variants: `{% when Self::Circle { radius } %}`. `#[derive(Template)]` works on the enum itself, giving each variant its own `#[template(...)]`.
 - Slice patterns with rest: `{% when [first, ..] %}`
 - Wildcard: `{% when _ %}` or `{% else %}`
 - Literal patterns: `{% when 3 %}`
 
-### Assignments and variable declarations
+### Assignments and Variable Declarations
 ```
 {% let name = user.name %}           {# immutable binding #}
 {% let mut it = xs.iter() %}         {# mutable binding #}
@@ -254,7 +237,7 @@ Cannot combine `path` and `source`.
 - **Compound assignment uses the `{% mut %}` tag (0.16)**, not bare `let`: `{% mut counter += i %}`. Every Rust compound operator (`+=`, `-=`, `*=`, …) works; the target must be a `mut` binding.
 - **Do not prefix variables with `__askama`, name one `caller` (reserved since 0.15), or use Rust keywords.**
 
-### Filter blocks
+### Filter Blocks
 Apply one or more filters to a whole block:
 ```
 {% filter lower | capitalize %}
@@ -264,7 +247,7 @@ Apply one or more filters to a whole block:
 
 ---
 
-## 7. Whitespace control — three operators, not one
+## 7. Whitespace Control: Three Operators, Not One
 
 | Operator | Name | Effect |
 |---|---|---|
@@ -285,19 +268,18 @@ Usage: put right after `{%`/`{{` or right before `%}`/`}}`.
 {%~ endfor %}
 ```
 
-Global default comes from `askama.toml`'s `whitespace = "preserve" | "suppress" | "minimize"`. Inline operators override globals. When two inline controls point at the same span, precedence is: **Suppress > Minimize > Preserve**.
+Global default comes from `askama.toml`'s `whitespace = "preserve" | "suppress" | "minimize"`. Inline operators override globals. When two inline controls point at the same span, **Suppress always wins**; between Minimize and Preserve, whichever operator sits on the tag AFTER the gap wins (positional, not a fixed priority). The book's flat `Suppress > Minimize > Preserve` table is wrong vs 0.16.0 for the Minimize/Preserve case.
 
-`{% extends %}` does NOT accept whitespace control — using `-`/`+` on it is a compile error.
+Whitespace-control operators (`-`/`+`/`~`) on `{% extends %}` are accepted but a no-op, **not** a compile error. The child's top-level content is dropped anyway, so a trim has nothing to act on. (The book still describes this as "rejected"; that's stale vs 0.16.0.)
 
 ---
 
 ## 8. Comments
 
+Nested block comments are supported:
 ```
-{# a comment #}
 {# outer {# nested #} still in outer #}
 ```
-Nested block comments are supported.
 
 ---
 
@@ -305,13 +287,8 @@ Nested block comments are supported.
 
 `base.html`:
 ```
-<!DOCTYPE html>
-<html>
-  <head><title>{% block title %}{{ title }} · Site{% endblock %}</title></head>
-  <body>
-    <main>{% block content %}<p>default</p>{% endblock %}</main>
-  </body>
-</html>
+<title>{% block title %}{{ title }} · Site{% endblock %}</title>
+<main>{% block content %}<p>default</p>{% endblock %}</main>
 ```
 
 `page.html`:
@@ -326,30 +303,18 @@ Nested block comments are supported.
 
 Rules:
 - Multi-layer inheritance is supported.
-- **Blocks must be at the top level of the template or nested inside other blocks.** Not inside `if`, `else`, or `for`.
+- **Blocks inside `if`/`else`/`for`**: the book forbids this, but 0.16.0 compiles it and inheritance overrides correctly (verified empirically). Top-level or block-nested stays the safe form.
 - The extending template's top-level content outside blocks is ignored.
-- A base template must define at least one block to enable inheritance.
+- A base template must define at least one block for inheritance to work.
 - Askama looks for the extended template relative to the extending one first, then relative to the config'd template dirs.
 
-### Rendering a single block
-```rust
-#[derive(Template)]
-#[template(path = "page.html", block = "content")]
-struct ContentOnly { ... }
-```
-Useful for HTMX partials. Fields outside the chosen block aren't required on the struct.
+### Single-Block & Per-Block Sub-Templates
 
-### Auto-generated per-block sub-templates
-```rust
-#[derive(Template)]
-#[template(path = "page.html", blocks = ["title", "content"])]
-struct Page { ... }
-```
-Generates `Page`, `PageTitleBlock`, `PageContentBlock` structs automatically.
+`block` / `blocks` (see §4): `block = "content"` renders one block (fields outside it not required, good for HTMX partials); `blocks = ["title", "content"]` generates `as_<block>()` accessor methods on the struct itself, e.g. `page.as_title().render()` / `page.as_content().render()` (no new struct types).
 
 ---
 
-## 10. Includes, macros, and composition
+## 10. Includes, Macros, and Composition
 
 ### `{% include %}`
 ```
@@ -379,13 +344,13 @@ Define with `{% macro name(args) %}...{% endmacro %}`, call with `{% call name(a
   {% call h(bold="x", arg="y") %}
   ```
 
-### Importing macros from another file
+### Importing Macros from Another File
 ```
 {%- import "macros.html" as m -%}
 {% call m::heading("hi") %}
 ```
 
-### Call-block syntax (macros with inner content)
+### Call-Block Syntax (Macros with Inner Content)
 ```
 {% macro card() %}
   <div class="card">{{ caller() }}</div>
@@ -397,7 +362,7 @@ Define with `{% macro name(args) %}...{% endmacro %}`, call with `{% call name(a
 ```
 `caller()` inside the macro renders the block passed to `{% call %}...{% endcall %}`. To pass arguments, the call-block declares them up front: `{% call(user) dump_users(list) %}...{% endcall %}` makes the macro's `caller(user)` render the body once per invocation. Guard an optional body with `{% if caller is defined %}`. `caller` is a reserved variable name since 0.15.
 
-### Render-in-place (nested Template structs)
+### Render-in-Place (Nested Template Structs)
 Embed a Template-derived type as a field; it auto-renders via its `Display` impl:
 ```rust
 #[derive(Template)]
@@ -409,7 +374,7 @@ struct Outer { s1: Inner }
 struct Inner { a: String }
 ```
 
-### Recursive rendering
+### Recursive Rendering
 Self-include does NOT work. Do recursion with an explicit `.render()` call:
 ```rust
 #[derive(Template)]
@@ -429,7 +394,7 @@ struct Item<'a> {
 
 ---
 
-## 11. Configuration — `askama.toml`
+## 11. Configuration: `askama.toml`
 
 Place at crate root (next to `Cargo.toml`). All sections are optional.
 
@@ -457,42 +422,42 @@ extensions = ["js"]
 Use a custom syntax per-template with `#[template(path = "...", syntax = "vue")]`.
 
 **Default escaping extensions**:
-- HTML escaper: `html`, `htm`, `xml`, `j2`, `jinja`, `jinja2`
-- Text (no escape): `md`, `yml`, `none`, `txt`, `` `` (empty)
+- HTML escaper: `askama`, `html`, `htm`, `j2`, `jinja`, `jinja2`, `rinja`, `svg`, `xml`
+- Text (no escape): `md`, `yml`, `none`, `txt` (and the empty extension)
 
 Escape modes override via `#[template(escape = "html")]` or `escape = "none"`.
 
 ---
 
-## 12. Auto-escaping
+## 12. Auto-Escaping
 
 Askama escapes `<`, `>`, `&`, `"`, `'` per OWASP recommendations when the extension implies HTML.
 
 Per-expression bypass:
-- `{{ value | safe }}` — don't escape this value
-- `{{ value | escape }}` or `{{ value | e }}` — force escape in an unescaped context
+- `{{ value | safe }}`: don't escape this value
+- `{{ value | escape }}` or `{{ value | e }}`: force escape in an unescaped context
 
 ---
 
-## 13. Built-in filters
+## 13. Built-in Filters
 
 All filters use `value | filter_name(args)`. Named arguments are supported: `{{ count | pluralize(plural = "gies") }}`.
 
-### Always available
+### Always Available
 | Filter | Purpose |
 |---|---|
 | `capitalize` | First char upper, rest lower |
 | `center` | Center in a field of given width |
 | `escape` / `e` | Force HTML escape |
-| `filesizeformat` | Bytes → "1.4 KB" |
+| `filesizeformat` | Bytes -> "1.4 KB" |
 | `fmt(fmtstr)` | Apply Rust format string |
 | `format(fmtstr, ...)` | Like `format!()` |
 | `indent(n)` / `indent(prefix)` | Indent each line |
 | `join(sep)` | Join iterable into string |
-| `linebreaks` | Plain text → `<p>`/`<br>` |
-| `linebreaksbr` | Newlines → `<br>` |
+| `linebreaks` | Plain text -> `<p>`/`<br>` |
+| `linebreaksbr` | Newlines -> `<br>` |
 | `lower` / `lowercase` | Lowercase |
-| `paragraphbreaks` | Only `\n\n` → `<p>` |
+| `paragraphbreaks` | Only `\n\n` -> `<p>` |
 | `pluralize(singular="", plural="s")` | Suffix based on ±1 |
 | `reject` / `reject_with` | Filter iterator |
 | `safe` | Mark as HTML-safe |
@@ -506,31 +471,24 @@ All filters use `value | filter_name(args)`. Named arguments are supported: `{{ 
 | `defined_or(fallback)` | Fallback if the identifier is undefined; LHS must be an identifier (0.15) |
 | `default(val[, bool])` | Jinja-compat: acts as `defined_or`, or as `assigned_or` when 2nd arg is `true`. Prefer the two above (0.15) |
 
-### Feature-gated
+### Feature-Gated
 | Filter | Feature flag |
 |---|---|
-| `json` | `serde_json` |
-| `json_pretty` | `serde_json` |
+| `json` (indent arg selects pretty: `{{ value | json(2) }}`) | `serde_json` |
 | `urlencode` (does NOT encode `/`) | `urlencode` |
 | `urlencode_strict` (encodes `/`) | `urlencode` |
 
-Enable in `Cargo.toml`: `askama = { version = "0.16", features = ["serde_json", "urlencode"] }`
+Add to `Cargo.toml`: `askama = { version = "0.16", features = ["serde_json", "urlencode"] }`
 
-### Filters REMOVED since older Askama
-- `humansize` — now always available (no flag needed)
-- `markdown` — removed; use `comrak` directly
-- `serde-yaml` — removed; use `yaml-rust2` directly
-- `serde-json` was renamed to `serde_json` (underscore)
-
-### Filter chaining
-```
-{{ name | trim | lower }}
-{{ "{:?}" | format(name | escape) }}
-```
+### Filters Removed Since Older Askama
+- `humansize`: always available now, no flag needed
+- `markdown`: removed, use `comrak` directly
+- `serde-yaml`: removed, use `yaml-rust2` directly
+- `serde-json` renamed to `serde_json`
 
 ---
 
-## 14. Custom filters
+## 14. Custom Filters
 
 Since **0.15** a custom filter is a plain fn annotated with **`#[askama::filter_fn]`**. Put it in a module named `filters` in scope of the `#[derive(Template)]` struct, or call it via an explicit path (`{{ x | mymod::myfilter }}`).
 
@@ -566,50 +524,49 @@ mod filters {
       #[optional("hi")] b: &str,           // omitted -> "hi"
   ) -> askama::Result<String> { /* ... */ }
   ```
-- Named-argument invocation works (named must follow positional): `{{ x | f(b = "yo") }}`. `where` bounds and lifetimes on the fn are allowed (since 0.15.1).
+- Named-argument invocation works (named must follow positional): `{{ x | f(b = "yo") }}`. Lifetimes on the fn are allowed since 0.15.1, `where` bounds since 0.15.2.
 
 Notes:
 - Built-in filter names take precedence over custom ones; be explicit with `{{ x | filters::myfilter }}` if you shadow one.
-- **Migrating from ≤0.14**: the old bare-fn form (no attribute) no longer compiles. Add `#[askama::filter_fn]`; this is also what unlocked the named/optional args that the old form couldn't express.
+- **Migrating from ≤0.14**: the old bare-fn form (no attribute) no longer compiles. Add `#[askama::filter_fn]`; it's what unlocked the named/optional args the old form couldn't express.
 
 ---
 
-## 15. Gotchas and footguns
+## 15. Gotchas and Footguns
 
-1. **Do not reach for `askama_axum` / `askama_actix_web` / etc.** They're gone. Use `askama_web` with `#[derive(WebTemplate)]` OR manual `.render()` + `Html(...)`.
-2. **`|`, `&`, `^` are NOT Rust bitwise operators in templates** — use `bitor`, `bitand`, `xor`.
-3. **Self-include doesn't work.** For recursion, embed the child struct and either use Display (render-in-place) or explicit `{{ child.render()? }}`.
-4. **Blocks can't be inside `if`/`for`.** Top-level or nested in another block only.
-5. **`{% extends %}` rejects whitespace control.**
-6. **Variable names starting with `__askama` or that are Rust keywords are banned.**
-7. **Methods whose result is `self`** cause infinite recursion via the Display impl. Don't write `{{ self }}` or a method that returns self.
-8. **Rust macro calls in templates don't infer field names.** `{{ my_macro!(field) }}` will fail because the macro receives the token literally, not `self.field`. Assign to a let first if you need it: `{% let x = field %}{{ my_macro!(x) }}` — but even this has caveats; generally, prefer a method on the struct instead.
-9. **Prefer `.render()` / `.render_into()` over `.to_string()`** — 2–3x slower with `to_string`.
-10. **`~` has two meanings**: concat operator (with spaces) vs. whitespace "minimize" (no spaces, attached to delimiter). Keep spaces around concat.
-11. **Auto-escape depends on extension.** `.html` → escaped, `.txt` → not. Use inline `source = "..."` requires explicit `ext = "..."` or `escape = "..."`.
-12. **Rinja is dead.** If user has `rinja` / `rinja_axum` / `rinja_derive` in `Cargo.toml`, migrate: rename to `askama` / `askama_web`, bump MSRV to 1.88, rename bitwise operators, drop any `EXTENSION`/`MIME_TYPE` references, migrate removed features (`humansize` drop, `markdown`→comrak, `serde-yaml`→yaml-rust2, `serde-json`→`serde_json`).
-13. **Custom filters need `#[askama::filter_fn]`** (since 0.15). A bare `fn` in `mod filters` no longer compiles. See §14.
-14. **0.16 breakage on upgrade from 0.15**: `{% let x %}` / `{% set x %}` with no value now opens a *block* (use `{% decl x %}` to declare valueless). Compound assignment moved to the `{% mut %}` tag. Two blocks with the same name is now a hard compile error (was a warning).
+1. **`askama_axum` / `askama_actix` / etc. are gone** — use `#[derive(WebTemplate)]` (askama_web) or manual `.render()` + `Html(...)`.
+2. **`|`, `&`, `^` are not bitwise in templates** — use `bitor`, `bitand`, `xor`.
+3. **Self-include doesn't work** — recurse via an embedded child struct (Display) or explicit `{{ child.render()? }}`.
+4. **Blocks inside `if`/`for`**: book forbids it, 0.16.0 compiles it (§9); top-level/block-nested is safe.
+5. **Whitespace control on `{% extends %}` is a silent no-op**, not a compile error (§7).
+6. **Variable names starting with `__askama`, the reserved `caller`, or Rust keywords are banned.**
+7. **A method returning `self`** infinite-loops via Display; don't write `{{ self }}`.
+8. **Rust macro calls don't infer field names** (§5): `{{ my_macro!(field) }}` sees `field`, not `self.field`.
+9. **Prefer `.render()` / `.render_into()` over `.to_string()`** (2-3x slower).
+10. **`~` is concat (with spaces) vs. whitespace-minimize (no spaces)** — keep spaces around concat.
+11. **Auto-escape depends on extension** (`.html` escaped, `.txt` not); inline `source` needs explicit `ext` / `escape`.
+12. **Rinja is dead** — `rinja` / `rinja_axum` / `rinja_derive` -> `askama` / `askama_web` (see intro).
+13. **Custom filters need `#[askama::filter_fn]`** since 0.15; a bare `fn` in `mod filters` no longer compiles (§14).
+14. **0.16 upgrade breakage**: valueless `{% let x %}` / `{% set x %}` now opens a *block* (use `{% decl x %}`); compound assignment moved to `{% mut %}`; duplicate block names are now a hard compile error (was a warning).
 
 ---
 
-## 16. Debugging tips
+## 16. Debugging Tips
 
-- **See generated Rust code**: `#[template(path = "x.html", print = "code")]` or `print = "ast"` or `print = "all"` — output goes to stdout at compile time.
 - **Playground**: https://askama.rs has a web playground that shows the generated code for any template.
-- **Compile errors**: Askama's error messages include the template filename, line, and column. Lifetime / ownership errors in generated code usually mean a field is moved — take references or use `&` in the template.
+- **Compile errors**: Askama's error messages point at the template's `file:line:column` location. Lifetime / ownership errors in generated code usually mean a field got moved. Take a reference, or use `&` in the template.
 - **Book**: https://askama.rs for the canonical syntax reference.
 - **docs.rs**: https://docs.rs/askama for API docs and the full filter list.
 
 ---
 
-## 17. Quick reference card
+## 17. Quick Reference Card
 
 ```
 Expressions:   {{ expr }}               Tags:   {% stmt %}       Comments: {# ... #}
 WS control:    {%- strip    -%}  {%~ min ~%}  {%+ keep +%}
 Inheritance:   {% extends "base.html" %}  {% block x %}...{% endblock %}  {{ super() }}
-Loops:         {% for x in xs if cond %}...{% else %}...{% endfor %}     loop.{index,index0,first,last}
+Loops:         {% for x in xs if cond %}...{% else %}...{% endfor %}     loop.{index,index0,first,last,cycle([…])}
 Conditionals:  {% if %}...{% else if %}...{% else %}...{% endif %}
 Match:         {% match v %}{% when Some with (x) %}...{% when None %}...{% endmatch %}
 Vars:          {% let x = y %}  {% let mut it = … %}  {% set x = 1 %}  {% decl x %}  {% mut x += 1 %}
