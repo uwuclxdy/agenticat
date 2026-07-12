@@ -1,24 +1,27 @@
 ---
 name: parity-gap
-description: Compare against a reference for matching, catching up to, reaching parity with, or surpassing another project.
+description: "Compare a program against a reference for matching, catching up to, reaching parity with, or surpassing it."
+metadata:
+  author: uwuclxdy
+  version: "1.0"
 ---
 
-# parity-gap
+# Parity Gap
 
-Bring `this program` (default: cwd) up to (and past) a `reference`. Map both sides, diff them, **confirm scope in rounds of 4 questions before writing anything**, then author tasks into `docs/todo.md` through the `todo` skill.
+Bring `this program` (default: cwd) up to (and past) a `reference`. Map both sides, diff them, **confirm scope in rounds of 4 questions before writing anything**, then author tasks into `docs/todo.md`, via the `todo` skill if installed or directly otherwise.
 
-## 1. Resolve the inputs first
+## 1. Resolve the Inputs First
 
-- **this program**: default to the working directory unless the user names another.
-- **reference**:
-  - a **remote repository**: clone it into a temp dir then treat as local codebase.
-  - a **local codebase** (path on disk): read its tree, entrypoints, commands, modules.
-  - a **docs/spec/feature list** (file or pasted text): treat each described capability as a reference feature.
+- `this program` defaults to the working directory. Name another explicitly to override.
+- `reference` is one of:
+  - a remote repository: clone it into a temp dir then treat as local codebase.
+  - a local codebase (path on disk): read its tree, entrypoints, commands, modules.
+  - a docs/spec/feature list (file or pasted text): treat every command, endpoint, flag, or behavior it describes as a reference feature.
 - If either is ambiguous (which repo? which spec?), ask anything and no guesses before mapping.
 
-## 2. Map each side (inline, single-pass)
+## 2. Map Each Side (Inline, Single-Pass)
 
-Build a capability inventory for both (NOT a file listing or internals). Capture user-reachable surface:
+Map what each side exposes to a user; skip internals and file structure. The user-reachable surface:
 
 - commands / subcommands / flags
 - exported APIs, routes, endpoints
@@ -26,42 +29,41 @@ Build a capability inventory for both (NOT a file listing or internals). Capture
 - UI/TUI/CLI surfaces and the actions they expose
 - notable behaviors, formats, integrations
 
-Use `Grep`/`Read`/semantic code search inline. The reference is the spec side, so read it thoroughly; the program is the have side. If the reference is too large to hold inline, offload its mapping to an `Explore` subagent and work from the returned inventory; keep the diff itself in the main thread.
+Use `Grep`/`Read`/semantic code search inline. The reference is the spec side, so read it thoroughly; the program is the have side. If the reference is too big to hold inline, offload its mapping to a read-only exploration subagent (e.g. `Explore`) and diff from the returned inventory.
 
-## 3. Diff into two buckets
+## 3. Diff into Two Buckets
 
-- **Parity gaps**: capabilities the reference has that this program lacks. The core of the output.
-- **Improvements**: things that would go *beyond* the reference (better defaults, missing affordances the reference itself lacks, obvious wins surfaced while mapping). Kept separate and clearly flagged, never silently mixed into parity.
+- Parity gaps: capabilities the reference has that this program lacks. The core of the output.
+- Improvements: things beyond the reference (better defaults, affordances the reference itself lacks, wins spotted during mapping). List these in their own section; never mix them into the parity list.
 
 Drop anything the program already has. Note cascade order where one gap blocks others.
 
-## 4. Confirm scope
+## 4. Confirm Scope
 
-**Before writing a single task**, run clarifying questions through `AskUserQuestion` (max 4 per round), looping rounds until scope is nailed. This gate is the point of the skill: the user reviews the gap list as questions, not as a finished file.
+**Before writing a single task**, run clarifying questions through `AskUserQuestion` (max 4 per round, batched rather than trickled), looping rounds until scope is nailed. (On other harnesses, check for a native equivalent first: opencode's `question` tool, gemini-cli's `ask_user` tool, or codex's `request_user_input` [Plan Mode only]. Fall back to a plain numbered message and wait for answers only if none is available.) This gate is the point of the skill: the user reviews the gap list as questions, not as a finished file.
 
-Each round, ask about the highest-leverage unknowns:
+Each round, target the unknowns that matter most:
 
-- which gaps are actually in-scope vs intentionally-omitted (the program may skip a reference feature on purpose)
+- which gaps are in scope versus intentionally omitted (the program may skip a reference feature on purpose)
 - ambiguous parity calls (match the reference's behavior exactly, or adapt it?)
 - which improvements to include vs drop
 - depth (every gap, or only a named subset / surface)
 
 Guidance:
 - Use `multiSelect: true` when the user is picking which of several gaps/improvements to keep.
-- Put a recommended option first, labelled `(rec)`.
-- Batch genuinely-independent questions into one round; don't trickle one at a time. Keep looping rounds while real ambiguity remains, stop as soon as it doesn't.
+- Put a recommended option first, labelled `(Recommended)`.
 - Never park an unresolved decision inside a task; resolve it here in a round instead. Next session should be able to start implementing everything that gets decided now.
 
-## 5. Write a todo
+## 5. Write a Todo
 
-Once scope is confirmed, load the `todo` skill. Map the buckets onto its two formats:
+Once scope is confirmed, write the gap list: if the `todo` skill is installed, load it; otherwise write straight to `docs/todo.md`. Either way, map the buckets onto the same two-bucket structure:
 
-- **Parity gaps** → punch-list under `# <reference> parity punch-list`, with one-line provenance (what was compared against what, date). Group by feature area; note cascade order.
-- **Improvements** → a clearly-marked checkbox-spec section (e.g. `## Beyond <reference>`), after the parity tasks.
+- Parity gaps -> punch-list under `# <reference> parity punch-list`, with one-line provenance (what was compared against what, date). Group by feature area; note cascade order.
+- Improvements -> its own checkbox-spec section (e.g. `## Beyond <reference>`), placed after the parity tasks.
 
-Honor every `todo` rule: each task independently executable by a fresh agent, states **what** (and optionally **how**) but never **where**, sized to one agent / one clean commit. Tasks confirmed out-of-scope in the rounds don't get written.
+Task rules (per the `todo` skill if installed): each task independently executable, says what to change not where, sized to one commit. Out-of-scope tasks aren't written.
 
 ## Boundaries
 
-- This skill owns analysis + the question gate + dispatch. The `todo` skill owns the file format and bookkeeping. Resolution/execution runs via your multi-task runner or workflows, one task each.
-- Plain note-dumps with no reference to catch up to → go straight to `todo`, skip this skill.
+- This skill owns analysis + the question gate; the `todo` skill (or plain `docs/todo.md`) owns the file format; your multi-task runner runs one task each.
+- Plain note-dumps with no reference to catch up to -> go straight to `todo` (or `docs/todo.md` directly), skip this skill.
