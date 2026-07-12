@@ -1,30 +1,34 @@
 ---
 name: handoff
-description: Continuation prompt handing work to a fresh session. Use for capturing the current session and continuing in a fresh one only from this handoff.
+description: "Capture the current session into a continuation prompt for a fresh one, or resume from a pasted handoff."
+metadata:
+  author: uwuclxdy
+  version: "1.1"
 ---
 
-# handoff
+# Handoff
 
 Produce a continuation prompt for a fresh session or resume from one.
 
-## Output rules
+## Output Rules
 
-- **Chat only.** Write the prompt in a single fenced codeblock so it copy-pastes clean. No files unless user explicitly asks.
-- **No length limit.** Capture everything important and load bearing from current session no matter how long the prompt gets; a dropped decision costs more than a long prompt. Still hand off *decisions and state*, not file contents; length comes from completeness, never padding.
-- If the user gives next-step instructions when invoking the skill they go into `next` verbatim, except in cases like "finish this then write a /handoff".
-- Absolute paths everywhere. The new session may start in a different cwd.
-- Never assume the new session shares any memory generated in this session. Skills, roles, and constraints set this session must be restated or re-invoked. Tag files the new session should read at the start with `@file`.
-- Assume the same working directory and starting conditions (context); do not restate what system prompts and CLAUDE.md files told you, the next session starts in the same cwd.
+- **Chat only.** Write the prompt in a single fenced codeblock so it copy-pastes clean. Skip files entirely; write one only if the user explicitly asks.
+- **No length limit.** Capture everything load-bearing from this session, no matter how long the prompt runs; completeness over brevity, a dropped decision costs more than a long prompt does. Hand off decisions and state, not file contents. Secret values never go in; name where a credential lives instead.
+- If the user gives next-step instructions when invoking the skill, they go into `next` verbatim. Exception: an instruction like "finish this then write a /handoff" means finish the requested work first; that instruction is already done by the time you write the prompt, so it doesn't go into `next`.
+- Default: the new session starts in the same cwd and picks up the same static context (system prompt, CLAUDE.md) as this one, so don't restate that content. If the handoff may be resumed from a different cwd, use absolute paths throughout.
+- Never assume the new session shares memory from this one. Skills you invoked, roles you took on, constraints you set: all of it needs restating or re-invoking. Tag files the new session should read at the start with `@file`.
 
-## Continuation prompt template
+## Continuation Prompt Template
 
 ```markdown
 # /handoff <title>
 
+> resume: read `load first`, verify `state` against the repo, treat `decisions` as settled, start at `next` 1. repo state beats this prompt on conflict.
+
 ## context
 - repo/path: <abs path>, branch: <name>
 - goal: <one line>
-- load first: </skill-name>, <@file references the session must read>
+- load first: /<skill-name>, <@file references the session must read>
 
 ## state
 - done + verified: <bullet per item, with how it was verified (test, build, manual)>
@@ -43,27 +47,21 @@ Produce a continuation prompt for a fresh session or resume from one.
 - <constraints, known traps, things that look wrong but are intentional>
 ```
 
-Omit empty sections. Merge sections for tiny handoffs; the order stays. Add more sections inbetween if context needed for the next session doesn't fit in any of the above sections. 
+Omit empty sections. Merge sections for tiny handoffs; the order stays. Add more sections in between if context needed for the next session doesn't fit in any of the above sections.
 
-## Filling it correctly
+## Filling It Correctly
 
-- **User answers are the highest-value content.** Past sessions repeatedly lost them; copy every answer the user gave (question-tool picks or free text) into `decisions`, condensed but faithful.
-- Run `git status --short` and `git log --oneline -3` before writing `state`. Report actual repo state, not remembered state.
-- `done + verified` means verified. Anything not verified goes under `next` with a verify step.
-- If the session used a skill, name it in `load first` if still relevant.
+- **User answers are the highest-value content.** Copy every answer the user gave (question-tool picks or free text) into `decisions`, condensed but faithful.
+- Base `state` on the injected git output below, not what you remember from earlier in the session.
+- Anything not verified goes under `next` with a verify step.
 
-## Resuming from a handoff
+## Resuming from a Handoff
 
-When the user pastes a continuation prompt:
+When the user pastes a continuation prompt, read the referenced files and skills before acting, then follow the `> resume:` directive.
 
-1. Read the referenced files and skills before acting.
-2. Verify the `state` claims (build, git log).
-3. Treat `decisions` as settled, do not re-ask.
-4. Start at `next` step 1.
+## Dynamic Context Injection
 
-## Dynamic context injection
-
-Commands run at skill invocation.
+Commands run at skill invocation. This only executes under Claude Code; other harnesses render the `!` lines below as literal text, so run the commands manually there.
 
 `git status --short`:
 !`git status --short`
