@@ -7,8 +7,13 @@
   },
   "plugins": [
     {
-      "name": "agenticat",
-      "source": "./",
+      "name": "agents",
+      "source": "./plugins/agents",
+      "category": "productivity"
+    },
+    {
+      "name": "skills",
+      "source": "./plugins/skills",
       "category": "productivity"
     }
   ]

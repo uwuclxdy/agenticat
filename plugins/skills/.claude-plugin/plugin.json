@@ -1,12 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "agenticat",
-  "description": "uwuclxdy's curated personal stack of agents and skills.",
+  "name": "skills",
+  "description": "agenticat's curated first-party skill collection.",
   "author": {
     "name": "uwuclxdy"
   },
   "license": "MIT",
   "homepage": "https://github.com/uwuclxdy/agenticat",
   "repository": "https://github.com/uwuclxdy/agenticat",
-  "keywords": ["agents", "skills", "subagents", "claude-code", "opencode", "gemini-cli", "codex"]
+  "keywords": ["skills", "claude-code", "npx-skills", "opencode", "gemini-cli", "codex"]
 }

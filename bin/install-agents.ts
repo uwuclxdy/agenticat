@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // agenticat agent converter/installer for harnesses without a native agent installer.
-// claude code -> /plugin install agenticat@agenticat ; gemini -> gemini extensions install <repo>
+// claude code -> /plugin install agents@agenticat ; gemini -> gemini extensions install <repo>
 // this script covers the gap: opencode + codex (cursor reads claude format natively).
 //
 // usage:

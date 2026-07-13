@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # agenticat agent installer for opencode + codex (harnesses without a native installer).
-# claude code:  /plugin marketplace add uwuclxdy/agenticat && /plugin install agenticat@agenticat
+# claude code:  /plugin marketplace add uwuclxdy/agenticat, then /plugin install agents@agenticat or skills@agenticat
 # gemini cli:   gemini extensions install https://github.com/uwuclxdy/agenticat --auto-update
 set -euo pipefail
 cd "$(dirname "$0")"
