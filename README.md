@@ -21,7 +21,7 @@ Skill and Agent frontmatter is in Claude Code compat format by default; use `npx
 ## Install
 
 > [!NOTE]
-> Installing the plugin means you get everything, even though you might not need everything. Feel free to try out **ragcat** or cherry-pick agents by name with `./install.sh --to opencode probe-agent web-researcher`. You can first list everything with `./install.sh --list`. 
+> Two plugins ship separately: `agents` and `skills`. Install one or both; on opencode/codex, cherry-pick by name with `./install.sh --to opencode probe-agent web-researcher` (list with `./install.sh --list`). 
 
 <details>
 <summary>Claude Code</summary>
@@ -30,12 +30,16 @@ Skill and Agent frontmatter is in Claude Code compat format by default; use `npx
 
 ```
 /plugin marketplace add uwuclxdy/agenticat
-/plugin install agenticat@agenticat
+/plugin install agents@agenticat
 ```
 
 #### Skills
 
-included with plugin, or if you cherry-pick:
+```
+/plugin install skills@agenticat
+```
+
+or cherry-pick with `npx skills`:
 ```
 npx skills add uwuclxdy/agenticat --skill <name>
 ```
