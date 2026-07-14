@@ -6,7 +6,7 @@ Shaping public surfaces: constructors, type-level guarantees, serde contracts.
 
 Beyond swap-proofing arguments (`UserId(u64)` vs `OrderId(u64)`, see `SKILL.md`), newtypes solve two structural problems:
 
-- **Orphan rule**: `impl ForeignTrait for ForeignType` is rejected — always, even with a type parameter in between. Wrap the foreign type in a local newtype and implement on the wrapper. Add `From`/`Into` and `into_inner()` so callers move in and out without friction.
+- **Orphan rule**: an impl is rejected when neither the trait nor any type in the impl header is local (`impl From<LocalType> for ForeignType` is fine — the local type appears as the trait's argument; fundamental wrappers like `Box<Local>` and `&Local` count as local). A bare type parameter doesn't help: `impl<T> ForeignTrait for ForeignType<T>` is always rejected. When you're stuck, wrap the foreign type in a local newtype and implement on the wrapper; add `From`/`Into` and `into_inner()` so callers move in and out without friction.
 - **Validated input**: parse untrusted input into a newtype whose constructor enforces the invariant (`Port::new(u16) -> Result<Port>`), then pass the newtype around instead of re-checking a primitive at every call site.
 
 `#[repr(transparent)]` on a single-field newtype guarantees the inner type's layout — mandatory when the wrapper crosses FFI or gets pointer-cast, good practice otherwise.

@@ -12,12 +12,12 @@ Tokio-flavored; the principles transfer to any executor.
 | `broadcast::Receiver::recv()` | yes | position tracked in the receiver |
 | `watch::Receiver::changed()` | yes | no data consumed |
 | `oneshot::Receiver` (by `&mut`) | yes | message stays until received |
-| `tokio::time::sleep` | yes | timer just resets |
+| `tokio::time::sleep` | one-shot only | dropping is clean, but recreating it every loop iteration resets the deadline — the timeout branch can starve forever; pin it outside the loop (pattern 2) |
 | `AsyncReadExt::read()` | yes | partial reads surface to the caller |
 | `AsyncReadExt::read_exact()` | **no** | partially filled buffer lost |
 | `AsyncReadExt::read_to_end()` | **no** | accumulation lives inside the future |
 | `AsyncWriteExt::write_all()` | **no** | unknown how much was written |
-| tokio `Mutex::lock()` | yes | lock not acquired if dropped |
+| tokio `Mutex::lock()` | **no** | cancelling loses your place in the fairness queue; same for `RwLock::read`/`write`, `Semaphore::acquire`, `Notify::notified` |
 | accumulating into a `Vec` inside a branch | **no** | partial state inside the future |
 
 Patterns for non-cancel-safe work inside a select loop:
@@ -28,11 +28,11 @@ Patterns for non-cancel-safe work inside a select loop:
 
 ## Locks and `.await`
 
-Never hold a lock across an `.await` point. A `std::sync::MutexGuard` isn't `Send` (the future won't compile on multi-threaded runtimes — good), but a tokio `Mutex` guard happily lives across awaits and serializes every task behind the slowest one, deadlocking under re-entry. Scope the guard:
+Never hold a lock across an `.await` point. A `std::sync::MutexGuard` isn't `Send`, so `tokio::spawn` refuses the future at compile time — but a future that's only `block_on`-ed or `spawn_local`-ed compiles fine and still deadlocks, and a tokio `Mutex` guard happily lives across awaits, serializing every task behind the slowest one. Scope the guard:
 
 ```rust
 let value = {
-    let state = state.lock().unwrap();
+    let state = state.lock().expect("mutex poisoned");
     state.value.clone()
 }; // guard dropped before any await
 process(value).await;

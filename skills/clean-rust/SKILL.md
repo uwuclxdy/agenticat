@@ -3,7 +3,7 @@ name: clean-rust
 description: "Clean, idiomatic Rust conventions: naming, error handling, ownership, iterators, traits, async, unsafe, testing, performance, and edition 2024. Use when writing, reviewing, or refactoring any Rust code, and whenever clippy, cargo, 'rust best practices', or 'idiomatic rust' come up."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Clean Rust
@@ -25,7 +25,7 @@ If the `clean-code` skill is installed, its language-agnostic principles (functi
 
 ## Errors
 
-- `Result` + `?` everywhere; no `.unwrap()`/`.expect()` outside tests and compile-time constants (`LazyLock<Regex>` init). The rare justified `expect` carries a message naming the invariant that makes it safe.
+- `Result` + `?` everywhere; no `.unwrap()`/`.expect()` outside tests and one-time init of hand-audited literals (`LazyLock<Regex>` on a fixed pattern). The rare justified `expect` carries a message naming the invariant that makes it safe.
 - No sentinel returns (`-1`, `""`) for failure. `Option<T>` for absence that isn't an error.
 - `thiserror` for library errors (callers can match), `anyhow`/`eyre` at the application boundary. Never `Box<dyn Error>` or `String` as a library error type.
 - Bind a `Result` once with `match`/`if let`/`let-else` — never `.is_ok()` followed by separate access or a downstream `.unwrap()`.
@@ -83,7 +83,7 @@ RFC 430 casing (`snake_case` items, `CamelCase` types, `SCREAMING_SNAKE_CASE` co
 ## Strings & IO
 
 - `static RE: LazyLock<Regex>` for compiled-once regexes; never compile inside a loop or per call.
-- ASCII character classes (`[a-zA-Z0-9]`) over POSIX `[[:alnum:]]` — the latter carries locale baggage.
+- ASCII character classes (`[a-zA-Z0-9]`) over POSIX `[[:alnum:]]` — the explicit range reads unambiguously and ports to engines where POSIX classes are locale-sensitive (in Rust's `regex` they're ASCII-only either way).
 - Inline format args: `debug!("found {name:?}")`, not `debug!("found {:?}", name)`.
 - Forward child-process output with `io::stdout().write_all(&output.stdout)?` — `println!` mangles encoding and panics on broken pipes.
 

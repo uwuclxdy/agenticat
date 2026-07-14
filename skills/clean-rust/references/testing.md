@@ -38,7 +38,7 @@ Never hardcode `target/debug/<name>` — it breaks under a shared/overridden `CA
 
 ## `#[path]`-Linked Tests Double-Compile
 
-Test bodies in `tests/` linked into `#[cfg(test)]` modules via `#[path = "../tests/..."]` are *also* autodiscovered by cargo as standalone integration crates — where `super::*` doesn't resolve, so `cargo check --tests` errors. Either set `autotests = false` in `[package]`, or put linked bodies in subdirectories (`tests/unit/…`) — cargo only autodiscovers `tests/*.rs`, one level deep — with a thin top-level aggregator per real integration crate.
+Test bodies in `tests/` linked into `#[cfg(test)]` modules via `#[path = "../tests/..."]` are *also* autodiscovered by cargo as standalone integration crates — where `super::*` doesn't resolve, so `cargo check --tests` errors. Either set `autotests = false` in `[package]`, or put linked bodies in subdirectories (`tests/unit/…`) — cargo autodiscovers `tests/*.rs` and `tests/*/main.rs`, so subdir bodies dodge the double-compile only if none is named `main.rs` — with a thin top-level aggregator per real integration crate.
 
 ## Network-Dependent Tests
 
