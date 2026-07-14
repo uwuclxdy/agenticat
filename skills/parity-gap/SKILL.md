@@ -3,7 +3,7 @@ name: parity-gap
 description: "Compare a program against a reference for matching, catching up to, reaching parity with, or surpassing it."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Parity Gap
@@ -50,6 +50,7 @@ Each round, target the unknowns that matter most:
 - depth (every gap, or only a named subset / surface)
 
 Guidance:
+- Keep looping rounds while real ambiguity remains and stop as soon as it doesn't. Four is a ceiling, not a quota; never pad a round to fill it.
 - Use `multiSelect: true` when the user is picking which of several gaps/improvements to keep.
 - Put a recommended option first, labelled `(Recommended)`.
 - Never park an unresolved decision inside a task; resolve it here in a round instead. Next session should be able to start implementing everything that gets decided now.
