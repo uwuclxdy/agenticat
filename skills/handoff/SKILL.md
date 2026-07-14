@@ -3,7 +3,7 @@ name: handoff
 description: "Capture the current session into a continuation prompt for a fresh one, or resume from a pasted handoff."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Handoff
@@ -64,7 +64,7 @@ When the user pastes a continuation prompt, read the referenced files and skills
 Commands run at skill invocation. This only executes under Claude Code; other harnesses render the `!` lines below as literal text, so run the commands manually there.
 
 `git status --short`:
-!`git status --short`
+!`git status --short || true`
 
 `git log --oneline -3`:
-!`git log --oneline -3`
+!`git log --oneline -3 || true`
