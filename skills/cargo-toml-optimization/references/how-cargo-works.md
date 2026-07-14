@@ -12,6 +12,9 @@ missing crates, compile each unit in dependency order (`build.rs` runs before it
 compiles independent crates in parallel; the real bottleneck is the critical path, the longest chain of
 sequential deps. See `--timings` below.
 
+Resolution picks the highest version satisfying every constraint in the graph. Constraint syntax:
+`references/dependencies.md`; resolver versions and feature unification: `references/workspaces.md`.
+
 ---
 
 ## Cargo.toml vs Cargo.lock
