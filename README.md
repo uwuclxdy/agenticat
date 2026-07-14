@@ -153,7 +153,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `askama` | original | `rust-pro` | conventions and reference for the askama Rust templating crate |
 | `maud` | original | `rust-pro` | conventions and reference for the maud Rust `html!` macro |
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
-| `clean-rust` | original | `rust-pro` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, testing, perf |
+| `clean-rust` | original | `rust-pro` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, testing, perf |
 | `threat-modeling` | original | `threat-modeling-expert` | STRIDE and attack trees, each requirement mapped to a mitigation |
 | `bash-defensive-patterns` | `wshobson` | `shell-pro` | defensive idioms for scripts that mutate live systems |
 | `bats-testing-patterns` | `wshobson` | `shell-pro` | testing shell scripts with bats-core, error paths included |
