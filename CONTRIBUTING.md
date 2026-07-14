@@ -6,7 +6,7 @@ Welcome contributions: new agents, new skills, fixes to existing ones, and READM
 
 - **Claude Code format is canonical.** `agents/*.md` and `skills/<name>/SKILL.md` are the source of truth; opencode/codex output derives from them at install time via `bin/install-agents.ts`. Don't PR generated files.
 - **Third-party skills are never vendored.** If a skill you didn't write is worth sharing, PR a row in the README's external skills table instead. It installs from its own repo with `npx skills add <owner>/<repo> --skill <name>`.
-- **Nothing personal or machine-specific**: absolute paths, IPs, hostnames, private tooling. `grep -rE '/home/|192\.168\.' agents/ skills/` must come back clean.
+- **Nothing personal or machine-specific**: absolute paths, IPs, hostnames, private tooling. `grep -rE '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/` must come back clean.
 
 ## Agents
 
