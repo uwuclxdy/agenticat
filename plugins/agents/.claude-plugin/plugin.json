@@ -8,5 +8,18 @@
   "license": "MIT",
   "homepage": "https://github.com/uwuclxdy/agenticat",
   "repository": "https://github.com/uwuclxdy/agenticat",
-  "keywords": ["agents", "subagents", "claude-code", "opencode", "gemini-cli", "codex"]
+  "keywords": ["agents", "subagents", "claude-code", "opencode", "gemini-cli", "codex"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/session-start.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
