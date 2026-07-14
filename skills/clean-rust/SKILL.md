@@ -3,7 +3,7 @@ name: clean-rust
 description: "Clean, idiomatic Rust conventions: naming, error handling, ownership, iterators, traits, async, unsafe, testing, performance, and edition 2024. Use when writing, reviewing, or refactoring any Rust code, and whenever clippy, cargo, 'rust best practices', or 'idiomatic rust' come up."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Clean Rust
@@ -87,6 +87,8 @@ RFC 430 casing (`snake_case` items, `CamelCase` types, `SCREAMING_SNAKE_CASE` co
 - ASCII character classes (`[a-zA-Z0-9]`) over POSIX `[[:alnum:]]` — the explicit range reads unambiguously and ports to engines where POSIX classes are locale-sensitive (in Rust's `regex` they're ASCII-only either way).
 - Inline format args: `debug!("found {name:?}")`, not `debug!("found {:?}", name)`.
 - Forward child-process output with `io::stdout().write_all(&output.stdout)?` — `println!` mangles encoding and panics on broken pipes.
+- Long-form flags when spawning external commands (`--force`, not `-f`) — the call site is its own documentation.
+- Never slice or truncate a `String` at a raw byte index — it panics mid-codepoint on non-ASCII input. Walk `char_indices()` or check `is_char_boundary` first.
 
 ## Modules & Visibility
 
@@ -111,6 +113,12 @@ RFC 430 casing (`snake_case` items, `CamelCase` types, `SCREAMING_SNAKE_CASE` co
 
 Default posture: `unsafe_code = "forbid"` until a concrete need exists. When it does exist, every block carries a `// SAFETY:` comment and stays minimal — full discipline in `references/unsafe.md`.
 
+## Process
+
+- One PR = one focused change; formatting fixes, new workflows, and features travel separately.
+- A technically-correct change that breaks a user contract (CLI flags, config keys, env semantics) keeps the legacy path, ships the new one alongside, and milestones the removal for the next major. Warn only on genuine old-vs-new conflicts — users on only-old or only-new see nothing.
+- Feature-detect external tools by parsing `--version` output; where that's unreliable, sniff for specific stderr messages. Either way, probe with plain `.output()` so a failed probe stays non-fatal.
+
 ## Pre-Submit Checklist
 
 - [ ] No `.unwrap()` outside tests/compile-time constants; no `.is_ok()` + separate access
@@ -124,3 +132,4 @@ Default posture: `unsafe_code = "forbid"` until a concrete need exists. When it 
 - [ ] `LazyLock` regexes; inline format args; `write_all` for child output
 - [ ] Comments say why; suppressions carry `reason`; no commented-out code
 - [ ] fmt + clippy clean; no formatting churn outside the change
+- [ ] One focused change per PR; breaking changes keep the legacy path, removal milestoned
