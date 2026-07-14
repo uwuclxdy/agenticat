@@ -5,7 +5,7 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-12-green)](#skills)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-13-green)](#skills)
 [![agents](https://shields.uwuclxdy.dev/badge/agents-13-green)](#agents)
 
 </div>
@@ -153,6 +153,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `askama` | original | `rust-pro` | conventions and reference for the askama Rust templating crate |
 | `maud` | original | `rust-pro` | conventions and reference for the maud Rust `html!` macro |
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
+| `clean-rust` | original | `rust-pro` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, testing, perf |
 | `threat-modeling` | original | `threat-modeling-expert` | STRIDE and attack trees, each requirement mapped to a mitigation |
 | `bash-defensive-patterns` | `wshobson` | `shell-pro` | defensive idioms for scripts that mutate live systems |
 | `bats-testing-patterns` | `wshobson` | `shell-pro` | testing shell scripts with bats-core, error paths included |
@@ -163,6 +164,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 - `wshobson`: [wshobson/agents](https://github.com/wshobson/agents) (MIT)
 - `s4.codes`: **content from [@s4.codes](https://www.tiktok.com/@s4.codes) (TikTok) as a Claude Skill**; Gemini transcribes the videos, Opus condenses them into the skill.
 - `original`: self-authored
+- `clean-rust` distills the author's own Rust conventions; a dozen standout rules were re-authored after studying [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT)
 
 ## External skills
 
@@ -190,7 +192,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `webapp-tester` | inherit | `webapp-testing` (ext) | drives a local app via Playwright, reports pass/fail with screenshots |
 | `shell-pro` + | inherit | `bash-defensive-patterns`, `shellcheck-configuration`, `bats-testing-patterns` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
-| `rust-pro` + | inherit | `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
+| `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
 | `c-cpp-pro` + | inherit | none | C and C++ with explicit ownership, sanitizers wired to the repo build |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
@@ -215,7 +217,7 @@ Repos evaluated as skill or agent sources. Adopted ones are marked; the rest wer
 - `contains-studio/agents`: `frontend-developer` compared, redundant.
 - `lodetomasi/agents-claude-code`: `playwright-pro` fetched, redundant.
 - `darcyegb/ClaudeCodeAgents`: `qa-engineer` link 404'd, dead.
-- `leonardomso/rust-skills`: vendored once then delisted. one fat `SKILL.md`, not modular enough.
+- `leonardomso/rust-skills`: vendored once then delisted. one fat `SKILL.md`, not modular enough. its standout rules were later re-authored into the first-party `clean-rust`.
 - `actionbook/rust-skills`: competing rust system, passed over.
 - `vercel-labs/open-plugin-spec`: spec only, nothing implements it.
 - `affaan-m/ecc`: "67 agents, 271 skills" claims unverified.
