@@ -3,7 +3,7 @@ name: threat-modeling
 description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, and mitigation/control mapping. Use for security reviews and hardening."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Threat Modeling
@@ -30,7 +30,7 @@ STRIDE categories and the property each violates:
 | Denial of service | Availability |
 | Elevation of privilege | Authorization |
 
-Attack trees: root = attacker goal; OR nodes (any child suffices), AND nodes (all children required), leaves = concrete attack steps with cost/skill/likelihood attributes. Cheapest complete path = priority defense target.
+Attack trees: root = attacker goal; OR nodes (any child suffices), AND nodes (all children required), leaves = concrete attack steps scored by difficulty, cost, and detection risk. Cheapest complete path = priority defense target.
 
 Control categories, in layering order: preventive (stop), detective (notice), corrective (recover). Deterrent and compensating controls sit outside that order. A threat counts as covered only when both a preventive control and a detective control apply.
 

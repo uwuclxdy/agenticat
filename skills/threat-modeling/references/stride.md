@@ -39,20 +39,21 @@ Brief description of the system and its purpose.
 ## 3. STRIDE Analysis
 
 One table per category; each row is a threat scored by impact and likelihood
-(Low/Medium/High/Critical). Draw mitigations from the Template 2 catalog.
+(Low/Medium/High/Critical). Draw mitigations from the control library in
+`references/mitigations.md`.
 
 ### 3.1 Spoofing
 
 | ID | Threat | Target | Impact | Likelihood |
 |----|--------|--------|--------|------------|
 | S1 | Session hijacking | User sessions | High | Medium |
-| S3 | Credential stuffing | Login endpoint | High | High |
+| S2 | Credential stuffing | Login endpoint | High | High |
 
 ### 3.2 Tampering
 
 | ID | Threat | Target | Impact | Likelihood |
 |----|--------|--------|--------|------------|
-| T1 | SQL injection | Database queries | Critical | Medium |
+| T1 | SQL injection | Database queries | Critical | High |
 | T2 | Parameter manipulation | API requests | High | High |
 
 ### 3.3 Remaining Categories
@@ -75,13 +76,27 @@ Denial of Service, and Elevation of Privilege.
 
 Rows = likelihood, columns = impact; score = impact x likelihood.
 
+Bands: 12 and up Critical, 6 to 11 High, 3 to 5 Medium, below 3 Low.
+
 ### 4.2 Prioritized Risks
 
 | Rank | Threat | Risk Score | Priority |
 |------|--------|------------|----------|
 | 1 | SQL injection (T1) | 12 | Critical |
-| 2 | Credential stuffing (S3) | 9 | High |
+| 2 | Credential stuffing (S2) | 9 | High |
 | 3 | Parameter manipulation (T2) | 9 | High |
+| 4 | Session hijacking (S1) | 6 | High |
+
+## 5. Mitigation Plan
+
+Sequence the work by risk score, Critical first, and run every row through the gap checks in
+`references/mitigations.md` before accepting it. Record residual risk per threat, not as one
+figure for the system.
+
+| Threat | Controls | Residual risk |
+|--------|----------|---------------|
+| SQL injection (T1) | VAL-003, VAL-002, LOG-001 | Low: preventive and detective, across two layers |
+| Credential stuffing (S2) | AUTH-001, AUTH-002, LOG-001 | Medium: every control is application-layer, so the 2-layer check still fails |
 ````
 
 ### Template 2: STRIDE Data Model and Questionnaires

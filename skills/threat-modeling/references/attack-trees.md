@@ -5,8 +5,7 @@
 ### Template 1: Attack Tree Data Model
 
 **Node types:** `OR` (any child suffices), `AND` (all children required), `LEAF` (concrete
-attack step). A tree carries a name, description, root node, and version. Cheapest complete
-path = priority defense target (see `SKILL.md`).
+attack step). A tree carries a name, description, root node, and version.
 
 **Leaf score axes** (higher = harder / costlier / louder):
 
@@ -41,6 +40,11 @@ product of its children's sub-paths), then score each path: sum cost / difficult
 its leaves, count leaves as steps, carry `requires_insider` / `requires_physical` if any leaf
 needs them. Coverage % = paths with any mitigated leaf / total paths; prioritize the leaves
 that appear in the most paths (highest coverage impact first).
+
+Rank paths by the axis that matches the adversary being modeled: cheapest (opportunistic),
+easiest (lowest total difficulty, commodity skill), or stealthiest (lowest detection risk, the
+patient adversary). Default to cheapest, and rank by stealthiest as well whenever the model
+includes an attacker who will pay more to stay unseen; the two rarely pick the same path.
 
 Deliberate: detection risk is scored as the worst single leaf (max), not summed — one loud
 step exposes the whole path, unlike cost/difficulty which accumulate per path.
