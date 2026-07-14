@@ -41,6 +41,15 @@ Calling `send` before `connect` is now a compile error, not a runtime check. Wor
 
 `#[non_exhaustive]` on public enums/structs you expect to grow forces downstream `match`es to carry a `_` arm — the inverse of the internal no-wildcard rule, and correct here: *you* control internal dispatchers, but you can't fix downstream crates when you add a variant. `#[must_use]` on types and functions whose ignored result is a bug (`Result` already has it; add it to builders and guards).
 
+Sealed traits close the remaining door: a public trait you'll need to add methods to without a breaking change gets a private supertrait —
+
+```rust
+mod sealed { pub trait Sealed {} }
+pub trait Backend: sealed::Sealed { /* callable, not implementable downstream */ }
+```
+
+Downstream crates can call it but can't implement it, so a new method with a default body isn't a breaking change.
+
 ## `Option<NonZero*>` Is Free
 
 `NonZeroU32` and friends give the compiler a niche: `Option<NonZeroU32>` is the same size as `u32`. Use them for IDs, counts, and handles where zero is invalid anyway — the invariant documents itself and the `Option` costs nothing.
