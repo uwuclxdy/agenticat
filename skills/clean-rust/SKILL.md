@@ -3,7 +3,7 @@ name: clean-rust
 description: "Clean, idiomatic Rust conventions: naming, error handling, ownership, iterators, traits, async, unsafe, testing, performance, and edition 2024. Use when writing, reviewing, or refactoring any Rust code, and whenever clippy, cargo, 'rust best practices', or 'idiomatic rust' come up."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Clean Rust
@@ -22,6 +22,7 @@ If the `clean-code` skill is installed, its language-agnostic principles (functi
 | Writing tests or debugging test infrastructure | `references/testing.md` |
 | Hot paths, allocations, string building, hasher choice | `references/performance.md` |
 | Secret files on disk, keys and tokens at rest | `references/security.md` |
+| Logging, tracing spans, log levels | `references/observability.md` |
 | Edition 2024 migration or 2024-specific behavior changes | `references/edition-2024.md` |
 
 ## Errors
