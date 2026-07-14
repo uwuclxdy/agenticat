@@ -3,7 +3,7 @@ name: clean-code
 description: "Language-agnostic principles (naming, functions, error handling, comments, formatting, readability, duplication, maintainability) for writing, reviewing, or refactoring."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Clean Code Principles
@@ -21,10 +21,14 @@ Treat these as directional principles. Where a repo's established precedent or a
 Never use variable names that create false expectations, contain misleading technical terms, or use visually confusing characters.
 
 **Do:**
+- Use names that honestly reflect the data structure (`accountsMap`, `accountsGroup`).
 - Use distinct names for classes/variables so autocomplete doesn't trick you.
 
 **Don't:**
+- Name a map `accountList` just because it holds several items; to a programmer "list" means an indexed structure.
 - Create names that vary in tiny ways (e.g., `ABCManagerForEfficientProcessingOfUsers` vs `...PersistingOfUsers`).
+- Use characters that look identical (lowercase `l` vs `1`, uppercase `O` vs `0`).
+  - Bad: `int a = l; if (O == l) a = O1; else l = O1;`
 
 ### 1.2 Make Meaningful Distinctions
 
@@ -49,6 +53,7 @@ Names should read as natural words and match the size of their scope, so they ca
 **Don't:**
 - Mash abbreviations into cryptic strings.
 - Use single letters in larger scopes (searching for `e` returns thousands of useless hits).
+- Use an abbreviation that reads fine but decodes several ways: in `const tx = t[i]`, is `tx` time, tax, text, or transaction? A pronounceable, searchable name can still force the reader to keep a lookup table in their head.
 
 ### 1.4 Avoid Encodings (Hungarian Notation)
 
@@ -205,6 +210,7 @@ A method should only call methods on its immediate dependencies ("friends"), nev
 
 **Don't:**
 - Chain method calls to burrow into an object's internal structure.
+  - Bad: `ctxt.getOptions().getScratchDir().getAbsolutePath()`
 
 ### 4.5 Objects vs. Data Structures
 
@@ -219,6 +225,9 @@ Keep objects (hide data, expose behavior) separate from data structures (expose 
       double area(Object shape) { ... }                  // add perimeter(), diagonal()... freely
     }
     ```
+- Expose what the caller needs, not the fields you happen to store.
+  - Good: `getPercentFuelRemaining()`, which hides whether the reading came from gallons, litres, or a sensor.
+  - Bad: `getFuelTankCapacityInGallons()` plus `getGallonsOfGasoline()`, which makes every caller do the division and pins the API to the storage unit.
 
 **Don't:**
 - Build "hybrid" classes that carry private data with getters/setters and also real business logic.
