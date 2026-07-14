@@ -3,7 +3,7 @@ name: todo
 description: "Author and normalize tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into executable tasks."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Todo
@@ -60,9 +60,7 @@ When the user dumps loose notes ("inconsistent cursor..", "remove j/k"):
 2. Ask clarifying questions for anything ambiguous (batch them, don't trickle).
 3. Rewrite as tasks in the matching format above. The original note text can be dropped once the task captures it fully.
 
-## Resolution Bookkeeping
+## Resolving
 
-- When `docs/` is gitignored (common for internal notes), resolved history lives **in the file**, not git.
-- On resolve: check the box or move the task under a `## Resolved` section with commit SHA + date + one line on what landed.
 - Never delete unresolved tasks without the user saying so.
 - When asked to "resolve the todo", route execution through your multi-task runner or workflows (one task each); this skill only owns the file.
