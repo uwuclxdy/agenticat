@@ -165,7 +165,7 @@ Avoid recompiling common dependencies per-project:
 ```toml
 # $CARGO_HOME/config.toml
 [build]
-target-dir = "/home/user/.cargo/target-shared"
+target-dir = "/path/to/shared-target"
 ```
 
 Or per-workspace in `.cargo/config.toml`:
