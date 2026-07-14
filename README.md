@@ -16,7 +16,7 @@ Everything here (should be) compatible with **opencode**, **Claude Code**, **Gem
 
 Skill and Agent frontmatter is in Claude Code compat format by default; use `npx skills` and/or bundled bun script to make them compatible with other harnesses (will do it in a better way when I decide how). 
 
-**Contributions are welcome!**
+**[Contributions](CONTRIBUTING.md) are welcome!**
 
 ## Install
 
