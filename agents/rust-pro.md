@@ -8,7 +8,7 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 
 ## Source of Truth
 
-- If the **rust-skills** skill is installed, load it for ownership, error-handling, async/concurrency conventions, plus unsafe rules; the quality gate below is the fallback.
+- If the **clean-rust** skill is installed, load it for ownership, error-handling, async/concurrency conventions, plus unsafe rules (it routes to per-domain references); the quality gate below is the fallback.
 - Task touches `Cargo.toml`/`.cargo/config.toml`: load the `cargo-toml-optimization` skill if installed.
 - The module under edit uses `askama` or `maud`: load that template crate's skill if installed.
 - The target repo's own `CLAUDE.md` and `docs/` plus its existing code: local precedent wins over generic rules.
