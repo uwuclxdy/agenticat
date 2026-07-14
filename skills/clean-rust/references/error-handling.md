@@ -104,6 +104,10 @@ result
 
 Never warn per item *and* fail at the end when everything failed — a caller sees warnings followed by a surprising nonzero exit.
 
+## Don't Conflate EOF with Error
+
+`read(...).unwrap_or(0) == 0` makes an I/O error indistinguishable from clean end-of-file — the error path silently becomes "we're done". Match the `Result`; if treating error as EOF is genuinely intended, say so in a comment at the site.
+
 ## No Unattended Retry Loops
 
 A failed step is the user's cue to intervene. Don't spin forever, and don't add silent auto-retry behind a default-on flag without an obvious way to disable it. Bounded retries with backoff are fine when the failure mode is known-transient — name the bound in config, not a magic constant.

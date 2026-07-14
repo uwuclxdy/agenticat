@@ -3,7 +3,7 @@ name: clean-rust
 description: "Clean, idiomatic Rust conventions: naming, error handling, ownership, iterators, traits, async, unsafe, testing, performance, and edition 2024. Use when writing, reviewing, or refactoring any Rust code, and whenever clippy, cargo, 'rust best practices', or 'idiomatic rust' come up."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Clean Rust
@@ -89,7 +89,7 @@ RFC 430 casing (`snake_case` items, `CamelCase` types, `SCREAMING_SNAKE_CASE` co
 - Inline format args: `debug!("found {name:?}")`, not `debug!("found {:?}", name)`.
 - Forward child-process output with `io::stdout().write_all(&output.stdout)?` — `println!` mangles encoding and panics on broken pipes.
 - Long-form flags when spawning external commands (`--force`, not `-f`) — the call site is its own documentation.
-- Never slice or truncate a `String` at a raw byte index — it panics mid-codepoint on non-ASCII input. Walk `char_indices()` or check `is_char_boundary` first.
+- Never truncate a `String` at a raw byte index. `&s[..n]` panics mid-codepoint on non-ASCII; the "safe" `s.get(..n).unwrap_or(s)` is worse — it returns the **whole** string when `n` lands mid-codepoint, so oversize input escapes the cap. Use `floor_char_boundary(n)` or walk `char_indices()`.
 
 ## Modules & Visibility
 
