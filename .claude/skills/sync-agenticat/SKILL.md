@@ -1,10 +1,10 @@
 ---
-name: sync-catalog
+name: sync-agenticat
 description: Mine an external agent/skill collection and curate keepers into this repo's catalog (agents/, skills/, README links). Use when importing, adapting, or evaluating external agents, skills, or commands for agenticat.
 argument-hint: "<owner/repo | git URL | local path> [focus, e.g. 'agents only']"
 ---
 
-# Sync Catalog
+# Sync Agenticat
 
 Harvest agents and skills from an external source, keep only what clears this repo's
 quality bar, rewrite to its conventions, route each keeper to its home, and
