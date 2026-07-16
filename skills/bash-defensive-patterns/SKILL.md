@@ -3,7 +3,7 @@ name: bash-defensive-patterns
 description: "Defensive Bash for scripts that mutate live systems. Use when writing, hardening, or reviewing scripts (deploy/apply, systemd oneshot+timer units, firewall/sshd/sudoers edits, ssh remote-exec)."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Bash Defensive Patterns
@@ -87,12 +87,22 @@ ssh -o BatchMode=yes -o ConnectTimeout=8 "$HOST" true \
   || echo "no fresh connection; letting rollback fire" >&2
 ```
 
-Prove a new connection rather than trusting the session you already hold. Defer any session-dropping restart to the last step:
+Prove a new connection rather than trusting the session you already hold. Order the steps so the one you cannot walk back runs last, whether it drops your session or breaks the next boot. An abort partway through then lands on a box that still boots and still answers:
 
 ```bash
 edit_sshd_config             # do not restart yet
 # ... every other step ...
 systemctl restart sshd       # LAST: a dropped session cannot skip earlier steps
+```
+
+Generate into a temp file and check it there; overwrite the live one only once it passes. For a bootloader, preserve the mode you found rather than imposing one:
+
+```bash
+grub-mkconfig -o "$tmp"
+grep -q "$expected_param" "$tmp"        || { echo "param missing" >&2; exit 1; }
+[ "$(count_entries "$tmp")" -ge "$old" ] || { echo "lost entries" >&2; exit 1; }
+cp -a -- "$cfg" "$cfg.bak-$STAMP"
+install -m"$(stat -c %a "$cfg")" -- "$tmp" "$cfg"
 ```
 
 ## Long-Running and Best-Effort
@@ -127,5 +137,5 @@ REMOTE
 
 - never echo a generated secret; write it to a file with tight perms or a secret store.
 - `curl | sh` floor is `--proto '=https' --tlsv1.2`; checksum-pin the payload when you can.
-- assert the post-condition (rule present, port open) instead of documenting ordering in a comment nothing enforces.
+- assert the post-condition (rule present, port open) instead of documenting ordering in a comment nothing enforces. check that the assertion itself runs: under `set -e` a readback that errors for its own reasons (write-only sysfs attr, absent tool) aborts the script exactly as if the mutation had failed.
 - centralize host/user/path config in one file; literals sprinkled across scripts turn a rename into a multi-file sweep.
