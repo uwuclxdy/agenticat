@@ -3,7 +3,7 @@ name: emulator-testing
 description: Drives Android emulators and iOS simulators from the CLI for automated app testing (adb input/screencap/logcat/uiautomator, `emulator` headless flags, `xcrun simctl`, Flutter `integration_test`, Alchemist goldens). Use when booting or scripting an AVD/simulator headlessly, verifying screenshots or UI state from an agent, or debugging emulator boot/GPU/snapshot failures.
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Emulator Testing
@@ -136,6 +136,12 @@ await binding.takeScreenshot('screen-1');
 Skipping `convertFlutterSurfaceToImage()` on Android produces blank/black captures. Not
 needed on iOS or web.
 
+Persistence caveat (verified empirically): under plain `flutter test integration_test/`,
+`takeScreenshot()` only buffers the PNG bytes in the binding — nothing writes them to disk.
+Persisting needs the `flutter drive` path with a driver that consumes them
+(`integration_test`'s `flutter_driver` extension + a `responseDataCallback` writing files).
+Without that wiring, capture independently via `adb exec-out screencap -p` instead.
+
 ### Dart & Flutter MCP Server (Dev-Loop Tooling, Not a Test Runner)
 
 For live inspection while iterating against a running `flutter run` session: hot reload,
@@ -207,4 +213,6 @@ accept it once by hand before handing the host to an agent.
 | 9 | Screenshot verification | a vision-model "looks right" read is not verification | parse the file for real (`file`/PNG header), diff two captures to confirm the UI changed |
 | 10 | iOS + ssh | simulator driver fails to start with nobody logged into the macOS GUI console | enable auto-login on the macOS host |
 | 11 | iOS code signing | device builds need a Team + provisioning profile; simulator builds need none | target the simulator for agent-driven testing |
+| 12 | GPU cold start | the first app to render after a fresh headless swiftshader boot can sit 60-90s on the splash at 0 rendered frames, no error, process idle | check `dumpsys gfxinfo <pkg> \| grep 'Total frames'`; force-stop and relaunch once before calling it a hang |
+| 13 | First android build | AGP auto-downloads NDK/build-tools/CMake on the first `flutter build`/`test` (~3+ min); a short command timeout kills the download mid-flight and leaves a corrupt `$ANDROID_HOME/ndk/<ver>` stub | run first builds backgrounded or with a generous timeout; on `source.properties` errors delete the stub dir and rebuild |
 | 12 | Xcode first run | `xcodebuild -license accept` is interactive, blocks headless automation | accept it once by hand before automating |
