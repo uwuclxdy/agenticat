@@ -3,7 +3,7 @@ name: clean-flutter
 description: "Clean, idiomatic Flutter and Dart conventions: feature-first architecture, Riverpod state and DI, widgets and const correctness, freezed models, go_router navigation, error handling, testing, and pub package hygiene. Use when writing, reviewing, or refactoring any Flutter or Dart code, and whenever widgets, BuildContext, build_runner, 'flutter best practices', or 'idiomatic dart' come up."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Clean Flutter

@@ -18,6 +18,11 @@ class Counter extends _$Counter {
 }
 ```
 
+Provider naming gotcha: riverpod_generator strips a trailing `Notifier` from the class name
+when deriving the provider (`class CounterNotifier` generates `counterProvider`, not
+`counterNotifierProvider`). A `*Notifier`-suffixed ViewModel class is the common way to hit
+`undefined_identifier` on the name you expected.
+
 Async state returns a `Future`; the generated provider exposes an `AsyncValue<T>` with loading, data, and error branches. Render all three in the View, never assume data is present.
 
 ```dart
