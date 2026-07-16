@@ -5,8 +5,8 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-13-green)](#skills)
-[![agents](https://shields.uwuclxdy.dev/badge/agents-13-green)](#agents)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-15-green)](#skills)
+[![agents](https://shields.uwuclxdy.dev/badge/agents-16-green)](#agents)
 
 </div>
 
@@ -158,6 +158,8 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `bash-defensive-patterns` | `wshobson` | `shell-pro` | defensive idioms for scripts that mutate live systems |
 | `bats-testing-patterns` | `wshobson` | `shell-pro` | testing shell scripts with bats-core, error paths included |
 | `shellcheck-configuration` | `wshobson` | `shell-pro` | minimal `.shellcheckrc` where every disable carries its reason; CI gating included |
+| `clean-flutter` | original | `flutter-pro`, `flutter-code-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
+| `emulator-testing` | original | `mobile-emulator-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
 
 ### origin
 
@@ -194,6 +196,9 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
 | `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
 | `c-cpp-pro` + | inherit | none | C and C++ with explicit ownership, sanitizers wired to the repo build |
+| `flutter-pro` | inherit | `clean-flutter` | one Flutter/Dart task against the repo's analyze/format/test gate |
+| `flutter-code-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
+| `mobile-emulator-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
 - `+` began as [wshobson/agents](https://github.com/wshobson/agents) personas (MIT), rewritten and debloated.
