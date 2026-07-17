@@ -149,7 +149,7 @@ widget-tree/selected-widget introspection, runtime errors, static-analysis fixes
 search. It complements `integration_test`, it doesn't replace it: there's no repeatable CI
 suite here, just a tight feedback loop for an agent driving development.
 
-Requires Dart SDK 3.9 / Flutter 3.35 (beta channel) or later.
+Requires Dart SDK 3.9 / Flutter 3.35 or later.
 
 ```bash
 dart mcp-server                                          # runs stdio, start it directly to check it launches
@@ -215,4 +215,4 @@ accept it once by hand before handing the host to an agent.
 | 11 | iOS code signing | device builds need a Team + provisioning profile; simulator builds need none | target the simulator for agent-driven testing |
 | 12 | GPU cold start | the first app to render after a fresh headless swiftshader boot can sit 60-90s on the splash at 0 rendered frames, no error, process idle | check `dumpsys gfxinfo <pkg> \| grep 'Total frames'`; force-stop and relaunch once before calling it a hang |
 | 13 | First android build | AGP auto-downloads NDK/build-tools/CMake on the first `flutter build`/`test` (~3+ min); a short command timeout kills the download mid-flight and leaves a corrupt `$ANDROID_HOME/ndk/<ver>` stub | run first builds backgrounded or with a generous timeout; on `source.properties` errors delete the stub dir and rebuild |
-| 12 | Xcode first run | `xcodebuild -license accept` is interactive, blocks headless automation | accept it once by hand before automating |
+| 14 | Xcode first run | `xcodebuild -license accept` is interactive, blocks headless automation | accept it once by hand before automating |

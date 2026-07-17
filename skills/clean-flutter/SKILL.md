@@ -49,7 +49,7 @@ If the `clean-code` skill is installed, its language-agnostic principles (functi
 
 ## Errors
 
-- Repositories catch throwing calls (network, disk, platform channels) internally and return a sealed `Result<T>` (`Ok`/`Error`); callers `switch` on it exhaustively. The failure path becomes part of the signature instead of an invisible throw. Detail in `references/architecture.md`.
+- Repositories catch throwing calls (network, disk, platform channels) internally and return a sealed `Result<T>` (`Ok`/`Failure`); callers `switch` on it exhaustively. The failure path becomes part of the signature instead of an invisible throw. Detail in `references/architecture.md`.
 - Let genuine bugs (programmer error, broken preconditions) throw and reach crash reporting. Don't wrap them in a `try/catch` that swallows them into a silent no-op.
 
 ## Naming & Style

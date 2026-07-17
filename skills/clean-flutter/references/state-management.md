@@ -35,7 +35,7 @@ class UserList extends _$UserList {
 
 - **Always assign `state = ...` to publish a change.** Mutating the held object in place (`state.add(x)`) doesn't notify watchers, so a `watch` never fires and a `read` returns a stale value. Reassign a new value.
 - **Never instantiate a `Notifier` by hand**, in app code or tests. Interact through its provider (`ref.read(counterProvider.notifier).increment()`).
-- Riverpod 3 unified the type hierarchy: the 2.x `AutoDisposeNotifier`/`AutoDoseRef` duplicates are gone, `Notifier` and `Ref` cover both. With codegen a provider is autoDispose by default; `@Riverpod(keepAlive: true)` keeps it alive.
+- Riverpod 3 unified the type hierarchy: the 2.x `AutoDisposeNotifier`/`AutoDisposeRef` duplicates are gone, `Notifier` and `Ref` cover both. With codegen a provider is autoDispose by default; `@Riverpod(keepAlive: true)` keeps it alive.
 
 ## Watch vs Read vs Listen
 
