@@ -154,15 +154,15 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `maud` | original | `rust-pro` | conventions and reference for the maud Rust `html!` macro |
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
 | `clean-rust` | original | `rust-pro` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, observability, testing, perf |
-| `threat-modeling` | original | `threat-modeling-expert` | STRIDE and attack trees, each requirement mapped to a mitigation |
+| `threat-modeling` | original | `threat-modeler` | STRIDE and attack trees, each requirement mapped to a mitigation |
 | `bash-defensive-patterns` | `wshobson` | `shell-pro` | defensive idioms for scripts that mutate live systems |
 | `bats-testing-patterns` | `wshobson` | `shell-pro` | testing shell scripts with bats-core, error paths included |
 | `shellcheck-configuration` | `wshobson` | `shell-pro` | minimal `.shellcheckrc` where every disable carries its reason; CI gating included |
 | `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
-| `emulator-testing` | original | `mobile-emulator-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
+| `emulator-testing` | original | `mobile-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
 | `skill-routing-audit` | original | standalone | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
 | `docs-sync` | original | `docs-reconciler` agent | reconciles README, docs, and CLAUDE.md with what the code actually does |
-| `ratatui-pro` | original | `ratatui-pro` agent | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
+| `ratatui-patterns` | original | `ratatui-pro` agent | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
 
 ### origin
@@ -188,7 +188,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `doc-coverage-auditor` | inherit | none | before deleting a doc, checks nothing it covers gets dropped |
 | `docs-extractor` | inherit | none | digests a file or doc set into a brief, keeps raw bytes out of your context |
 | `spec-propagator` | opus | none | folds a decided spec into a design doc in that doc's own voice |
-| `threat-modeling-expert` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
+| `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
 | `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright, reports pass/fail with screenshots |
@@ -198,14 +198,14 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `c-cpp-pro` + | inherit | none | C and C++ with explicit ownership, sanitizers wired to the repo build |
 | `flutter-pro` | inherit | `clean-flutter` | one Flutter/Dart task against the repo's analyze/format/test gate |
 | `flutter-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
-| `mobile-emulator-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
+| `mobile-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
 | `rust-reviewer` | opus | `clean-rust` | read-only Rust diff/PR review: correctness, safety, async, invariants |
 | `shell-reviewer` | sonnet | `bash-defensive-patterns`, `shellcheck-configuration` | read-only shell/bash review: quoting, error handling, injection, portability |
 | `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
 | `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, and CLAUDE.md with the code, edits docs only |
-| `ratatui-pro` | sonnet | `ratatui-pro` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
+| `ratatui-pro` | sonnet | `ratatui-patterns` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
 - `+` began as [wshobson/agents](https://github.com/wshobson/agents) personas (MIT), rewritten and debloated.
