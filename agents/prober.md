@@ -1,6 +1,6 @@
 ---
-name: probe-agent
-description: "Runs commands, returns a pass/fail probe (exit code, warn/error, tree-dirty), never mutates; logs stay out of your context."
+name: prober
+description: "Runs a build, test, lint, or any command and returns a pass/fail probe (exit code, warn/error counts, tree-dirty) instead of the full log. Use when you need a command's verdict without its output filling your context. Never mutates. Spawn one per check."
 # lint: sandboxed. Bash+Read is the whole job, no MCP access intended.
 tools: Bash, Read
 model: haiku

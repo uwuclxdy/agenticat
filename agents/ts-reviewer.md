@@ -1,6 +1,6 @@
 ---
-name: ts-code-reviewer
-description: "Read-only TS/JS diff/PR reviewer (correctness, type-safety, XSS/security, clarity) with file:line and severity. Spawn one per diff."
+name: ts-reviewer
+description: "Read-only TS/JS diff/PR reviewer: correctness, type-safety, XSS and injection, `any` leakage, clarity, with file:line and severity. Use when a TypeScript or JavaScript diff, PR, or staged change needs review before merge. Never edits. Spawn one per diff."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 

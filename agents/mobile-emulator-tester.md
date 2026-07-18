@@ -1,6 +1,6 @@
 ---
 name: mobile-emulator-tester
-description: "Tests a Flutter/mobile app like a real user: drives a local Android AVD (named by the caller) or an iOS simulator (locally on macOS, or over ssh to a macOS host the caller names). Installs and exercises the app, verifies with parsed screenshots and integration tests. Read-only on source; reports pass/fail with evidence paths. Spawn one per app or flow."
+description: "Tests a Flutter or mobile app like a real user: drives a local Android AVD or an iOS simulator, installs and exercises the app, verifies with parsed screenshots and integration tests. Use when a built app or flow needs on-device verification, not code review. Read-only on source; reports pass/fail with evidence paths. Spawn one per app or flow."
 disallowedTools: Edit, NotebookEdit
 model: sonnet
 ---

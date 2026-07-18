@@ -1,9 +1,9 @@
 ---
 name: ratatui-pro
-description: "Modern-ratatui knowledge pack for writing, refactoring, or reviewing Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops; writing TestBackend render tests; or resolving ratatui version upgrades and API questions. Not for general Rust idioms outside the TUI layer; see clean-rust."
+description: "Modern-ratatui knowledge pack for writing, refactoring, or reviewing Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops; writing TestBackend render tests; or resolving ratatui version upgrades and API questions."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # ratatui-pro

@@ -1,6 +1,6 @@
 ---
-name: rust-code-reviewer
-description: "Read-only Rust diff/PR reviewer reporting correctness, safety, async, and invariant issues with file:line and severity; never edits, spawn one per diff. Not for implementing (`rust-pro`)."
+name: rust-reviewer
+description: "Read-only Rust diff/PR reviewer: correctness, safety, async, and invariant issues with file:line and severity. Use when a Rust diff, PR, or staged change needs review before merge. Never edits. Spawn one per diff."
 disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---

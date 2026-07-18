@@ -1,6 +1,6 @@
 ---
 name: frontend-builder
-description: "Builds self-contained single-file frontends/web assets (canvas/WebAudio demos, SVG/favicon glyphs, vendored client-side apps). Spawn one per artifact; frontend files only. In a Workflow its writes flush to the working tree only when the run completes, so never have a same-run sibling review its output; re-review after."
+description: "Builds self-contained single-file frontends and web assets: canvas/WebAudio demos, SVG/favicon glyphs, vendored client-side apps. Use when asked for a standalone HTML/JS demo, an inline-SVG icon or favicon, or a no-build client-side page. Spawn one per artifact; writes frontend files only."
 model: sonnet
 ---
 

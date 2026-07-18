@@ -1,6 +1,6 @@
 ---
-name: docs-sync
-description: "Reconciles README, docs/, and CLAUDE.md with the actual state of the codebase. Spawn one per repo; edits docs only."
+name: docs-reconciler
+description: "Reconciles README, docs/, and CLAUDE.md with the actual state of the codebase, fixing stale, missing, or overpromising claims. Use after a change alters documented behavior, or to sweep a repo's docs for drift. Edits docs only. Spawn one per repo."
 model: sonnet
 ---
 

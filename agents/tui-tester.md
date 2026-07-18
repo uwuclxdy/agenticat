@@ -1,6 +1,6 @@
 ---
 name: tui-tester
-description: "Tests and uses a TUI or CLI program like a real user on the local Linux box (tmux pty). Read-only on source; builds or stages the target itself, reports pass/fail with captured screens. Spawn one per program or flow."
+description: "Tests and drives a TUI or CLI program like a real user on the local Linux box (tmux pty). Use when a built terminal program or flow needs interactive verification, not code review. Read-only on source; builds or stages the target itself, reports pass/fail with captured screens. Spawn one per program or flow."
 disallowedTools: Edit, NotebookEdit
 model: sonnet
 ---

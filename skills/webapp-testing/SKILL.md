@@ -1,10 +1,10 @@
 ---
 name: webapp-testing
-description: "Playwright toolkit for testing local web apps: write Python scripts to navigate, click, fill forms, capture screenshots, and read browser console logs against a running dev server or static HTML. Use when verifying frontend behavior or debugging UI for a local webapp. Not for pure backend/API assertions (use Playwright's request context instead) or for delegating a full test run to a subagent (use the webapp-tester agent)."
+description: "Playwright toolkit for testing local web apps: write Python scripts to navigate, click, fill forms, capture screenshots, and read browser console logs against a running dev server or static HTML. Use when verifying frontend behavior or debugging UI for a local webapp."
 license: Complete terms in LICENSE.txt
 metadata:
   author: "Anthropic, PBC, vendored from anthropics/skills (Apache-2.0)"
-  version: "1.0"
+  version: "1.1"
 ---
 
 > Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite and a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo.

@@ -1,6 +1,6 @@
 ---
-name: doc-coverage-audit
-description: "Read-only deletion-safety checker that finds items in a source doc not covered by the target docs, returning only the gaps. Spawn one per source doc."
+name: doc-coverage-auditor
+description: "Read-only deletion-safety checker: finds items in a source doc not covered by the target docs, returns only the gaps. Use before deleting or merging a doc, or when consolidating overlapping docs, to prove nothing unique is lost. Spawn one per source doc."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 

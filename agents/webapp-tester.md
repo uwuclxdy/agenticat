@@ -1,6 +1,6 @@
 ---
 name: webapp-tester
-description: "Local web app tester with Playwright for smoke tests and behavior verification, read-only on source. Reports pass/fail with screenshots and console logs. Spawn one per app/flow."
+description: "Local web app tester driving Playwright for smoke tests and behavior verification. Use when a running local web app or flow needs browser-level verification, not code review. Read-only on source; reports pass/fail with screenshots and console logs. Spawn one per app or flow."
 disallowedTools: Edit, NotebookEdit
 ---
 
