@@ -5,8 +5,8 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-15-green)](#skills)
-[![agents](https://shields.uwuclxdy.dev/badge/agents-16-green)](#agents)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-19-green)](#skills)
+[![agents](https://shields.uwuclxdy.dev/badge/agents-23-green)](#agents)
 
 </div>
 
@@ -160,22 +160,22 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `shellcheck-configuration` | `wshobson` | `shell-pro` | minimal `.shellcheckrc` where every disable carries its reason; CI gating included |
 | `clean-flutter` | original | `flutter-pro`, `flutter-code-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-emulator-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
+| `skill-routing-audit` | original | standalone | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
+| `docs-sync` | original | `docs-sync` agent | reconciles README, docs, and CLAUDE.md with what the code actually does |
+| `ratatui-pro` | original | `ratatui-pro` agent | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
+| `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
 
 ### origin
 
 - `wshobson`: [wshobson/agents](https://github.com/wshobson/agents) (MIT)
 - `s4.codes`: **content from [@s4.codes](https://www.tiktok.com/@s4.codes) (TikTok) as a Claude Skill**; Gemini transcribes the videos, Opus condenses them into the skill.
 - `original`: self-authored
+- `anthropics`: [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), vendored with its LICENSE and a modification note
 - `clean-rust` distills the author's own Rust conventions; a dozen standout rules were re-authored after studying [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT)
 
 ## External skills
 
-Third-party skills worth checking out. use `--skill` to cherry pick them, so your setup doesn't get bloated.
-
-| skill | source | license | used by | install |
-|---|---|---|---|---|
-| `systematic-debugging`, `test-driven-development`, `verification-before-completion` | [obra/superpowers](https://github.com/obra/superpowers) | MIT | standalone | `npx skills add obra/superpowers --skill <name>` |
-| `webapp-testing` | [anthropics/skills](https://github.com/anthropics/skills) | Apache-2.0 | `webapp-tester` | `npx skills add anthropics/skills --skill webapp-testing` |
+Not bundled here, worth a look on their own. The [obra/superpowers](https://github.com/obra/superpowers) skills `systematic-debugging`, `test-driven-development`, and `verification-before-completion` (MIT) install straight from source with `npx skills add obra/superpowers --skill <name>`.
 
 ## Agents
 
@@ -191,7 +191,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `threat-modeling-expert` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `probe-agent` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
-| `webapp-tester` | inherit | `webapp-testing` (ext) | drives a local app via Playwright, reports pass/fail with screenshots |
+| `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright, reports pass/fail with screenshots |
 | `shell-pro` + | inherit | `bash-defensive-patterns`, `shellcheck-configuration`, `bats-testing-patterns` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
 | `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
@@ -199,6 +199,13 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `flutter-pro` | inherit | `clean-flutter` | one Flutter/Dart task against the repo's analyze/format/test gate |
 | `flutter-code-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
 | `mobile-emulator-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
+| `rust-code-reviewer` | opus | `clean-rust` | read-only Rust diff/PR review: correctness, safety, async, invariants |
+| `shell-code-reviewer` | sonnet | `bash-defensive-patterns`, `shellcheck-configuration` | read-only shell/bash review: quoting, error handling, injection, portability |
+| `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
+| `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
+| `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
+| `docs-sync` | sonnet | `docs-sync` | reconciles README, docs, and CLAUDE.md with the code, edits docs only |
+| `ratatui-pro` | sonnet | `ratatui-pro` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
 - `+` began as [wshobson/agents](https://github.com/wshobson/agents) personas (MIT), rewritten and debloated.
@@ -211,8 +218,8 @@ Repos evaluated as skill or agent sources. Adopted ones are marked; the rest wer
 <summary>show the list</summary>
 
 - `wshobson/agents`: adopted. source of the shell skills and the `-pro` agents, all rewritten and debloated.
-- `obra/superpowers`: linked external, see the External skills table.
-- `anthropics/skills`: linked external (`webapp-testing`).
+- `obra/superpowers`: linked external, see [External skills](#external-skills).
+- `anthropics/skills`: `webapp-testing` vendored (Apache-2.0).
 - `vercel-labs/skills`: adopted as the `npx skills` installer, not a content source.
 - `VoltAgent/awesome-claude-code-subagents`: 100+ subagent index, generic, nothing worth vendoring.
 - `0xfurai/claude-code-subagents`: `playwright-expert` too thin, wrote own `webapp-tester`.
