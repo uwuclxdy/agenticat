@@ -37,9 +37,13 @@ interface AgentDef {
   name: string;
   description: string;
   tools?: string[];
+  disallowedTools?: string[];
   model?: string;
   body: string;
 }
+
+const splitList = (v?: string) =>
+  v ? v.split(",").map((t) => t.trim()).filter(Boolean) : undefined;
 
 function parseAgent(path: string): AgentDef {
   const raw = readFileSync(path, "utf8");
@@ -54,7 +58,8 @@ function parseAgent(path: string): AgentDef {
   return {
     name: fm.name,
     description: fm.description,
-    tools: fm.tools ? fm.tools.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
+    tools: splitList(fm.tools),
+    disallowedTools: splitList(fm.disallowedTools),
     model: fm.model,
     body: m[2].trim(),
   };
@@ -71,6 +76,14 @@ function toOpencode(a: AgentDef): string {
     for (const t of MUTATING) if (!mapped.includes(t)) lines.push(`  ${t}: false`);
     const unknown = a.tools.filter((t) => !TOOL_MAP[t]);
     if (unknown.length) console.warn(`  warn: ${a.name}: no opencode mapping for ${unknown.join(", ")}, skipped`);
+  } else if (a.disallowedTools) {
+    // denylist form: everything else inherits, so only the denials are emitted.
+    // an unmapped denial (NotebookEdit) is a no-op in opencode, not a warning.
+    const denied = a.disallowedTools.map((t) => TOOL_MAP[t]).filter(Boolean);
+    if (denied.length) {
+      lines.push("tools:");
+      for (const t of denied) lines.push(`  ${t}: false`);
+    }
   }
   return `---\n${lines.join("\n")}\n---\n\n${a.body}\n`;
 }
@@ -78,7 +91,13 @@ function toOpencode(a: AgentDef): string {
 function toCodex(a: AgentDef): string {
   // Bash alone stays read-only: our read-only agents carry it for git diff/checks,
   // and codex's read-only sandbox still allows command execution, just no fs writes.
-  const mutates = a.tools?.some((t) => ["Write", "Edit"].includes(t)) ?? true;
+  // denylist form: read-only only when both write tools are denied; deny-Edit-only
+  // agents (testers writing scratch/screenshots) still need workspace-write.
+  const mutates = a.tools
+    ? a.tools.some((t) => ["Write", "Edit"].includes(t))
+    : a.disallowedTools
+      ? !["Write", "Edit"].every((t) => a.disallowedTools!.includes(t))
+      : true;
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
   // bodies survive verbatim. A body containing ''' cannot be represented — fail loud.
   if (a.body.includes("'''")) throw new Error(`${a.name}: body contains ''' — unrepresentable in TOML literal string`);
