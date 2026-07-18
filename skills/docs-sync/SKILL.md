@@ -1,9 +1,9 @@
 ---
 name: docs-sync
-description: "Reconcile `README`, `docs/*`, `CLAUDE.md` and other prose docs with what the code actually does: fix stale, missing, or overpromising claims and verify every quoted command/flag/path. Use after a change alters documented behavior, or to sweep all docs. Delegates to the `docs-reconciler` agent per repo."
+description: "Reconcile `README`, `docs/*`, `CLAUDE.md` and other prose docs with what the code actually does: fix stale, missing, or overpromising claims and verify every quoted command/flag/path. Use after a change alters documented behavior, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # docs-sync

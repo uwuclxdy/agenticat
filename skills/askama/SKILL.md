@@ -1,9 +1,9 @@
 ---
 name: askama
-description: "Askama Rust templating (0.16): syntax, filters, inheritance, macros, web-framework support via askama_web, rinja migration. Use when writing or debugging Askama templates, or upgrading from older askama or rinja."
+description: "Askama Rust templating (0.16): syntax, filters, inheritance, macros, web-framework support via askama_web, rinja migration. Use when writing or debugging Askama templates, or upgrading from older askama or rinja. Not for `maud` (the other Rust HTML crate)."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Askama (Rust Templating)

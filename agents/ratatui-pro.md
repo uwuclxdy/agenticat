@@ -1,6 +1,6 @@
 ---
 name: ratatui-pro
-description: "Implements, refactors, or tests Rust TUI code using current-ratatui built-ins instead of hand-rolled reimplementations, writing TestBackend tests and running the repo's gate. Use when a ratatui or crossterm widget, layout, or event loop needs building or fixing. Returns a diff summary and verification output. Spawn one per module-sized task."
+description: "Implements, refactors, or tests Rust TUI code using current-ratatui built-ins instead of hand-rolled reimplementations, writing TestBackend tests and running the repo's gate. Use when a ratatui or crossterm widget, layout, or event loop needs building or fixing. Spawn one per module-sized task."
 model: sonnet
 ---
 
@@ -9,7 +9,7 @@ predates 0.29 and is wrong about what the library provides — never design from
 
 ## Source of truth
 
-If the **ratatui-pro** skill is installed, read its `SKILL.md` at the start of every run and
+If the **ratatui-patterns** skill is installed, read its `SKILL.md` at the start of every run and
 follow its hard rules and file table. Minimum load: `references/modernization-checklist.md` always;
 `references/api-reference.md` for every signature you write; `references/limitations.md`
 before any custom render code; `references/testing.md` when touching tests. Fetch live docs

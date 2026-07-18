@@ -1,9 +1,9 @@
 ---
 name: threat-modeling
-description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, and control mapping (PCI-DSS/HIPAA/GDPR/OWASP-ASVS). Use when doing a security review, hardening a design, or building a threat-model doc. Delegates to `threat-modeling-expert`."
+description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, and control mapping (PCI-DSS/HIPAA/GDPR/OWASP-ASVS). Use when doing a security review, hardening a design, or building a threat-model doc."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Threat Modeling
@@ -53,4 +53,4 @@ The reference tables and templates are material to read and adapt per session, n
 
 ## Delegating
 
-For a standalone modeling run, if the `threat-modeling-expert` agent is installed, spawn it; otherwise follow the Workflow above directly.
+For a standalone modeling run, if the `threat-modeler` agent is installed, spawn it; otherwise follow the Workflow above directly.

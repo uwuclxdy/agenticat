@@ -1,12 +1,12 @@
 ---
-name: ratatui-pro
+name: ratatui-patterns
 description: "Modern-ratatui knowledge pack for writing, refactoring, or reviewing Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops; writing TestBackend render tests; or resolving ratatui version upgrades and API questions."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
-# ratatui-pro
+# Ratatui Patterns
 
 Modern-ratatui knowledge pack. Current stable: **ratatui 0.30.2** (2026-06). Model training
 data predates 0.29. The biggest failure mode is reimplementing by hand what the library now
