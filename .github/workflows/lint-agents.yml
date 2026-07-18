@@ -1,0 +1,40 @@
+name: lint-agents
+
+on:
+  push:
+    paths: ["agents/**", "bin/**", ".github/workflows/lint-agents.yml"]
+  pull_request:
+    paths: ["agents/**", "bin/**", ".github/workflows/lint-agents.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: lint agent defs
+        run: bun bin/lint-agents.ts agents --portable
+
+      # A def that parses but converts to nothing usable still fails a user's install.
+      - name: converter smoke test
+        run: |
+          bun bin/install-agents.ts --dest "$RUNNER_TEMP/out"
+          for t in opencode codex; do
+            n=$(find "$RUNNER_TEMP/out/$t" -name '*.md' -o -name '*.toml' | wc -l)
+            a=$(find agents -name '*.md' | wc -l)
+            [ "$n" -eq "$a" ] || { echo "$t: converted $n of $a defs"; exit 1; }
+          done
+
+      - name: no machine-specific references
+        run: |
+          if grep -rEn '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/; then
+            echo "machine-specific reference found above"
+            exit 1
+          fi
