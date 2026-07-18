@@ -1,9 +1,9 @@
 ---
 name: parity-gap
-description: "Compare a program against a reference for matching, catching up to, reaching parity with, or surpassing it."
+description: "Diff a program against a reference or spec and write the gaps as tasks. Use when matching, catching up to, reaching parity with, or surpassing another tool. Writes findings via `todo`."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Parity Gap
@@ -17,7 +17,7 @@ Bring `this program` (default: cwd) up to (and past) a `reference`. Map both sid
   - a remote repository: clone it into a temp dir then treat as local codebase.
   - a local codebase (path on disk): read its tree, entrypoints, commands, modules.
   - a docs/spec/feature list (file or pasted text): treat every command, endpoint, flag, or behavior it describes as a reference feature.
-- If either is ambiguous (which repo? which spec?), ask anything and no guesses before mapping.
+- If either is ambiguous (which repo? which spec?) or the reference can't be reached once identified (private, no network, no read access), ask anything and no guesses before mapping.
 
 ## 2. Map Each Side (Inline, Single-Pass)
 
@@ -61,8 +61,14 @@ Once scope is confirmed, write the gap list: if the `todo` skill is installed, l
 
 - Parity gaps -> punch-list under `# <reference> parity punch-list`, with one-line provenance (what was compared against what, date). Group by feature area; note cascade order.
 - Improvements -> its own checkbox-spec section (e.g. `## Beyond <reference>`), placed after the parity tasks.
+- If `docs/todo.md` already has content, append the new punch-list section to it. Never overwrite the file or delete existing tasks (same no-delete rule the `todo` skill applies to itself).
 
 Task rules (per the `todo` skill if installed): each task independently executable, says what to change not where, sized to one commit. Out-of-scope tasks aren't written.
+
+## Gotchas
+
+- Rerunning against an existing `docs/todo.md`: append the new punch-list section, don't overwrite the file or delete prior tasks (Section 5).
+- Reference identified but unreachable (private, no network, no read access) is a different blocker than the reference not being identified in the first place. Both stop at asking, never guess or substitute a stand-in (Section 1).
 
 ## Boundaries
 

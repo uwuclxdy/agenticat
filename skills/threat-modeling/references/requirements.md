@@ -59,5 +59,8 @@ Map a requirement to controls by its domain. Control ids anchored to **PCI DSS v
 | OWASP ASVS 5.0 | data protection | V14 |
 | OWASP ASVS 5.0 | audit logging | V16 |
 
+No control-id mapping table exists for SOC2, NIST CSF, or ISO 27001. Template 1 lists them as
+recognized frameworks, not as ones with ready-made control ids.
+
 Gap analysis: a control with no mapped requirement is a missing control; one with a single
 mapped requirement is weak coverage.

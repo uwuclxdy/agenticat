@@ -2,6 +2,10 @@
 
 Threads, atomics, lock discipline, drop order. Async-specific rules live in `async.md`.
 
+## Process-Global State Isn't a Locking Problem
+
+Env vars and other process-global mutable state don't get safer behind a `Mutex` or atomic. The race is against every thread reading it, not just the writers. `env::set_var`/`remove_var` are `unsafe` for exactly this reason; call only in single-threaded context (`edition-2024.md`). Test-suite fallout from this pattern lives in `testing.md`'s Process-Global State Races section.
+
 ## Atomics Over `Mutex<primitive>`
 
 A shared counter or flag is an `AtomicUsize`/`AtomicBool`, not a `Mutex<usize>` — no poisoning, no blocking, no guard to hold wrong.

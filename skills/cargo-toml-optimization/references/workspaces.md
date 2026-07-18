@@ -63,6 +63,7 @@ Requires Rust 1.64+.
 - Cannot mark workspace deps as `optional`
 - `features` declared here are additive with member-level features (member can add more, not subtract)
 - Members choose dep kind (normal / build / dev) at the member level
+- A member entry with `{ workspace = true }` cannot override `version`, `default-features`, `git`, `path`, or `registry`; it may only add `optional` and extra `features`. Full explanation: `references/dependencies.md` (Workspace Inheritance section)
 
 ```toml
 # root Cargo.toml

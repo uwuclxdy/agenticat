@@ -1,9 +1,9 @@
 ---
 name: clean-flutter
-description: "Clean, idiomatic Flutter and Dart conventions: feature-first architecture, Riverpod state and DI, widgets and const correctness, freezed models, go_router navigation, error handling, testing, and pub package hygiene. Use when writing, reviewing, or refactoring any Flutter or Dart code, and whenever widgets, BuildContext, build_runner, 'flutter best practices', or 'idiomatic dart' come up."
+description: "Clean, idiomatic Flutter/Dart conventions: feature-first architecture, Riverpod, freezed, go_router, const correctness. Use when writing or reviewing Dart, widgets, `BuildContext`, `build_runner`, or state management. Not for generic clean-code (`clean-code`)."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Clean Flutter
@@ -41,6 +41,7 @@ If the `clean-code` skill is installed, its language-agnostic principles (functi
 - Riverpod with codegen (`@riverpod`) is the default for both state and DI. `ref.watch` in `build` to react to changes; `ref.read` in callbacks and event handlers for a one-shot read. Watching in a callback re-subscribes on every call; reading in `build` misses updates. Detail in `references/state-management.md`.
 - Push state to the smallest widget that needs it. Scope `ref.watch` with `.select(...)` so a one-field change doesn't rebuild the whole screen.
 - `setState` is fine for genuinely local ephemeral state (a toggle, focus, an animation flag). Not for app state or anything shared across widgets.
+- Package-specific deprecation/trend verdicts (GetX, Isar, old Hive, golden_toolkit) live in `references/pitfalls.md`'s Named traps list, even when the package's own topic has a dedicated reference file (e.g. `state-management.md`).
 
 ## Async & Lifecycle
 

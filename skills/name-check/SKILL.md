@@ -1,9 +1,9 @@
 ---
 name: name-check
-description: "Suggest project/crate/plugin names and verify availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains). Use before naming, renaming, or publishing anything."
+description: "Suggest project/crate/plugin names and check availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains; needs `bun`). Use before naming, renaming, or publishing anything."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Name Check
@@ -39,11 +39,13 @@ metadata:
 
 - compact JSON by default; `--table` for a quick scan, `--list` for registry ids.
 - supports npm, PyPI, crates.io, RubyGems, Hackage, Go, Docker (library), Homebrew, AUR, NuGet, GitHub, plus domain availability (RDAP, DNS-confirmed on a 404).
-- does not do web collision. still run that axis via WebSearch (same-space products, companies, trademarks) and fold both into the report table.
+- domain checks run only when `--registry` is unset or explicitly includes `domain` (e.g. `--registry npm,domain`). The flag is not additive by default for domains.
+- does not do web collision. still run that axis via WebSearch (same-space products, companies, trademarks) and fold both into the report table. Not a legal trademark search either (see Rules).
 - registry read-only.
 
 ## Rules
 
 - Never reserve, publish, or rename anything. This flow is report only; renames require user's call.
 - "Free" claims must come from an actual lookup this session, not memory.
-- If every candidate is taken, say so and generate a second batch instead of stretching a bad fit.
+- If every candidate is taken, say so and generate a second batch instead of stretching a bad fit. Taken by an abandoned or dead project still counts as taken. Do not attempt reclaim, transfer, or dispute (each registry has its own policy for that). Report it as taken and let the user decide.
+- Registry and WebSearch checks are not a legal trademark search. Flag trademark-adjacent hits. Tell the user to run a formal search (USPTO, EUIPO, local registry) before any commercial release.

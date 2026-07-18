@@ -428,7 +428,7 @@ Useful for: vendored library paths, tool version pins, reproducible CI env.
 
 | Section | Key purpose |
 |---------|-------------|
-| `[paths]` | array of local package paths used as dependency overrides (like `[patch]` but path-based) |
+| `[paths]` | array of local package paths used as dependency overrides (like `[patch]` but path-based). Crates-io crates only; cannot add deps or change graph structure; cannot target an unpublished local crate. Full restrictions: `references/dependencies.md` (paths Override section) |
 | `[patch]` | override deps for all builds from this config; same format as `Cargo.toml [patch]` |
 | `[install]` | `root`: override `cargo install` output dir |
 | `[doc]` | `browser`: browser to use for `cargo doc --open` |

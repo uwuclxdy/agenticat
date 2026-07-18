@@ -1,9 +1,9 @@
 ---
 name: clean-rust
-description: "Clean, idiomatic Rust conventions: naming, error handling, ownership, iterators, traits, async, unsafe, testing, performance, and edition 2024. Use when writing, reviewing, or refactoring any Rust code, and whenever clippy, cargo, 'rust best practices', or 'idiomatic rust' come up."
+description: "Clean, idiomatic Rust 2024 conventions: ownership, error handling, async, unsafe, traits, iterators, performance. Use when writing or reviewing Rust, running clippy, or touching Cargo. Not for `Cargo.toml` tuning (`cargo-toml-optimization`)."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Clean Rust
@@ -17,10 +17,12 @@ If the `clean-code` skill is installed, its language-agnostic principles (functi
 | Error types, propagation helpers, failure semantics, retries | `references/error-handling.md` |
 | async/await, tokio, `select!`, channels, spawned child processes | `references/async.md` |
 | Threads, atomics, lock ordering, drop order | `references/concurrency.md` |
+| Process-global mutable state (env vars, global overrides) across threads | `references/edition-2024.md` |
 | Public API shape, builders, newtypes, typestate, serde | `references/api-design.md` |
 | Any `unsafe` block, FFI, raw pointers, exported symbols | `references/unsafe.md` |
 | Writing tests or debugging test infrastructure | `references/testing.md` |
 | Hot paths, allocations, string building, hasher choice | `references/performance.md` |
+| Benchmarks, criterion, `#[bench]` | `references/performance.md` |
 | Secret files on disk, keys and tokens at rest | `references/security.md` |
 | Logging, tracing spans, log levels | `references/observability.md` |
 | Edition 2024 migration or 2024-specific behavior changes | `references/edition-2024.md` |

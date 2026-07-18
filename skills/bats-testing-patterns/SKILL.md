@@ -3,12 +3,17 @@ name: bats-testing-patterns
 description: "Bats test patterns for shell scripts and CLI tools (`.bats` files, `run`, `setup`/`teardown`, PATH-stub mocking, CI wiring). Use when adding tests to a bash/shell script, hardening its error paths, or wiring `bats-core` into CI."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Bats Testing Patterns
 
 Bats (`bats-core`) runs `.bats` files as TAP-compliant Bash tests. Each `@test` block runs in its own subshell/process; state never leaks between tests. `export` a variable when a command run via `run` within the same test needs to see it.
+
+## Gotchas
+
+- PATH stubs (see Mocking External Commands) only intercept bare-name lookups. A script calling an absolute path (`/usr/bin/curl`) bypasses the stub entirely and needs a function mock or wrapper instead.
+- The `BASH_SOURCE` guard (see Making Scripts Testable) only stops `main` from firing on source. A top-level statement outside any function still runs when the script is sourced.
 
 ## Test File Anatomy
 
@@ -62,6 +67,8 @@ setup() {
 }
 ```
 
+The `BASH_SOURCE` guard only stops `main` from firing on source. A top-level statement outside any function (a bare command, a `readonly` assignment) still runs when the script is sourced. Keep a testable script's side effects inside functions.
+
 ## Mocking External Commands
 
 Prepend a stub directory to `PATH` so the script under test picks up a fake `curl`, `docker`, or similar instead of the real binary. For a function mock, defining the function in the test file is enough when the code under test is sourced; `export -f` exists to carry the mock into a child bash process.
@@ -81,6 +88,8 @@ setup() {
 ```
 
 `chmod 000` a `$BATS_TEST_TMPDIR` subdir before `run` to simulate an unreadable/unwritable path.
+
+PATH stubs only intercept bare-name lookups. A call to an absolute path (`/usr/bin/curl` instead of `curl`) bypasses `PATH` entirely. Mock those with a function override or wrapper script instead.
 
 ## Shared Helpers
 

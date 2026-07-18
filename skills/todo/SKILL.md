@@ -1,9 +1,9 @@
 ---
 name: todo
-description: "Author and normalize tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into executable tasks."
+description: "Author and normalize tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into pickup-cold-ready tasks. Not for executing them (route to a task runner)."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Todo
@@ -62,5 +62,5 @@ When the user dumps loose notes ("inconsistent cursor..", "remove j/k"):
 
 ## Resolving
 
-- Never delete unresolved tasks without the user saying so.
+- Never delete a task, unresolved or completed, without the user saying so. Leave completed checkboxes checked in place as a record.
 - When asked to "resolve the todo", route execution through your multi-task runner or workflows (one task each); this skill only owns the file.

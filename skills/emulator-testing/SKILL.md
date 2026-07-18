@@ -1,9 +1,9 @@
 ---
 name: emulator-testing
-description: Drives Android emulators and iOS simulators from the CLI for automated app testing (adb input/screencap/logcat/uiautomator, `emulator` headless flags, `xcrun simctl`, Flutter `integration_test`, Alchemist goldens). Use when booting or scripting an AVD/simulator headlessly, verifying screenshots or UI state from an agent, or debugging emulator boot/GPU/snapshot failures.
+description: "Boot and drive Android AVDs and iOS simulators from the CLI (adb, `xcrun simctl`, Flutter `integration_test`, Alchemist goldens). Use when running headless app tests, verifying screenshots, or debugging emulator boot/GPU issues. Not for writing Flutter code (`clean-flutter`)."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Emulator Testing
@@ -15,6 +15,10 @@ file parser (not a vibe check), shut it down clean.
 **Out of scope**: installing the Android SDK, creating AVDs, or setting up Xcode/simulators.
 Assume `$ANDROID_HOME`/`PATH` and an existing AVD, or Xcode + simulator runtimes, are already
 in place. This skill is about driving them.
+
+§2's `adb` primitives work unmodified against a real physical device over USB (same commands,
+target it with `adb -s <device_serial>`). §1's boot/lifecycle flags and §4's `simctl` lane are
+emulator/simulator-only and don't apply to physical hardware.
 
 ## Decision Tree
 
@@ -50,7 +54,7 @@ emulator -avd <avd_name> \
 | `-no-snapshot-save` | quick-boot from a snapshot if one exists, skip saving state on exit |
 | `-no-snapshot-load` | force a full cold boot, ignoring any saved snapshot |
 | `-no-snapshot` | disable Quick Boot entirely: neither load nor save |
-| `-wipe-data` | factory-reset the userdata partition before boot |
+| `-wipe-data` | factory-reset the userdata partition before boot (last resort, destroys all AVD state; not for routine use on every run) |
 
 Match the system image ABI to the host arch (`x86_64` image on an `x86_64` host); an ARM image
 on x86 needs per-instruction translation and is dramatically slower.
@@ -94,6 +98,9 @@ Works against any installed app, Flutter or not.
 | View hierarchy | `adb shell uiautomator dump /sdcard/window_dump.xml && adb pull /sdcard/window_dump.xml` |
 | Filtered logs | `adb logcat --pid=$(adb shell pidof -s com.example.app)` or `adb logcat -s <tag>` |
 | Install / uninstall | `adb install -r app.apk` / `adb uninstall com.example.app` |
+
+No simulator equivalent: iOS's `simctl` (§4) has no touch/text input-injection primitive.
+Use `integration_test`/XCUITest-level tooling for iOS UI instead (see §4).
 
 ### Verify Screenshots with a Real Parser, Not Prose
 
@@ -176,6 +183,10 @@ xcrun simctl terminate booted com.example.app
 xcrun simctl shutdown MyTestPhone
 ```
 
+`simctl` has no touch/text input-injection primitive (no `adb input tap`/`swipe`/`text`
+equivalent, see §2). Use `integration_test`/XCUITest-level tooling (or `idb`) for iOS UI input,
+not raw `simctl` calls.
+
 Flutter on the same host: `flutter build ios --simulator --debug` needs no code signing;
 `flutter test integration_test/ -d <simulator_udid>` runs directly against a booted sim.
 Physical-device builds need a Team ID + provisioning profile. Always target the simulator
@@ -216,3 +227,5 @@ accept it once by hand before handing the host to an agent.
 | 12 | GPU cold start | the first app to render after a fresh headless swiftshader boot can sit 60-90s on the splash at 0 rendered frames, no error, process idle | check `dumpsys gfxinfo <pkg> \| grep 'Total frames'`; force-stop and relaunch once before calling it a hang |
 | 13 | First android build | AGP auto-downloads NDK/build-tools/CMake on the first `flutter build`/`test` (~3+ min); a short command timeout kills the download mid-flight and leaves a corrupt `$ANDROID_HOME/ndk/<ver>` stub | run first builds backgrounded or with a generous timeout; on `source.properties` errors delete the stub dir and rebuild |
 | 14 | Xcode first run | `xcodebuild -license accept` is interactive, blocks headless automation | accept it once by hand before automating |
+| 15 | Physical device | §2's `adb` primitives assume an emulator serial (`emulator-5554`) | works unmodified on a real USB device too, target it with `adb -s <device_serial>`; §1/§4 boot-lifecycle content stays emulator/simulator-only |
+| 16 | iOS input injection | `simctl` (§4) has no touch/text input-injection primitive, unlike `adb input tap`/`swipe`/`text` (§2) | use `integration_test`/XCUITest-level tooling (or `idb`) for iOS UI input |

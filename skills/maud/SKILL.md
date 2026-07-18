@@ -1,9 +1,9 @@
 ---
 name: maud
-description: "Maud Rust HTML macro crate (html!, 0.27): splices, control flow, escaping, framework feature flags. Use when writing or debugging Maud templates or wiring up web-framework integration."
+description: "Maud Rust HTML macro crate (html!, 0.27): splices, control flow, escaping, framework feature flags. Use when writing or debugging Maud templates or wiring Maud into a web framework. Not for `askama` (the other Rust HTML crate)."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Maud (Rust HTML Macro)
@@ -125,6 +125,8 @@ html! {
 ```
 
 Elements and attributes with hyphens are supported (custom elements, `data-*`, ARIA).
+
+"Type-checked at compile time" means Rust splice-expression types only. Maud does not validate element or attribute names against the HTML5 spec. It does not check content-model nesting either (a `<div>` inside a `<p>` compiles fine). Any valid Rust ident compiles as a tag, typos included.
 
 ### Text
 
@@ -418,6 +420,8 @@ Override at least one. Overriding neither causes infinite recursion (each defaul
 
 A `render_to` override is responsible for its own escaping. Raw writes into `buffer` are not escaped for you. Need that inside one? Reach for `maud::Escaper`, it escapes as it writes.
 
+`render`/`render_to` are sync-only. There is no async `Render` trait or streaming variant. Resolve async data (a DB or HTTP call) to a value before entering `html!` and splice the resolved value.
+
 ### Components Are Just Functions
 
 A partial or component is a plain function returning `Markup`. Compose by splicing the call.
@@ -458,7 +462,9 @@ Each is flagged inline at its section; §11 consolidates. Index:
 - Splices escape by default; `PreEscaped` is an XSS hole on untrusted input; only `&` `<` `>` `"` escaped (single quote not) — §6, §8
 - Rust 2021 `#` spacing (`input #pinkie;`) — §5
 - `Render` with neither method overridden recurses forever; a `render_to` override does its own escaping (`maud::Escaper`) — §9
+- `render`/`render_to` are sync-only; no async `Render` trait, no streaming variant; resolve async values before `html!` (§9)
 - `Markup` has no `Display` impl (`.into_string()` / `maud::display(x)`); no template files, no `html_to!` — §2
+- "Type-checked" covers Rust splice types only; no HTML5 tag/attribute validation, no content-model nesting checks (§4)
 
 ---
 
@@ -488,7 +494,7 @@ Let:           @let x = expr;                      @let y: Option<&str> = None;
 Raw HTML:      (PreEscaped(safe_html))            disables escaping
 Display value: (display(x))
 Component:     fn c(...) -> Markup { html! { } }   splice with (c(...))
-Render trait:  fn render(&self) -> Markup          fn render_to(&self, buf: &mut String)  (both have default impls)
+Render trait:  fn render(&self) -> Markup          fn render_to(&self, buf: &mut String)  (both have default impls, both sync-only)
 Escapes:       & < > "   (single quote NOT escaped)
 ```
 

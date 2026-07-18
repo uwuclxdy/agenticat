@@ -5,6 +5,7 @@ Test placement, lint interplay, and the infra gotchas that pass locally then fai
 ## Placement
 
 - Public-API tests live in `tests/` (each `tests/*.rs` file compiles as its own crate against the pub surface). Private internals get inline `#[cfg(test)]` modules next to the code they test.
+- Benchmarks (criterion, `#[bench]`) aren't tests: they live in `benches/`, not `tests/`. See `performance.md`'s Benchmarks section.
 - Non-trivial logic ships with tests that fail if the logic breaks. Assert exact expected values and the edge/error paths — then watch the test fail once (break the code or the assertion) before trusting green. A test that can't fail is a bug in the test.
 - Reproduce a reported bug with a failing test *before* fixing it.
 

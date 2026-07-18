@@ -1,9 +1,9 @@
 ---
 name: askama
-description: "Askama Rust templating (0.16): syntax, filters, inheritance, macros, web-framework integration via askama_web, rinja migration. Use when writing or debugging Askama templates or upgrading from older askama/rinja."
+description: "Askama Rust templating (0.16): syntax, filters, inheritance, macros, web-framework support via askama_web, rinja migration. Use when writing or debugging Askama templates or upgrading from older askama/rinja. Not for `maud` (the other Rust HTML crate)."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Askama (Rust Templating)
@@ -140,6 +140,8 @@ Returns `200 OK`, `Content-Type: text/html; charset=utf-8`. Render errors become
 | `askama` | `askama = $crate::__askama` | Override the `askama` crate path. Needed when re-exporting from a macro-defining crate. |
 
 Cannot combine `path` and `source`.
+
+`path` and `source` must be string literals known at compile time, the same constraint `{% include %}` paths have (§10). The template can't be chosen at runtime from a variable or computed string.
 
 ---
 
@@ -307,6 +309,7 @@ Rules:
 - The extending template's top-level content outside blocks is ignored.
 - A base template must define at least one block for inheritance to work.
 - Askama looks for the extended template relative to the extending one first, then relative to the config'd template dirs.
+- Duplicate `{% block %}` names in the same template are a hard compile error since 0.16, previously only a warning (see §15).
 
 ### Single-Block & Per-Block Sub-Templates
 
@@ -529,6 +532,7 @@ mod filters {
 Notes:
 - Built-in filter names take precedence over custom ones; be explicit with `{{ x | filters::myfilter }}` if you shadow one.
 - **Migrating from ≤0.14**: the old bare-fn form (no attribute) no longer compiles. Add `#[askama::filter_fn]`; it's what unlocked the named/optional args the old form couldn't express.
+- **Filter fns and `render()` / `render_into()` are synchronous only.** No async support; an `async fn` doesn't satisfy the `#[askama::filter_fn]` signature.
 
 ---
 
@@ -548,6 +552,8 @@ Notes:
 12. **Rinja is dead** — `rinja` / `rinja_axum` / `rinja_derive` -> `askama` / `askama_web` (see intro).
 13. **Custom filters need `#[askama::filter_fn]`** since 0.15; a bare `fn` in `mod filters` no longer compiles (§14).
 14. **0.16 upgrade breakage**: valueless `{% let x %}` / `{% set x %}` now opens a *block* (use `{% decl x %}`); compound assignment moved to `{% mut %}`; duplicate block names are now a hard compile error (was a warning).
+15. **`path` / `source` take string literals only** (§4), same as `{% include %}` (§10). No picking the template from a variable or computed string at runtime.
+16. **Filter fns and `render()` / `render_into()` are sync only** (§14). No async filter or async render path exists.
 
 ---
 

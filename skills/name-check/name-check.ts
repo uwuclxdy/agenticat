@@ -334,6 +334,7 @@ usage:
 
 options:
   --registry a,b,c   check only these ids/aliases (default: all). see --list.
+                     domain checks run only if unset or "domain" is listed explicitly.
   --tld com,io,...   domain tlds to probe (default: ${DEFAULT_TLDS.join(",")})
   --timeout <sec>    per-request timeout (default ${DEFAULT_TIMEOUT / 1000})
   --table            human matrix (default: compact json)

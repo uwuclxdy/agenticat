@@ -1,9 +1,9 @@
 ---
 name: clean-code
-description: "Language-agnostic principles (naming, functions, error handling, comments, formatting, readability, duplication, maintainability) for writing, reviewing, or refactoring."
+description: "Language-agnostic clean-code baseline: naming, functions, error handling, comments, duplication. Use before writing or reviewing any code; a language-specific skill supersedes it."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Clean Code Principles
@@ -142,6 +142,8 @@ Fewer arguments read cleaner. If you reach three or more, wrap them in an object
 
 A function should either perform an action (Command) or answer a question (Query), but never both. It should never harbor hidden side effects.
 
+Caveat: narrow, well-named mutate-and-report idioms (`pop()`, `tryAdd()`, `tryAcquireLock()`) are fine when the name itself signals the combined action. The rule targets functions whose name promises only a query but secretly acts too, not idioms that advertise the action up front.
+
 **Do:**
 - Ensure functions only do what their names say. Let side effects happen elsewhere.
   - Good: `if (checkPassword(password)) { initializeSession(); }`
@@ -199,6 +201,9 @@ Throw exceptions instead of returning error codes. Keep the algorithm and its er
 ### 4.3 Don't Repeat Yourself (DRY)
 
 Extract repeated logic (API `fetch` boilerplate, `timeout: 5000`, `if (!res.ok) throw error`) into a single authoritative function; duplicating it guarantees silent bugs when you update one copy and forget the others.
+
+**Don't:**
+- Merge two blocks that only look alike today but encode different business rules with different reasons to change (coincidental duplication). Only extract duplication that shares one true reason to change; two validation functions with matching checks today can still diverge tomorrow if they answer different questions.
 
 ### 4.4 The Law of Demeter
 
@@ -331,9 +336,9 @@ Declare variables exactly where they're used to cut mental baggage. Follow your 
 | **Self-documenting code** | Extract complex logic into well-named booleans, helper functions, named constants (`ONE_DAY_IN_MS`) | Comments explaining messy code, single-letter variables (`d`), raw magic numbers (`86400000`) |
 | **Functions** | Small functions, one thing each, single level of abstraction | Massive functions mixing high-level decisions with low-level API calls |
 | **Arguments** | Zero or one arg; group 3+ into an object | Long arg lists, boolean flags, output arguments, hidden side effects |
-| **Control flow** | Commands (do things) or Queries (answer things), never both | Functions that mutate state and return values simultaneously |
+| **Control flow** | Commands (do things) or Queries (answer things), never both; named mutate-and-report idioms (`pop()`, `tryAdd()`) are the exception | Functions that mutate state and return values under a name that promises only a query |
 | **Errors** | Throw exceptions; write the try-catch-finally skeleton first; keep error handling in its own function, separate from the algorithm | Return error codes forcing nested `if/else`; global error enums; bolt try/catch on as an afterthought |
-| **Duplication** | Extract shared logic into a single authoritative place (DRY) | Copy-pasting switch statements or API boilerplate into file after file |
+| **Duplication** | Extract shared logic into a single authoritative place (DRY), only when it shares one true reason to change | Copy-pasting switch statements or API boilerplate into file after file; merging coincidentally-identical blocks that encode different business rules |
 | **Types** | Polymorphism via interfaces/factories for type-dependent behavior | Repeated `switch(type)` blocks duplicated in every function |
 | **Coupling** | Ask immediate dependencies to act directly (Law of Demeter) | Chain calls (`a.getB().getC().getD()`) to reach into internal structure |
 | **Objects vs. data** | Pure data structures (DTOs) hold data; behavior lives in separate objects | Hybrid classes carrying both getters/setters and business logic |

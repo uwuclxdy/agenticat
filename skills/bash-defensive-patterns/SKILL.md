@@ -3,7 +3,7 @@ name: bash-defensive-patterns
 description: "Defensive Bash for scripts that mutate live systems. Use when writing, hardening, or reviewing scripts (deploy/apply, systemd oneshot+timer units, firewall/sshd/sudoers edits, ssh remote-exec)."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Bash Defensive Patterns
@@ -25,6 +25,8 @@ A thin wrapper sets no flags and ends with `exec` so the wrapped tool's exit cod
 ```bash
 exec tool "$@"      # no set flags; propagate the real exit code to systemd
 ```
+
+`set -x`/`bash -x` traces every expanded command to stderr, secrets included. Scope it tightly around the code that needs it and turn it back off with `set +x` before anything secret-handling runs (see Pitfalls).
 
 ## Quoting and Expansion
 
@@ -55,6 +57,8 @@ Every `mktemp` gets an EXIT trap. Manual per-path `rm` leaks the moment someone 
 TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
 ```
 
+EXIT traps do not fire on SIGKILL, SIGSTOP, OOM-kill, or power loss; bash cannot catch those. The same limit applies to any other guard that claims to always clean up. Treat cleanup as best-effort.
+
 ## Idempotency
 
 Check-then-act so a re-run is a no-op.
@@ -64,6 +68,8 @@ have(){ docker inspect "$1" >/dev/null 2>&1; }
 have web || docker run --name web "$image"
 iptables -C FORWARD -i eth0 -j ACCEPT 2>/dev/null || iptables -I FORWARD -i eth0 -j ACCEPT
 ```
+
+Check-then-act is not race-free under concurrent runs (cron overlap, two operators): both can pass the check before either acts. Use `flock` for real mutual exclusion, e.g. `flock -n 9 || exit 0`. The `lock=/run/app.lock` pattern under Long-Running and Best-Effort is a time-window debounce; it doesn't stop this race.
 
 ## Risky Changes to Live Systems
 
@@ -115,7 +121,7 @@ wait_for up 60 || exit 1
 curl -fsS -m 10 "$HEARTBEAT" || true         # fail-open best-effort op
 systemctl is-active --quiet svc || exit 0    # health-gated: stay silent so a watchdog fires
 
-lock=/run/app.lock                           # debounce via mtime
+lock=/run/app.lock                           # time-window debounce via mtime; not a mutex, races under concurrent runs (see flock under Idempotency)
 [ -f "$lock" ] && [ $(( $(date +%s) - $(stat -c %Y "$lock") )) -lt 300 ] && exit 0
 touch "$lock"
 
@@ -133,9 +139,19 @@ ssh "$HOST" bash -s <<'REMOTE'
 REMOTE
 ```
 
+To pass a local value into the single-quoted heredoc, pass it as a positional arg. Switching the delimiter to unquoted just to interpolate reopens injection.
+
+```bash
+ssh "$HOST" bash -s -- "$SERVICE_NAME" <<'REMOTE'
+  set -euo pipefail
+  systemctl restart "$1"
+REMOTE
+```
+
 ## Pitfalls
 
-- never echo a generated secret; write it to a file with tight perms or a secret store.
+- never echo a generated secret; write it to a file with tight perms or a secret store. it still leaks via `set -x`/`bash -x` tracing to stderr/logs and via `ps`/`/proc/*/cmdline` when passed as a bare CLI arg. scope `set -x` around secret-handling code with `set +x` first; prefer env/fd/file over argv.
 - `curl | sh` floor is `--proto '=https' --tlsv1.2`; checksum-pin the payload when you can.
 - assert the post-condition (rule present, port open) instead of documenting ordering in a comment nothing enforces. check that the assertion itself runs: under `set -e` a readback that errors for its own reasons (write-only sysfs attr, absent tool) aborts the script exactly as if the mutation had failed.
 - centralize host/user/path config in one file; literals sprinkled across scripts turn a rename into a multi-file sweep.
+- `EXIT` traps are best-effort: SIGKILL, SIGSTOP, OOM-kill, and power loss skip them; a guard that claims to always clean up still isn't guaranteed to run.

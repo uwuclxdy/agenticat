@@ -3,7 +3,7 @@ name: shellcheck-configuration
 description: "ShellCheck rc-file and directive discipline. Use when adding a `.shellcheckrc`, silencing warnings (`# shellcheck disable=`), or gating CI."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # ShellCheck Configuration
@@ -11,6 +11,8 @@ metadata:
 ## Field Reality
 
 Healthy shell code runs ShellCheck near default: rare directives, each with a reason, not a blanket-exclusion `.shellcheckrc` or a script full of `disable=`.
+
+- `-S` is one knob, not two: it filters what prints and what counts toward exit `1` together. An issue below the floor doesn't trigger a non-zero exit either, so `-S warning` on a style-only script exits `0`.
 
 ## `.shellcheckrc`
 
@@ -82,7 +84,7 @@ Disabling any of these without one of those reasons is hiding a real bug, not do
 
 `-S error|warning|info|style` sets the reporting floor. Default is `style`, the loosest setting: it reports everything down to style nits. Tighten CI with `-S warning` to skip stylistic noise.
 
-Exit codes: `0` clean, `1` issues found, `2` a file could not be processed, `3` bad invocation syntax, `4` bad option value. CI should fail on any non-zero exit, not just `1`.
+Exit codes: `0` clean, `1` issues found, `2` a file could not be processed, `3` bad invocation syntax, `4` bad option value. CI should fail on any non-zero exit, not just `1`. The `-S` floor decides what "issues found" means for that exit code too: an issue filtered out by `-S` neither prints nor triggers `1`. Verify with a throwaway low-severity-only script before trusting `-S warning` alone to gate CI.
 
 Output formats: `-f gcc` for editors that parse compiler output, `-f json1` for tooling, `-f diff` for a unified diff of the auto-fixable issues. Pipe `-f diff` straight into an apply step to auto-fix:
 ```sh

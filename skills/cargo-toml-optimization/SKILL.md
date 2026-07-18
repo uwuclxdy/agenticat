@@ -1,9 +1,9 @@
 ---
 name: cargo-toml-optimization
-description: "Tune a Rust Cargo.toml or .cargo/config.toml (profiles, dependencies, features, workspaces). Use when tuning compile time, binary size, dependency hygiene, or build config."
+description: "Tune a Rust `Cargo.toml` or `.cargo/config.toml`: profiles, features, workspaces, dependency hygiene. Use when cutting compile time or binary size, trimming deps, or configuring a workspace. Not for writing Rust code (`clean-rust`)."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Cargo.toml Optimization
@@ -155,6 +155,8 @@ fallback if upstream changes. Read the one reference matching the task:
 - Missing `cargo::rerun-if-changed` in `build.rs`: re-runs every build, common slow-rebuild cause.
 - Two semver-incompatible versions of one crate bloat everything; `cargo tree -d` finds them, `[patch]` or `[workspace.dependencies]` collapses them.
 - `panic = "abort"` breaks code relying on unwinding (`catch_unwind`, some test setups).
+- `[paths]` override (`.cargo/config.toml`) only works for crates already on crates.io; it cannot add a new dependency, change graph structure, or point at an unpublished internal crate. Use a normal `path = "..."` dependency in `Cargo.toml` or `[patch]` instead.
+- `{ workspace = true }` dependency inheritance: a member can only add `optional`/extra `features`; it cannot override the workspace entry's `version`, `default-features`, `git`, `path`, or `registry`.
 
 ## Official Docs
 

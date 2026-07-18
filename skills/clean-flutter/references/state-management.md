@@ -80,3 +80,4 @@ ProviderScope(
 
 - `ChangeNotifier`, `StateNotifier`, and the `Provider` package moved to legacy import paths. Don't reach for them in new code; migrate incrementally where you inherit them.
 - Bloc/Cubit stays a reasonable pick for large teams that want enforced event-to-state discipline and an audit trail. It's a different model, not a Riverpod add-on: choose one per app.
+- GetX: current verdict lives in `references/pitfalls.md`'s Named traps list (community guidance trends away from it toward Riverpod plus go_router).

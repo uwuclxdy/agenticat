@@ -35,6 +35,10 @@ Never expose a predictable hasher (`FxHashMap`) to user-supplied strings, networ
 
 Chains do nothing until consumed — build the full pipeline and consume once. `collect()` into an intermediate `Vec` mid-chain defeats the point (see `SKILL.md` on premature collection); `.collect::<Result<Vec<_>, _>>()` at the end short-circuits on the first error without allocating for the failures.
 
+## Benchmarks
+
+Criterion (`cargo bench` via the `criterion` crate) over unstable `#[bench]`: stable Rust, statistical output, HTML reports. Benchmarks live in `benches/` as their own crate target, not in `tests/` or an inline `#[cfg(test)]` module. `cargo test`'s default run skips them; a CI job gates on them only by running `cargo bench` or `cargo criterion` explicitly.
+
 ## Debug Builds of Heavy Dependencies
 
 Native/numerical crates (ONNX runtimes, tokenizers, arrow/datafusion engines, tree-sitter) run 10–50× slower unoptimized, crawling `cargo test`. Raise opt-level for just those packages while your own crate keeps fast incremental rebuilds:

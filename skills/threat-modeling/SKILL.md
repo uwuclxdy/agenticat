@@ -1,9 +1,9 @@
 ---
 name: threat-modeling
-description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, and mitigation/control mapping. Use for security reviews and hardening."
+description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, and control mapping (PCI-DSS/HIPAA/GDPR/OWASP-ASVS). Use when doing a security review, hardening a design, or building a threat-model doc. Delegates to `threat-modeling-expert`."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Threat Modeling
@@ -14,7 +14,7 @@ This threat-models a system's components and data flows, not its code. Pick the 
 |---|---|
 | Identify threats per component/interaction (STRIDE questionnaires, DFD trust-boundary analysis, threat-model doc template) | `references/stride.md` |
 | Map attack paths (OR/AND node model, path + coverage analysis, worked account-takeover example) | `references/attack-trees.md` |
-| Turn threats into requirements (STRIDE -> requirement patterns, compliance mapping with PCI-DSS/HIPAA/GDPR/OWASP-ASVS control IDs) | `references/requirements.md` |
+| Turn threats into requirements (STRIDE -> requirement patterns, compliance mapping with PCI-DSS/HIPAA/GDPR/OWASP-ASVS control IDs; SOC2/NIST CSF/ISO 27001 have no control-id table) | `references/requirements.md` |
 | Choose and prioritize controls (standard-controls library, defense-in-depth layering, coverage + gap analysis) | `references/mitigations.md` |
 
 ## Core Model
@@ -46,6 +46,10 @@ Control categories, in layering order: preventive (stop), detective (notice), co
 8. Document residual risks; revisit when components, trust boundaries, or data flows change.
 
 The reference tables and templates are material to read and adapt per session, not a library to install.
+
+## Gotchas
+
+- `references/requirements.md` Template 1 names 7 compliance frameworks, but Template 3's control-id mapping table only covers PCI DSS, HIPAA, GDPR, and OWASP ASVS. SOC2, NIST CSF, and ISO 27001 have no control-id table anywhere in this skill.
 
 ## Delegating
 
