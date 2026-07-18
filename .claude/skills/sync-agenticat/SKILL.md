@@ -16,7 +16,9 @@ quality bar, rewrite to its conventions, route each keeper to its home, and
 |---|---|---|
 | Agent worth shipping | `agents/<name>.md` | rewritten as a thin implementer, never copied verbatim |
 | Knowledge worth a first-party skill | `skills/<name>/SKILL.md` | only as an original distillation authored here; declares `metadata.version` |
-| Good third-party skill as-is | README link | `npx skills add <owner>/<repo> --skill <name>` (drop `--skill` for single-skill repos); **never vendored** |
+| Pristine third-party skill (no local edits) | README link | `npx skills add <owner>/<repo> --skill <name>` (drop `--skill` for single-skill repos) |
+| Locally-edited third-party skill, catalog-worthy | `skills/<name>/` | vendored WITH its LICENSE + README credit + a "Modified:" note; permissive license required |
+| Locally-edited third-party skill, not catalog-worthy | keep global-only | un-manage from npx (delete its `.skill-lock.json` entry) so a reinstall can't overwrite the edits |
 | Curation-process rule or gotcha | `CLAUDE.md` learnings / `docs/publish-backlog.md` | |
 | Everything else | drop | listed in the drop list, not silently skipped |
 
@@ -74,7 +76,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
 
 ## Hard Rules
 
-- **Never vendor a third-party skill** — README link only, regardless of license.
+- **Vendor a third-party skill only once it's locally edited.** Pristine upstream stays a README link. A locally-edited upstream skill can't stay a live npx link (a reinstall drops the edits): vendor it into `skills/` if catalog-worthy (permissive license required: keep its LICENSE, add a README credit and a "Modified:" note), else keep it global-only and un-manage it from npx (delete its `.skill-lock.json` entry).
 - **Source license gates derived work.** No LICENSE, all-rights-reserved, or an unclear or restrictive license means no derived agent and no first-party skill rewrite from that source. Fall back to a README link only (a link is not redistribution). Override this only if the user explicitly accepts the risk.
 - Derived work keeps attribution: README credit + license exception note when the license
   requires it.
