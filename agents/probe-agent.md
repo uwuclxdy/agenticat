@@ -1,6 +1,7 @@
 ---
 name: probe-agent
 description: "Runs commands, returns a pass/fail probe (exit code, warn/error, tree-dirty), never mutates; logs stay out of your context."
+# lint: sandboxed. Bash+Read is the whole job, no MCP access intended.
 tools: Bash, Read
 model: haiku
 ---

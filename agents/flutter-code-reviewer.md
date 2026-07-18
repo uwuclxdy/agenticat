@@ -1,7 +1,7 @@
 ---
 name: flutter-code-reviewer
 description: "Read-only Flutter/Dart diff/PR reviewer (correctness, async/context safety, rebuild perf, state-management misuse, clarity) with file:line and severity. Spawn one per diff."
-tools: Read, Grep, Glob, Bash
+disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---
 

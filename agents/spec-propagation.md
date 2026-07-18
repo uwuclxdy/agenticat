@@ -1,7 +1,7 @@
 ---
 name: spec-propagation
 description: "Surgically folds a decided spec/changelog block into one design doc while preserving its voice. Edits docs only. Spawn one per doc."
-tools: Read, Grep, Glob, Edit, Write
+disallowedTools: Bash, NotebookEdit
 model: opus
 ---
 

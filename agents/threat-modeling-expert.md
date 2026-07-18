@@ -1,7 +1,7 @@
 ---
 name: threat-modeling-expert
 description: "Architecture-level threat modeler (STRIDE, attack trees, requirement extraction): identifies threats, designs mitigations. Read-only on code, writes only the threat-model doc. Spawn one per system or feature."
-tools: Read, Grep, Glob, Bash, Write
+disallowedTools: Edit, NotebookEdit
 model: opus
 ---
 

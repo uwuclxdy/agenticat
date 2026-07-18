@@ -1,7 +1,6 @@
 ---
 name: c-cpp-pro
 description: "Implements or refactors C/C++ code against the repo's build-system conventions, verifies with the build/tests/clang-tidy/format gate when wired. Returns a changed-files summary and verification output. Spawn one per module-sized task."
-tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
 You implement and refactor C and C++ code for one module-sized task, then prove the change against the repo's own build and test gate.
