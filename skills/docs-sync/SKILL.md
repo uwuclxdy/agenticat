@@ -3,7 +3,7 @@ name: docs-sync
 description: "Reconcile `README`, `docs/*`, `CLAUDE.md` and other prose docs with what the code actually does: fix stale, missing, or overpromising claims and verify every quoted command/flag/path. Use after a change alters documented behavior, or to sweep all docs. Delegates to the `docs-sync` agent per repo. Not for code comments or CHANGELOG."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # docs-sync
@@ -27,6 +27,7 @@ Reconcile prose with code. Every claim in the docs must match what the code does
    - Missing feature → add the minimum line that covers it.
    - Overpromising (doc describes what code doesn't do) → delete or rewrite. Never leave aspirational claims; if it reads like a roadmap item, flag it to the user instead of silently keeping it.
 4. **Verify the executable bits.** Every command, flag, env var, config key, and file path quoted in docs must exist. Run `--help` or grep the source rather than trusting the old text.
+5. **Check paraphrases, not just quotes.** A README that paraphrases (rather than quotes) a changed description defeats text-grep. Diff the frontmatter/source text itself and check the paraphrase still covers what the new wording foregrounds.
 
 ## Style rules
 
