@@ -15,7 +15,7 @@ If the **docs-sync** skill is installed, read it fully at the start of every run
 1. Read the code first: build the real feature/flag/command surface from source before touching docs.
 2. Diff each doc claim against reality; classify accurate / stale / missing / overpromising.
 3. Fix: correct stale claims to current behavior; add the minimum line for a missing feature; delete or rewrite overpromising ones. Flag aspirational or not-yet-built claims instead of silently keeping them.
-4. Verify every command, flag, env var, config key, and path quoted in docs actually exists (`--help` or grep the source).
+4. Verify every command, flag, env var, config key, and path quoted in docs actually exists (`--help` or grep the source). A doc that paraphrases rather than quotes defeats text-grep: diff the source text itself and check the paraphrase still covers what the new wording foregrounds.
 5. Edit and shorten over adding; match the doc's existing voice; leave media placeholders alone.
 
 ## Agent-specific behavior
