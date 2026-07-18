@@ -21,7 +21,7 @@ Skill and Agent frontmatter is in Claude Code compat format by default; use `npx
 ## Install
 
 > [!NOTE]
-> Two plugins ship separately: `agents` and `skills`. Install one or both; on opencode/codex, cherry-pick by name with `./install.sh --to opencode probe-agent web-researcher` (list with `./install.sh --list`). 
+> Two plugins ship separately: `agents` and `skills`. Install one or both; on opencode/codex, cherry-pick by name with `./install.sh --to opencode prober web-researcher` (list with `./install.sh --list`). 
 
 <details>
 <summary>Claude Code</summary>
@@ -145,7 +145,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 
 | skill | origin | used by | what it does |
 |---|---|---|---|
-| `clean-code` | `s4.codes` | `python-code-reviewer`, `ts-code-reviewer` | language-agnostic readability and naming conventions |
+| `clean-code` | `s4.codes` | `python-reviewer`, `ts-reviewer` | language-agnostic readability and naming conventions |
 | `handoff` | original | standalone | writes a continuation prompt for a fresh session, resumes from one too |
 | `name-check` | original | standalone | proposes project or crate names, checks each for availability on registries and domains (needs `bun`) |
 | `parity-gap` | original | standalone | diffs your project against a reference or spec, writes the gaps as tasks (calls `todo`) |
@@ -158,10 +158,10 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `bash-defensive-patterns` | `wshobson` | `shell-pro` | defensive idioms for scripts that mutate live systems |
 | `bats-testing-patterns` | `wshobson` | `shell-pro` | testing shell scripts with bats-core, error paths included |
 | `shellcheck-configuration` | `wshobson` | `shell-pro` | minimal `.shellcheckrc` where every disable carries its reason; CI gating included |
-| `clean-flutter` | original | `flutter-pro`, `flutter-code-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
+| `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-emulator-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
 | `skill-routing-audit` | original | standalone | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
-| `docs-sync` | original | `docs-sync` agent | reconciles README, docs, and CLAUDE.md with what the code actually does |
+| `docs-sync` | original | `docs-reconciler` agent | reconciles README, docs, and CLAUDE.md with what the code actually does |
 | `ratatui-pro` | original | `ratatui-pro` agent | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
 
@@ -183,13 +183,13 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 
 | agent | model | loads if installed | what it does |
 |---|---|---|---|
-| `python-code-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
-| `ts-code-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
-| `doc-coverage-audit` | inherit | none | before deleting a doc, checks nothing it covers gets dropped |
+| `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
+| `ts-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
+| `doc-coverage-auditor` | inherit | none | before deleting a doc, checks nothing it covers gets dropped |
 | `docs-extractor` | inherit | none | digests a file or doc set into a brief, keeps raw bytes out of your context |
-| `spec-propagation` | opus | none | folds a decided spec into a design doc in that doc's own voice |
+| `spec-propagator` | opus | none | folds a decided spec into a design doc in that doc's own voice |
 | `threat-modeling-expert` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
-| `probe-agent` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
+| `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
 | `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright, reports pass/fail with screenshots |
 | `shell-pro` + | inherit | `bash-defensive-patterns`, `shellcheck-configuration`, `bats-testing-patterns` | writes or refactors bash or POSIX sh, verifies with shellcheck |
@@ -197,14 +197,14 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
 | `c-cpp-pro` + | inherit | none | C and C++ with explicit ownership, sanitizers wired to the repo build |
 | `flutter-pro` | inherit | `clean-flutter` | one Flutter/Dart task against the repo's analyze/format/test gate |
-| `flutter-code-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
+| `flutter-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
 | `mobile-emulator-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
-| `rust-code-reviewer` | opus | `clean-rust` | read-only Rust diff/PR review: correctness, safety, async, invariants |
-| `shell-code-reviewer` | sonnet | `bash-defensive-patterns`, `shellcheck-configuration` | read-only shell/bash review: quoting, error handling, injection, portability |
+| `rust-reviewer` | opus | `clean-rust` | read-only Rust diff/PR review: correctness, safety, async, invariants |
+| `shell-reviewer` | sonnet | `bash-defensive-patterns`, `shellcheck-configuration` | read-only shell/bash review: quoting, error handling, injection, portability |
 | `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
-| `docs-sync` | sonnet | `docs-sync` | reconciles README, docs, and CLAUDE.md with the code, edits docs only |
+| `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, and CLAUDE.md with the code, edits docs only |
 | `ratatui-pro` | sonnet | `ratatui-pro` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
