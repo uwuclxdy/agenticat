@@ -24,6 +24,8 @@ Routing test: *does it act (method + gates + output contract)* → agent. *Is it
 agent or session loads* → skill or README link, split by authorship. *Is it about how this
 repo curates* → learnings.
 
+License gate: a derived agent or first-party skill needs a permissive source license. A missing, all-rights-reserved, or unclear license routes the pick to a README link only (see Hard Rules).
+
 ## Pipeline
 
 1. **Resolve the source** (`$1`): local path in place; `owner/repo` → github URL; git URL →
@@ -50,7 +52,8 @@ repo curates* → learnings.
    - **Drop rot magnets**: scaffolding commands with pinned dep versions, install matrices,
      benchmarks, marketing.
    - **Scrub.** Prune upstream repo scaffolding (`.github/`, `CHANGELOG`, `CONTRIBUTING`); check
-     `metadata.author` + license headers; nothing personal or machine-specific lands in
+     `metadata.author` + license headers (a missing, all-rights-reserved, or restrictive license
+     forces README-link-only, see Hard Rules); nothing personal or machine-specific lands in
      `agents/` or `skills/`.
    - **Pairing check**, both directions: an agent touching a shipped skill's domain gets a
      conditional "load `<skill>` if installed" line with an inline fallback — never a hard
@@ -72,6 +75,7 @@ repo curates* → learnings.
 ## Hard Rules
 
 - **Never vendor a third-party skill** — README link only, regardless of license.
+- **Source license gates derived work.** No LICENSE, all-rights-reserved, or an unclear or restrictive license means no derived agent and no first-party skill rewrite from that source. Fall back to a README link only (a link is not redistribution). Override this only if the user explicitly accepts the risk.
 - Derived work keeps attribution: README credit + license exception note when the license
   requires it.
 - Report any secret read during the harvest, no matter why.
