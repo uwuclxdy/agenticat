@@ -1,6 +1,6 @@
 ---
 name: web-researcher
-description: "Single-topic web researcher for fan-out: runs multi-query search and full-source fetch, cross-verifies, writes a cited markdown brief to a path. Use when a question needs current web evidence gathered and cited, one topic per spawn. Spawn one per topic."
+description: "Single-topic web researcher for fan-out: runs multi-query search and full-source fetch, cross-verifies, writes a cited markdown brief to a path. Use when a question needs current web evidence gathered and cited. Spawn one per topic."
 disallowedTools: Bash, Edit, NotebookEdit
 ---
 
