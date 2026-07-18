@@ -1,6 +1,6 @@
 ---
 name: flutter-code-reviewer
-description: "Read-only Flutter/Dart diff/PR reviewer (correctness, async/context safety, rebuild perf, state-management misuse, clarity) with file:line and severity. Spawn one per diff."
+description: "Read-only Flutter/Dart diff/PR reviewer (correctness, async/context safety, rebuild perf, state-management misuse, clarity) with file:line and severity. Never edits. Spawn one per diff. Not for implementing (`flutter-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---

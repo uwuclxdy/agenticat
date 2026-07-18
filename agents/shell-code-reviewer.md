@@ -1,6 +1,6 @@
 ---
 name: shell-code-reviewer
-description: "Read-only shell/bash script reviewer reporting quoting, error-handling, injection, and portability issues with file:line and severity; never edits, spawn one per diff or script set."
+description: "Read-only shell/bash script reviewer reporting quoting, error-handling, injection, and portability issues with file:line and severity; never edits, spawn one per diff or script set. Not for implementing (`shell-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: sonnet
 ---
