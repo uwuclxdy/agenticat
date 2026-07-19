@@ -1,9 +1,9 @@
 ---
 name: emulator-testing
-description: "Boot and drive Android AVDs and iOS simulators from the CLI (adb, `xcrun simctl`, Flutter `integration_test`, Alchemist goldens). Use when running headless app tests, verifying screenshots, or debugging emulator boot/GPU issues."
+description: "Boots and drives Android AVDs and iOS simulators from the CLI (adb, `xcrun simctl`, Flutter `integration_test`, Alchemist goldens). Use when running headless app tests, verifying screenshots, or debugging emulator boot/GPU issues."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Emulator Testing

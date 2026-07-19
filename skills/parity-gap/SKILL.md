@@ -1,9 +1,9 @@
 ---
 name: parity-gap
-description: "Diff a program against a reference or spec and write the gaps as tasks. Use when matching, catching up to, reaching parity with, or surpassing another tool. Writes the gap list into `docs/todo.md`."
+description: "Diffs a program against a reference or spec and writes the gaps as tasks. Use when matching, catching up to, reaching parity with, or surpassing another tool. Writes the gap list into `docs/todo.md`."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Parity Gap

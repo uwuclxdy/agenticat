@@ -1,6 +1,6 @@
 ---
 name: sync-agenticat
-description: Mine an external agent/skill collection and curate keepers into this repo's catalog (agents/, skills/, README links). Use when importing, adapting, or evaluating external agents, skills, or commands for agenticat.
+description: Mines an external agent/skill collection and curates keepers into this repo's catalog (agents/, skills/, README links). Use when importing, adapting, or evaluating external agents, skills, or commands for agenticat.
 argument-hint: "<owner/repo | git URL | local path> [focus, e.g. 'agents only']"
 ---
 

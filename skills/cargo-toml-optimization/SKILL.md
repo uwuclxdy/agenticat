@@ -1,9 +1,9 @@
 ---
 name: cargo-toml-optimization
-description: "Tune a Rust `Cargo.toml` or `.cargo/config.toml`: profiles, features, workspaces, dependency hygiene. Use when cutting compile time or binary size, trimming deps, or configuring a workspace."
+description: "Tunes a Rust `Cargo.toml` or `.cargo/config.toml`: profiles, features, workspaces, dependency hygiene. Use when cutting compile time or binary size, trimming deps, or configuring a workspace."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Cargo.toml Optimization

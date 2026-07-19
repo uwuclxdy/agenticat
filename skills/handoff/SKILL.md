@@ -1,9 +1,9 @@
 ---
 name: handoff
-description: "Capture the current session into a continuation prompt for a fresh one, or resume from a pasted handoff. Use when context is running low, when ending a session mid-task, or when told to 'hand off' or write a handoff."
+description: "Captures the current session into a continuation prompt for a fresh one, or resumes from a pasted handoff. Use when context is running low, when ending a session mid-task, or when told to 'hand off' or write a handoff."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Handoff
