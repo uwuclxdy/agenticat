@@ -58,8 +58,8 @@ One table per category; each row is a threat scored by impact and likelihood
 
 ### 3.3 Remaining Categories
 
-Repeat one table per category for Repudiation, Information Disclosure,
-Denial of Service, and Elevation of Privilege.
+Repeat one table per category for Repudiation, Information disclosure,
+Denial of service, and Elevation of privilege.
 
 ## 4. Risk Assessment
 

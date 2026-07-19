@@ -25,9 +25,9 @@ carries neither column; assign both per system at modeling time.
 A threat's controls have a **gap** when any of these hold (count only active controls, i.e.
 status past not-implemented):
 
-- weighted coverage < 50% — add controls or strengthen existing ones
-- fewer than 2 distinct layers — no defense in depth; add controls at other layers
-- no preventive **and** detective control both present — not covered
+- weighted coverage < 50%: add controls or strengthen existing ones
+- fewer than 2 distinct layers: no defense in depth; add controls at other layers
+- no preventive **and** detective control both present: not covered
 
 Weighted coverage: each active control has strength `effectiveness × status weight / 4`, so a
 verified very-high control is 1.0 and an implemented medium one is 0.4. Coverage =
