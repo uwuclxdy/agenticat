@@ -42,7 +42,7 @@ $HOME/.cargo/config.toml          ← $CARGO_HOME, lowest priority
 - Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member
   directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same
   command from the workspace root does NOT (the member dir is never an ancestor of the root).
-  Workspace membership itself adds nothing to config discovery — only cwd's own ancestor chain matters.
+  Workspace membership itself adds nothing to config discovery. Only cwd's own ancestor chain matters.
 
 **`[include]`**: load additional config files inline:
 ```toml
@@ -71,14 +71,14 @@ Included files load first; the including file wins on conflict.
 | `incremental` | bool | from profile | `CARGO_INCREMENTAL` / `CARGO_BUILD_INCREMENTAL` | override profile incremental setting globally |
 | `dep-info-basedir` | path | none | `CARGO_BUILD_DEP_INFO_BASEDIR` | strip path prefix from dep-info files (for build systems that watch deps) |
 
-**rustflags precedence — four mutually exclusive sources, first match wins (they do not merge across
+**rustflags precedence: four mutually exclusive sources, first match wins (they do not merge across
 tiers):**
 1. `CARGO_ENCODED_RUSTFLAGS` env
 2. `RUSTFLAGS` env
 3. Target tier: all matching `[target.<triple>].rustflags` **and** `[target.'cfg(...)'].rustflags`
    entries, joined into one list (triple entry first, then each matching cfg entry in config-file
    order; multiple matching cfg entries also merge with each other)
-4. `[build].rustflags` — fallback only, used when no target-tier entry matches; dropped entirely the
+4. `[build].rustflags`: fallback only, used when no target-tier entry matches; dropped entirely the
    moment one does
 
 **Note on `--target`:** when cross-compiling, target-tier rustflags only reach the target compiler. Build scripts and proc-macros (host artifacts) are not affected.
@@ -191,7 +191,7 @@ Useful to reduce jobs on machines with low RAM (each rustc invocation peaks ~1GB
 
 ## Runtime-Speed Lever: `target-cpu=native`
 
-Not a build-speed lever — if anything it slows compilation (deeper codegen passes to exploit the extra
+Not a build-speed lever. If anything it slows compilation (deeper codegen passes to exploit the extra
 instructions) in exchange for faster generated code:
 
 ```toml
@@ -234,7 +234,7 @@ runner = ["qemu-arm", "-cpu", "cortex-m4"]
 - `linker` / `runner`: `[target.<triple>]` wins over `[target.'cfg(...)']` (it's an error if more than
   one `cfg()` table's `linker` matches).
 - `rustflags` / `rustdocflags`: entries from every matching triple + cfg table are **joined together**
-  (see the rustflags precedence note under `[build]` above) — neither one "wins".
+  (see the rustflags precedence note under `[build]` above); neither one "wins".
 
 **Build script override** (`target.<triple>.<links-key>`): skip build script entirely and supply its output directly:
 ```toml

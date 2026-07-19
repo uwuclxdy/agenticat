@@ -3,7 +3,7 @@ name: maud
 description: "Maud Rust HTML macro crate (html!, 0.27): splices, control flow, escaping, framework feature flags. Use when writing or debugging Maud templates, or wiring the `html!` macro into a web framework. Not for `askama` (the other Rust HTML crate)."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Maud (Rust HTML Macro)
@@ -457,13 +457,13 @@ Splicing a `Markup` value never re-escapes it, so nesting components is safe. Ma
 
 Each is flagged inline at its section; §11 consolidates. Index:
 
-- Void `;` not self-close; control flow needs `@` (every branch braced) — §4, §7
-- `[cond]` (toggle) vs `attr=[Option<T>]` (value only when `Some`); attr concat needs `{ }` — §5, §6
-- Splices escape by default; `PreEscaped` is an XSS hole on untrusted input; only `&` `<` `>` `"` escaped (single quote not) — §6, §8
-- Rust 2021 `#` spacing (`input #pinkie;`) — §5
-- `Render` with neither method overridden recurses forever; a `render_to` override does its own escaping (`maud::Escaper`) — §9
+- Void `;` not self-close; control flow needs `@` (every branch braced); §4, §7
+- `[cond]` (toggle) vs `attr=[Option<T>]` (value only when `Some`); attr concat needs `{ }`; §5, §6
+- Splices escape by default; `PreEscaped` is an XSS hole on untrusted input; only `&` `<` `>` `"` escaped (single quote not); §6, §8
+- Rust 2021 `#` spacing (`input #pinkie;`); §5
+- `Render` with neither method overridden recurses forever; a `render_to` override does its own escaping (`maud::Escaper`); §9
 - `render`/`render_to` are sync-only; no async `Render` trait, no streaming variant; resolve async values before `html!` (§9)
-- `Markup` has no `Display` impl (`.into_string()` / `maud::display(x)`); no template files, no `html_to!` — §2
+- `Markup` has no `Display` impl (`.into_string()` / `maud::display(x)`); no template files, no `html_to!`; §2
 - "Type-checked" covers Rust splice types only; no HTML5 tag/attribute validation, no content-model nesting checks (§4)
 
 ---

@@ -27,7 +27,7 @@ resolved pins. Edit the lock via `cargo update`, never by hand.
 ### When to Commit Cargo.lock
 
 Guidance changed 2023-08: the old "libraries don't commit `Cargo.lock`" convention is superseded.
-Whether to commit it now depends on the package's own needs, not on binary-vs-library — committing it
+Whether to commit it now depends on the package's own needs, not on binary-vs-library; committing it
 is a reasonable default/starting point even for a library (a dependent's own resolution still governs
 what it builds; the committed lock only pins your own dev/CI runs). Regardless of the choice, CI should
 regularly test against the latest dependency versions.

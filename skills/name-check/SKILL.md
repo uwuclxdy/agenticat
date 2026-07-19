@@ -3,7 +3,7 @@ name: name-check
 description: "Suggest project/crate/plugin names and check availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains; needs `bun`). Use before naming, renaming, or publishing anything."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Name Check

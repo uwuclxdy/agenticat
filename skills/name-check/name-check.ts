@@ -208,7 +208,7 @@ function resolveRegistryIds(spec: string[] | undefined): string[] {
     if (id) {
       if (!out.includes(id)) out.push(id);
     } else if (!out.includes(raw)) {
-      console.error(`name-check: unknown registry "${raw}" — see --list for known ids/aliases`);
+      console.error(`name-check: unknown registry "${raw}"; see --list for known ids/aliases`);
       out.push(raw);
     }
   }

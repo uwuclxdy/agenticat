@@ -335,7 +335,7 @@ async = ["tokio"]
 
 Usage in code: `#[cfg(feature = "serde")]`
 
-Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported** — Cargo warns
+Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported**: Cargo warns
 "Found `feature = ...` in `target.'cfg(...)'.dependencies`. This key is not supported for selecting
 dependencies and will not work as expected," and the entry silently never matches. Use
 `[dependencies] serde = { optional = true }` + `[features]` instead.

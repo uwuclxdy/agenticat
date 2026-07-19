@@ -6,10 +6,10 @@ Shaping public surfaces: constructors, type-level guarantees, serde contracts.
 
 Beyond swap-proofing arguments (`UserId(u64)` vs `OrderId(u64)`, see `SKILL.md`), newtypes solve two structural problems:
 
-- **Orphan rule**: an impl is rejected when neither the trait nor any type in the impl header is local (`impl From<LocalType> for ForeignType` is fine — the local type appears as the trait's argument; fundamental wrappers like `Box<Local>` and `&Local` count as local). A bare type parameter doesn't help: `impl<T> ForeignTrait for ForeignType<T>` is always rejected. When you're stuck, wrap the foreign type in a local newtype and implement on the wrapper; add `From`/`Into` and `into_inner()` so callers move in and out without friction.
+- **Orphan rule**: an impl is rejected when neither the trait nor any type in the impl header is local (`impl From<LocalType> for ForeignType` is fine: the local type appears as the trait's argument; fundamental wrappers like `Box<Local>` and `&Local` count as local). A bare type parameter doesn't help: `impl<T> ForeignTrait for ForeignType<T>` is always rejected. When you're stuck, wrap the foreign type in a local newtype and implement on the wrapper; add `From`/`Into` and `into_inner()` so callers move in and out without friction.
 - **Validated input**: parse untrusted input into a newtype whose constructor enforces the invariant (`Port::new(u16) -> Result<Port>`), then pass the newtype around instead of re-checking a primitive at every call site.
 
-`#[repr(transparent)]` on a single-field newtype guarantees the inner type's layout — mandatory when the wrapper crosses FFI or gets pointer-cast, good practice otherwise.
+`#[repr(transparent)]` on a single-field newtype guarantees the inner type's layout: mandatory when the wrapper crosses FFI or gets pointer-cast, good practice otherwise.
 
 ## Typestate for Illegal-Transition Bugs
 
@@ -31,17 +31,17 @@ Calling `send` before `connect` is now a compile error, not a runtime check. Wor
 
 ## Constructors and Configuration
 
-- Builder over `..Default::default()` struct literals once a config struct has several optional fields — `Client::builder().timeout(t).retries(3).build()` reads at the call site; a literal with `..Default::default()` hides which fields matter.
-- Enums over boolean parameters: `write_file(path, data, WriteMode::Append)` — a bare `true` at a call site is opaque.
+- Builder over `..Default::default()` struct literals once a config struct has several optional fields: `Client::builder().timeout(t).retries(3).build()` reads at the call site; a literal with `..Default::default()` hides which fields matter.
+- Enums over boolean parameters: `write_file(path, data, WriteMode::Append)`; a bare `true` at a call site is opaque.
 - Direct accessors over wrapper structs that exist only to group two values a single caller wanted together.
 - Minimize arguments; prefer the natural receiver (`smtp.send(message)` over `send_email(message, smtp)`). When two call sites stitch the same sequence of calls together, push the combination behind a method on the receiving type.
 - CQS is a guideline, not law, in Rust: `vec.pop()`, `entry().or_insert()`, `iter.next()` mutate and return, and that's idiomatic. Do avoid names that read as pure queries but mutate.
 
 ## Future-Proofing Public Enums and Structs
 
-`#[non_exhaustive]` on public enums/structs you expect to grow forces downstream `match`es to carry a `_` arm — the inverse of the internal no-wildcard rule, and correct here: *you* control internal dispatchers, but you can't fix downstream crates when you add a variant. `#[must_use]` on types and functions whose ignored result is a bug (`Result` already has it; add it to builders and guards).
+`#[non_exhaustive]` on public enums/structs you expect to grow forces downstream `match`es to carry a `_` arm; the inverse of the internal no-wildcard rule, and correct here: *you* control internal dispatchers, but you can't fix downstream crates when you add a variant. `#[must_use]` on types and functions whose ignored result is a bug (`Result` already has it; add it to builders and guards).
 
-Sealed traits close the remaining door: a public trait you'll need to add methods to without a breaking change gets a private supertrait —
+Sealed traits close the remaining door: a public trait you'll need to add methods to without a breaking change gets a private supertrait:
 
 ```rust
 mod sealed { pub trait Sealed {} }
@@ -52,7 +52,7 @@ Downstream crates can call it but can't implement it, so a new method with a def
 
 ## `Option<NonZero*>` Is Free
 
-`NonZeroU32` and friends give the compiler a niche: `Option<NonZeroU32>` is the same size as `u32`. Use them for IDs, counts, and handles where zero is invalid anyway — the invariant documents itself and the `Option` costs nothing.
+`NonZeroU32` and friends give the compiler a niche: `Option<NonZeroU32>` is the same size as `u32`. Use them for IDs, counts, and handles where zero is invalid anyway: the invariant documents itself and the `Option` costs nothing.
 
 ## Serde Contracts
 
@@ -65,7 +65,7 @@ Pick enum tagging deliberately; the default rarely matches an external API:
 | Adjacent | `#[serde(tag = "t", content = "c")]` | `{"t":"Circle","c":{"radius":5}}` | yes |
 | Untagged | `#[serde(untagged)]` | `{"radius":5}` | yes |
 
-- Internally tagged enums can't hold tuple variants or newtype-wrapped primitives — reach for adjacent tagging.
+- Internally tagged enums can't hold tuple variants or newtype-wrapped primitives; reach for adjacent tagging.
 - Untagged tries variants in declaration order: slower, can silently pick the wrong variant, and produces vague errors. Reserve it for small, structurally distinct sets.
 - `#[serde(rename_all = "camelCase")]` at the struct level, not per-field renames.
 - `#[serde(deny_unknown_fields)]` on config structs turns typos in user config into errors instead of silently ignored keys (incompatible with `#[serde(flatten)]`).

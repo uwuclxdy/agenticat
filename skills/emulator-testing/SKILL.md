@@ -3,7 +3,7 @@ name: emulator-testing
 description: "Boot and drive Android AVDs and iOS simulators from the CLI (adb, `xcrun simctl`, Flutter `integration_test`, Alchemist goldens). Use when running headless app tests, verifying screenshots, or debugging emulator boot/GPU issues."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Emulator Testing
@@ -144,7 +144,7 @@ Skipping `convertFlutterSurfaceToImage()` on Android produces blank/black captur
 needed on iOS or web.
 
 Persistence caveat (verified empirically): under plain `flutter test integration_test/`,
-`takeScreenshot()` only buffers the PNG bytes in the binding — nothing writes them to disk.
+`takeScreenshot()` only buffers the PNG bytes in the binding; nothing writes them to disk.
 Persisting needs the `flutter drive` path with a driver that consumes them
 (`integration_test`'s `flutter_driver` extension + a `responseDataCallback` writing files).
 Without that wiring, capture independently via `adb exec-out screencap -p` instead.

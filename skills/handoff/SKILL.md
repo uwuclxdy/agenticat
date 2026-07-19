@@ -3,7 +3,7 @@ name: handoff
 description: "Capture the current session into a continuation prompt for a fresh one, or resume from a pasted handoff. Use when context is running low, when ending a session mid-task, or when told to 'hand off' or write a handoff."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Handoff
@@ -50,14 +50,14 @@ Produce a continuation prompt for a fresh session or resume from one.
 ```
 
 For an INVESTIGATION handoff (root-causing, not building), add a hypothesis ledger between
-`state` and `next` — this structure is the highest-value thing an investigation session can
+`state` and `next`; this structure is the highest-value thing an investigation session can
 pass on:
 
 ```markdown
-## hypotheses to test (NOT established — the next session's job)
-- **H1 — <claim>.** decomposed: mechanism / trigger / attribution (these live and die
+## hypotheses to test (NOT established: the next session's job)
+- **H1: <claim>.** decomposed: mechanism / trigger / attribution (these live and die
   separately). evidence for, evidence against, and the KILL CRITERION: the concrete result
-  that proves it dead ("if all versions are RED, H1-attribution is dead — say so and pivot").
+  that proves it dead ("if all versions are RED, H1-attribution is dead; say so and pivot").
 - <mark which prior verdicts are inherited and must be re-verified rather than trusted;
   flag any authoritative-looking doc whose claims the next session should check against
   primary sources>

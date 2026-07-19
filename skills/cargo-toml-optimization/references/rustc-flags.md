@@ -16,7 +16,7 @@ Every `-C` flag accepted by rustc. "Cargo field" column: named `[profile.*]` key
 | `opt-level` | `0` `1` `2` `3` `s` `z` | Codegen pass depth. `0`=none, `1`=basic, `2`=default release, `3`=all passes, `s`=size, `z`=aggressive size | `[profile.*] opt-level = 3` |
 | `lto` | `fat`/`true` (default when enabled), `thin`, `false` | LTO mode. `fat`=full cross-crate, `thin`=parallel incremental LTO | `[profile.*] lto = "thin"` |
 | `codegen-units` | integer ≥ 1 | Parallel LLVM codegen shards. Lower = fewer units, more inlining/merging, slower compile. Default: 16 (non-incremental), 256 (incremental) | `[profile.*] codegen-units = 1` |
-| `panic` | `abort`, `unwind`, `immediate-abort` (nightly-only) | Panic mode. `abort` skips unwinder, smaller binary; `immediate-abort` traps immediately without a panic hook — requires `-Zunstable-options` on nightly, not stabilized as of 2026-07 | `[profile.*] panic = "abort"` |
+| `panic` | `abort`, `unwind`, `immediate-abort` (nightly-only) | Panic mode. `abort` skips unwinder, smaller binary; `immediate-abort` traps immediately without a panic hook; requires `-Zunstable-options` on nightly, not stabilized as of 2026-07 | `[profile.*] panic = "abort"` |
 | `debuginfo` | `0`/`none`, `line-directives-only`, `line-tables-only`, `1`/`limited`, `2`/`full` | Debug info verbosity. `2` = full DWARF; `line-tables-only` = minimal for profilers | `[profile.*] debug = 2` (maps 0/1/2 -> `none`/`limited`/`full`) |
 | `split-debuginfo` | `off`, `packed`, `unpacked` | Where debug sections land. `packed` = separate `.dSYM`/`.pdb`; `unpacked` = per-object files | `[profile.*] split-debuginfo = "packed"` |
 | `strip` | `none`, `debuginfo`, `symbols` | Strip debug sections or all symbols from output binary | `[profile.*] strip = "symbols"` |

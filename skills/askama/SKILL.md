@@ -3,7 +3,7 @@ name: askama
 description: "Askama Rust templating (0.16): syntax, filters, inheritance, macros, web-framework support via askama_web, rinja migration. Use when writing or debugging Askama templates, or upgrading from older askama or rinja. Not for `maud` (the other Rust HTML crate)."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Askama (Rust Templating)
@@ -538,18 +538,18 @@ Notes:
 
 ## 15. Gotchas and Footguns
 
-1. **`askama_axum` / `askama_actix` / etc. are gone** — use `#[derive(WebTemplate)]` (askama_web) or manual `.render()` + `Html(...)`.
-2. **`|`, `&`, `^` are not bitwise in templates** — use `bitor`, `bitand`, `xor`.
-3. **Self-include doesn't work** — recurse via an embedded child struct (Display) or explicit `{{ child.render()? }}`.
+1. **`askama_axum` / `askama_actix` / etc. are gone**: use `#[derive(WebTemplate)]` (askama_web) or manual `.render()` + `Html(...)`.
+2. **`|`, `&`, `^` are not bitwise in templates**: use `bitor`, `bitand`, `xor`.
+3. **Self-include doesn't work**: recurse via an embedded child struct (Display) or explicit `{{ child.render()? }}`.
 4. **Blocks inside `if`/`for`**: book forbids it, 0.16.0 compiles it (§9); top-level/block-nested is safe.
 5. **Whitespace control on `{% extends %}` is a silent no-op**, not a compile error (§7).
 6. **Variable names starting with `__askama`, the reserved `caller`, or Rust keywords are banned.**
 7. **A method returning `self`** infinite-loops via Display; don't write `{{ self }}`.
 8. **Rust macro calls don't infer field names** (§5): `{{ my_macro!(field) }}` sees `field`, not `self.field`.
 9. **Prefer `.render()` / `.render_into()` over `.to_string()`** (2-3x slower).
-10. **`~` is concat (with spaces) vs. whitespace-minimize (no spaces)** — keep spaces around concat.
+10. **`~` is concat (with spaces) vs. whitespace-minimize (no spaces)**: keep spaces around concat.
 11. **Auto-escape depends on extension** (`.html` escaped, `.txt` not); inline `source` needs explicit `ext` / `escape`.
-12. **Rinja is dead** — `rinja` / `rinja_axum` / `rinja_derive` -> `askama` / `askama_web` (see intro).
+12. **Rinja is dead**: `rinja` / `rinja_axum` / `rinja_derive` -> `askama` / `askama_web` (see intro).
 13. **Custom filters need `#[askama::filter_fn]`** since 0.15; a bare `fn` in `mod filters` no longer compiles (§14).
 14. **0.16 upgrade breakage**: valueless `{% let x %}` / `{% set x %}` now opens a *block* (use `{% decl x %}`); compound assignment moved to `{% mut %}`; duplicate block names are now a hard compile error (was a warning).
 15. **`path` / `source` take string literals only** (§4), same as `{% include %}` (§10). No picking the template from a variable or computed string at runtime.
