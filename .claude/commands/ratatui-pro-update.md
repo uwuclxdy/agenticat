@@ -1,10 +1,9 @@
 ---
-name: ratatui-pro-update
-description: This skill should be used when updating the ratatui-patterns skill and ratatui-pro agent to a new ratatui release (refresh the bundled api-reference, modernization checklist, and limitations after a ratatui version bump, or when asked to check whether ratatui-patterns is stale).
+description: Re-syncs the catalog's ratatui-patterns skill + ratatui-pro agent against a new ratatui release, or reports whether they're stale.
 disable-model-invocation: true
 ---
 
-# ratatui-pro-update
+# Ratatui Pro Update
 
 Refreshes this repo's `skills/ratatui-patterns/` + `agents/ratatui-pro.md` after a ratatui
 release. Run it whenever crates.io is ahead of the version pinned in ratatui-patterns's SKILL.md.
@@ -43,7 +42,7 @@ release. Run it whenever crates.io is ahead of the version pinned in ratatui-pat
    - `patterns.md` / `testing.md`: only if the delta touches their content.
 
 4. **Sweep for drift.** Grep old version strings + every changed public symbol across all of
-   `skills/ratatui-patterns/`, `.claude/skills/ratatui-pro-update/SKILL.md`, and `agents/ratatui-pro.md`;
+   `skills/ratatui-patterns/`, `.claude/commands/ratatui-pro-update.md`, and `agents/ratatui-pro.md`;
    fix stale mentions.
 
 5. **Verify.** Spot-check 5 random cheat-sheet rows against docs.rs for the new version. If a
