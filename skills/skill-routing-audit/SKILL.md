@@ -3,16 +3,16 @@ name: skill-routing-audit
 description: "Audit a skill (or all skills) for routing gaps: it holds the right answer but buries it where an agent won't reach it. Targets boundary/negative probes (can it do X, what can't it do, is Y possible) that route to the how-to and miss the answer. Use after authoring or editing a skill, or to sweep all skills."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
-# skill-routing-audit
+# Skill Routing Audit
 
 A skill can hold the right answer and still fail, because routing buries it. Happy-path "how do I X" questions route to the right reference. Boundary and negative questions ("can it even do X?", "what can't it do?", "is Y possible?") route to that same "how to do X" reference, which only lists what the subject can do, so the real "no" sits in another file or nowhere. The reader lands where the routing points and never sees it.
 
 This skill hunts that failure with boundary probes and a skill-only simulation.
 
-## When to use
+## When to Use
 
 - After authoring or editing a skill, before relying on it.
 - To sweep every installed skill for the same class of gap.
@@ -37,7 +37,7 @@ Fan out one read-only subagent per skill (parallel for an all-skills sweep). Eac
 
 Merge into one punch-list grouped by skill, ROUTING and CONTENT gaps first, cleanest skills last.
 
-## Fixing a routing gap
+## Fixing a Routing Gap
 
 Surface the answer where the wrong routing lands. Do not relocate content:
 
@@ -49,6 +49,6 @@ Phrase the fix for the class, not the single probe: state what the skill's subje
 
 A CONTENT GAP needs the missing fact added to the owning reference first, then surfaced by the same three landing spots.
 
-## Confirm the fix
+## Confirm the Fix
 
 Re-run one fresh skill-only subagent (no priming, does not know the intended answer) on the failing probe. It must reach the correct answer on the first pass from `SKILL.md`, not by luck. If it still lands on the wrong file, the surfacing is not where the routing sends the reader; move it, do not add more prose elsewhere.
