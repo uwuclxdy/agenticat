@@ -1,9 +1,9 @@
 ---
 name: maud
-description: "Maud Rust HTML macro crate (html!, 0.27): splices, control flow, escaping, framework feature flags. Use when writing or debugging Maud templates, or wiring the `html!` macro into a web framework. Not for `askama` (the other Rust HTML crate)."
+description: "Maud Rust `html!` macro reference (0.27)."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Maud (Rust HTML Macro)

@@ -3,7 +3,7 @@ name: skill-routing-audit
 description: "Audit a skill (or all skills) for routing gaps: it holds the right answer but buries it where an agent won't reach it. Targets boundary/negative probes (can it do X, what can't it do, is Y possible) that route to the how-to and miss the answer. Use after authoring or editing a skill, or to sweep all skills."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Skill Routing Audit
@@ -18,7 +18,7 @@ This skill hunts that failure with boundary probes and a skill-only simulation.
 - To sweep every installed skill for the same class of gap.
 - When a skill that should cover a question gave a vague or wrong answer.
 
-Not for creating a skill from scratch (`skill-creator`) or folding a user's manual edit back into a skill (`skill-sync`).
+Not for creating a skill from scratch (`skill-creator`) or folding a user's manual edit back into a skill.
 
 ## Method
 

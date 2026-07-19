@@ -3,7 +3,7 @@ name: ratatui-patterns
 description: "Modern-ratatui knowledge pack for writing, refactoring, or reviewing Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops; writing TestBackend render tests; or resolving ratatui version upgrades and API questions."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Ratatui Patterns
@@ -54,8 +54,8 @@ For anything the bundled references don't answer 1:1, fetch instead of guessing:
 - version check: `curl -s -H 'User-Agent: ratatui-version-check' https://crates.io/api/v1/crates/ratatui`
   (a bare curl without User-Agent gets policy-blocked)
 
-If crates.io reports a version newer than the one at the top of this file, flag it and run the
-`ratatui-pro-update` skill before trusting the bundled references.
+If crates.io reports a version newer than the one at the top of this file, flag it before
+trusting the bundled references; they get re-synced upstream per release.
 
 ## Related
 
@@ -65,5 +65,3 @@ If crates.io reports a version newer than the one at the top of this file, flag 
   restore panic hook; hand-rolled guards are only for extra seams like bracketed paste or kitty
   flags. Kitty flags are what let you tell Shift+Enter/Ctrl+Enter apart from plain Enter, see
   `references/api-reference.md` §14.
-- per-repo modernization punch-lists from the 2026-07 audit: `<repo>/docs/ratatui-modernization.md`
-  across several real TUIs.

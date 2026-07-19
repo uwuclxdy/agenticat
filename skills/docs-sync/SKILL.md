@@ -3,12 +3,12 @@ name: docs-sync
 description: "Reconcile `README`, `docs/*`, `CLAUDE.md` and other prose docs with what the code actually does: fix stale, missing, or overpromising claims and verify every quoted command/flag/path. Use after a change alters documented behavior, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Docs Sync
 
-Reconcile prose with code. Every claim in the docs must match what the code does today. Accuracy pass only; no restructing.
+Reconcile prose with code. Every claim in the docs must match what the code does today. Accuracy pass only; no restructuring.
 
 **Delegate by default:** spawn the `docs-reconciler` agent (one per repo) and pass it the change description if the pass is scoped. Run inline only for a single small doc. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
 
