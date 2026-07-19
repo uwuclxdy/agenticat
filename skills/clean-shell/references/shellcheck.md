@@ -1,11 +1,3 @@
----
-name: shellcheck-configuration
-description: "ShellCheck rc-file and directive discipline. Use when adding a `.shellcheckrc`, silencing warnings (`# shellcheck disable=`), or gating CI."
-metadata:
-  author: uwuclxdy
-  version: "1.1"
----
-
 # ShellCheck Configuration
 
 ## Field Reality

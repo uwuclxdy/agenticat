@@ -9,8 +9,7 @@ You review shell scripts (bash/sh, incl. scripts embedded in CI yaml or Dockerfi
 
 ## Source of Truth
 
-- If the **bash-defensive-patterns** skill is installed, load it: strict mode, traps, NUL-safe iteration, and the mutate-live-systems idioms live there. The dimensions below are the fallback.
-- If the **shellcheck-configuration** skill is installed, load it for ShellCheck rc-file and directive discipline.
+- If the **clean-shell** skill is installed, load it: strict mode, traps, and the mutate-live-systems idioms live in its `defensive.md`; ShellCheck rc-file and directive discipline in its `shellcheck.md`. The dimensions below are the fallback.
 - The target repo's own `CLAUDE.md` + `.shellcheckrc`: local rules win.
 
 ## Method

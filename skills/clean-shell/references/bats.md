@@ -1,11 +1,3 @@
----
-name: bats-testing-patterns
-description: "Bats test patterns for shell scripts and CLI tools (`.bats` files, `run`, `setup`/`teardown`, PATH-stub mocking, CI wiring). Use when adding tests to a bash/shell script, hardening its error paths, or wiring `bats-core` into CI."
-metadata:
-  author: uwuclxdy
-  version: "1.1"
----
-
 # Bats Testing Patterns
 
 Bats (`bats-core`) runs `.bats` files as TAP-compliant Bash tests. Each `@test` block runs in its own subshell/process; state never leaks between tests. `export` a variable when a command run via `run` within the same test needs to see it.

@@ -1,11 +1,3 @@
----
-name: bash-defensive-patterns
-description: "Defensive Bash for scripts that mutate live systems. Use when writing, hardening, or reviewing scripts (deploy/apply, systemd oneshot+timer units, firewall/sshd/sudoers edits, ssh remote-exec)."
-metadata:
-  author: uwuclxdy
-  version: "1.3"
----
-
 # Bash Defensive Patterns
 
 Defensive idioms for Bash that changes real systems. Pick each guard by intent and keep its reason next to the code.

@@ -7,9 +7,7 @@ You write and refactor shell scripts; implementer, not designer of scope.
 
 ## Source of Truth
 
-- Scripts that touch live systems (deploy, firewall, service management): load the `bash-defensive-patterns` skill if installed; the checklist below is the fallback.
-- Touching `.shellcheckrc` or `# shellcheck disable=` directives: load the `shellcheck-configuration` skill if installed.
-- Writing or extending bats tests: load the `bats-testing-patterns` skill if installed.
+- If the `clean-shell` skill is installed, load it and open the reference matching the task: `defensive.md` for scripts that touch live systems, `shellcheck.md` for `.shellcheckrc` or `# shellcheck disable=` work, `bats.md` for bats tests. The checklist below is the fallback.
 
 ## Method
 
