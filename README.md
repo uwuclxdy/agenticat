@@ -5,8 +5,8 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-19-green)](#skills)
-[![agents](https://shields.uwuclxdy.dev/badge/agents-23-green)](#agents)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-17-green)](#skills)
+[![agents](https://shields.uwuclxdy.dev/badge/agents-22-green)](#agents)
 
 </div>
 
@@ -128,7 +128,7 @@ Or just download into `~/.claude/skills/`, but then you won't get updates.
 
 ## Update
 
-- Claude Code: `/plugin update agenticat` (every commit is a new version)
+- Claude Code: `/plugin update agents@agenticat` and/or `/plugin update skills@agenticat` (every commit is a new version)
 - Gemini CLI: automatic with `--auto-update`
 - opencode / Codex: `./install.sh --update` pulls and reconverts what you installed
 - Skills: `npx skills update`
@@ -155,14 +155,12 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
 | `clean-rust` | original | `rust-pro` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, observability, testing, perf |
 | `threat-modeling` | original | `threat-modeler` | STRIDE and attack trees, each requirement mapped to a mitigation |
-| `bash-defensive-patterns` | `wshobson` | `shell-pro` | defensive idioms for scripts that mutate live systems |
-| `bats-testing-patterns` | `wshobson` | `shell-pro` | testing shell scripts with bats-core, error paths included |
-| `shellcheck-configuration` | `wshobson` | `shell-pro` | minimal `.shellcheckrc` where every disable carries its reason; CI gating included |
+| `clean-shell` | `wshobson` | `shell-pro`, `shell-reviewer` | defensive live-system idioms, `.shellcheckrc` discipline, bats-core testing; core rules plus a reference for each |
 | `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
 | `skill-routing-audit` | original | standalone | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
-| `docs-sync` | original | `docs-reconciler` agent | reconciles README, docs, and CLAUDE.md with what the code actually does |
-| `ratatui-patterns` | original | `ratatui-pro` agent | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
+| `docs-sync` | original | `docs-reconciler` | reconciles README, docs, and CLAUDE.md with what the code actually does |
+| `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
 
 ### origin
@@ -175,7 +173,9 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 
 ## External skills
 
-Not bundled here, worth a look on their own. The [obra/superpowers](https://github.com/obra/superpowers) skills `systematic-debugging`, `test-driven-development`, and `verification-before-completion` (MIT) install straight from source with `npx skills add obra/superpowers --skill <name>`.
+Every third-party-origin item in the tables above is a copy this repo owns: the `wshobson` skills and `-pro` agents are rewrites, `webapp-testing` is vendored with its license, `clean-code` is distilled from transcripts. Installing them never pulls from the original source.
+
+The one exception worth a look on its own: the [obra/superpowers](https://github.com/obra/superpowers) skills `systematic-debugging`, `test-driven-development`, and `verification-before-completion` (MIT) are not bundled here and install pristine from source with `npx skills add obra/superpowers --skill <name>`.
 
 ## Agents
 
@@ -185,14 +185,13 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 |---|---|---|---|
 | `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
 | `ts-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
-| `doc-coverage-auditor` | inherit | none | before deleting a doc, checks nothing it covers gets dropped |
-| `docs-extractor` | inherit | none | digests a file or doc set into a brief, keeps raw bytes out of your context |
+| `docs-extractor` | inherit | none | digests a file or doc set into a brief, keeps raw bytes out of your context; coverage mode proves a doc safe to delete or merge |
 | `spec-propagator` | opus | none | folds a decided spec into a design doc in that doc's own voice |
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
 | `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright, reports pass/fail with screenshots |
-| `shell-pro` + | inherit | `bash-defensive-patterns`, `shellcheck-configuration`, `bats-testing-patterns` | writes or refactors bash or POSIX sh, verifies with shellcheck |
+| `shell-pro` + | inherit | `clean-shell` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
 | `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
 | `c-cpp-pro` + | inherit | none | C and C++ with explicit ownership, sanitizers wired to the repo build |
@@ -200,7 +199,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `flutter-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
 | `mobile-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
 | `rust-reviewer` | opus | `clean-rust` | read-only Rust diff/PR review: correctness, safety, async, invariants |
-| `shell-reviewer` | sonnet | `bash-defensive-patterns`, `shellcheck-configuration` | read-only shell/bash review: quoting, error handling, injection, portability |
+| `shell-reviewer` | sonnet | `clean-shell` | read-only shell/bash review: quoting, error handling, injection, portability |
 | `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
@@ -257,4 +256,4 @@ About 30 more were surveyed in a separate trending/growth analysis, not as adopt
 
 MIT. 
 
-External skills install keep their upstream licenses.
+Skills with a third-party origin keep their upstream licenses (see [origin](#origin)).
