@@ -99,8 +99,8 @@ function toCodex(a: AgentDef): string {
       ? !["Write", "Edit"].every((t) => a.disallowedTools!.includes(t))
       : true;
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
-  // bodies survive verbatim. A body containing ''' cannot be represented — fail loud.
-  if (a.body.includes("'''")) throw new Error(`${a.name}: body contains ''' — unrepresentable in TOML literal string`);
+  // bodies survive verbatim. A body containing ''' cannot be represented; fail loud.
+  if (a.body.includes("'''")) throw new Error(`${a.name}: body contains ''' (unrepresentable in TOML literal string)`);
   return [
     `name = ${JSON.stringify(a.name)}`,
     `description = ${JSON.stringify(a.description)}`,
@@ -184,7 +184,7 @@ if (targets.some((t) => !["opencode", "codex"].includes(t))) {
 if (doList) {
   for (const f of readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md"))) {
     const a = parseAgent(join(AGENTS_DIR, f));
-    console.log(`${a.name} — ${a.description.slice(0, 90)}`);
+    console.log(`${a.name}: ${a.description.slice(0, 90)}`);
   }
 } else if (doUpdate) {
   update(project);

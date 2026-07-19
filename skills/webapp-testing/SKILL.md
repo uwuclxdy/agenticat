@@ -4,10 +4,10 @@ description: "Playwright toolkit for testing local web apps: write Python script
 license: Complete terms in LICENSE.txt
 metadata:
   author: "Anthropic, PBC, vendored from anthropics/skills (Apache-2.0)"
-  version: "1.2"
+  version: "1.3"
 ---
 
-> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite and a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo.
+> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, and a tone pass (emoji and all-caps emphasis removed).
 
 # Web Application Testing
 
@@ -16,7 +16,7 @@ To test local web applications, write native Python Playwright scripts.
 **Helper Scripts Available**:
 - `scripts/with_server.py` - Manages server lifecycle (supports multiple servers)
 
-**Always run scripts with `--help` first** to see usage. DO NOT read the source until you try running the script first and find that a customized solution is absolutely necessary. These scripts can be very large and thus pollute your context window. They exist to be called directly as black-box scripts rather than ingested into your context window.
+**Always run scripts with `--help` first** to see usage. Don't read the source until the script has been run and shown not to fit the task. These scripts can be large; reading them pollutes your context window. They exist to be called directly as black boxes.
 
 ## Decision Tree: Choosing Your Approach
 
@@ -64,7 +64,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=True) # Always launch chromium in headless mode
     page = browser.new_page()
     page.goto('http://localhost:5173') # Server already running and ready
-    page.wait_for_load_state('networkidle') # CRITICAL: Wait for JS to execute
+    page.wait_for_load_state('networkidle') # wait for JS to execute before inspecting
     # ... your automation logic
     browser.close()
 ```
@@ -85,8 +85,7 @@ with sync_playwright() as p:
 
 ## Common Pitfall
 
-❌ **Don't** inspect the DOM before waiting for `networkidle` on dynamic apps
-✅ **Do** wait for `page.wait_for_load_state('networkidle')` before inspection
+Inspecting the DOM before `networkidle` on a dynamic app reads a half-rendered page. Wait for `page.wait_for_load_state('networkidle')` first.
 
 ## Best Practices
 

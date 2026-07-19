@@ -32,15 +32,15 @@ License gate: a derived agent or first-party skill needs a permissive source lic
 
 1. **Resolve the source** (`$1`): local path in place; `owner/repo` → github URL; git URL →
    shallow clone to a temp dir (remove at the end); raw URL → fetch. A trailing free-text arg
-   (`agents only`, `just shell stuff`) narrows the harvest — honor it.
+   (`agents only`, `just shell stuff`) narrows the harvest; honor it.
 
 2. **Harvest.** Agent defs in any harness format (`agents/*.md`, `.claude/agents/`, opencode /
-   codex / gemini dirs — same content is usually duplicated, read one canonical copy), skills
+   codex / gemini dirs; same content is usually duplicated, read one canonical copy), skills
    (`SKILL.md`), commands. Prefer context-mode reading (batch + search) so raw bytes stay out
    of the session.
 
 3. **Read the destinations**: `agents/`, `skills/`, the README catalog tables, `CLAUDE.md`,
-   `docs/publish-backlog.md`. A candidate overlapping an existing agent or skill extends it —
+   `docs/publish-backlog.md`. A candidate overlapping an existing agent or skill extends it,
    never lands as a sibling. Check the backlog's held list before re-proposing something
    already rejected.
 
@@ -49,7 +49,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
      checklists → fabricated metrics → "integrates with" lists) get rewritten to method +
      quality gates + output contract; genuinely useful knowledge moves to a paired skill.
      Expect most persona catalogs to yield ~0 keepers.
-   - **Currency-check** distilled tool claims against live docs — flags, config keys, CLI
+   - **Currency-check** distilled tool claims against live docs: flags, config keys, CLI
      behavior. Upstream sources cite nonexistent flags; so do task prompts.
    - **Drop rot magnets**: scaffolding commands with pinned dep versions, install matrices,
      benchmarks, marketing.
@@ -58,7 +58,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
      forces README-link-only, see Hard Rules); nothing personal or machine-specific lands in
      `agents/` or `skills/`.
    - **Pairing check**, both directions: an agent touching a shipped skill's domain gets a
-     conditional "load `<skill>` if installed" line with an inline fallback — never a hard
+     conditional "load `<skill>` if installed" line with an inline fallback, never a hard
      dependency. A new skill sweeps existing agents for the reverse reference.
    - **Conventions**: lowercase frontmatter `name`/`description` (third-person, trigger-rich),
      Title Case headings, comma-string `tools`, `model` picked per task weight (sonnet default
@@ -70,7 +70,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
 6. **Land per artifact**: write the repo copy, re-run the scrub
    (`grep -rE '/home/|192\.168|cloudify|cloudy-' agents/ skills/`), sync README index tables +
    badge counts + `CLAUDE.md` counts, verify the agent survives `bin/install-agents.ts`
-   conversion (a new tool name or model alias may need the converter's map updated — see
+   conversion (a new tool name or model alias may need the converter's map updated; see
    `docs/frontmatter-sync-plan.md`), commit `feat(agents|skills): add <name>`. Derived
    rewrites get a README credit line naming the upstream source.
 
