@@ -1,6 +1,6 @@
 ---
 name: docs-extractor
-description: "Digests a file or doc set into an exhaustive structured brief against your question template, keeping raw bytes out of your context. Use when you need specific facts pulled from a large file or doc set without reading it all yourself. Read-only. Spawn one per scope."
+description: "Digests a file or doc set into an exhaustive structured brief against a caller-supplied question template, keeping raw bytes out of the caller's context. Use when specific facts must be pulled from a large file or doc set without reading it all inline. Read-only. Spawn one per scope."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 
