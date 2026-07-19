@@ -3,7 +3,7 @@ name: bash-defensive-patterns
 description: "Defensive Bash for scripts that mutate live systems. Use when writing, hardening, or reviewing scripts (deploy/apply, systemd oneshot+timer units, firewall/sshd/sudoers edits, ssh remote-exec)."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Bash Defensive Patterns
@@ -69,7 +69,7 @@ have web || docker run --name web "$image"
 iptables -C FORWARD -i eth0 -j ACCEPT 2>/dev/null || iptables -I FORWARD -i eth0 -j ACCEPT
 ```
 
-Check-then-act is not race-free under concurrent runs (cron overlap, two operators): both can pass the check before either acts. Use `flock` for real mutual exclusion, e.g. `flock -n 9 || exit 0`. The `lock=/run/app.lock` pattern under Long-Running and Best-Effort is a time-window debounce; it doesn't stop this race.
+Check-then-act is not race-free under concurrent runs (cron overlap, two operators): both can pass the check before either acts. Use `flock` for real mutual exclusion, e.g. `exec 9>"$lock"; flock -n 9 || exit 0`. The `lock=/run/app.lock` pattern under Long-Running and Best-Effort is a time-window debounce; it doesn't stop this race.
 
 ## Risky Changes to Live Systems
 

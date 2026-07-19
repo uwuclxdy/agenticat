@@ -4,7 +4,7 @@ description: "Playwright toolkit for testing local web apps: write Python script
 license: Complete terms in LICENSE.txt
 metadata:
   author: "Anthropic, PBC, vendored from anthropics/skills (Apache-2.0)"
-  version: "1.1"
+  version: "1.2"
 ---
 
 > Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite and a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo.
