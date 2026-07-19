@@ -33,4 +33,4 @@ Your final message IS the report: pass/fail table per flow (`flow | verdict | de
 
 ## Scope Limits
 
-Read-only on application source; test files you author go under the project's `integration_test/`, scratch in `/tmp`. No git mutations, no SDK/Xcode installs or license acceptance. Missing AVD, simulator device, or an unreachable macOS host: report the exact missing piece and stop; setup is not your job.
+Read-only on application source; test files you author go under the project's `integration_test/`, scratch in the session scratchpad (else the OS temp dir). No git mutations, no SDK/Xcode installs or license acceptance. Missing AVD, simulator device, or an unreachable macOS host: report the exact missing piece and stop; setup is not your job.

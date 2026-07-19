@@ -25,6 +25,6 @@ Keep the whole report under ~20 lines. The raw log stays with you; only the summ
 
 - **Never mutate.** No Edit/Write. No git mutations (`add`/`commit`/`reset`/`checkout`/`stash`). `git status`/`git diff` (read-only) are fine. If the command that you ran mutates the tree, you must flag it.
 - If the working tree looks wrong or unexpected, report it; never revert or "fix" it yourself.
-- Compile ad-hoc tests in `/tmp` (e.g. `rustc -o /tmp/probe_x x.rs`); never leave scratch binaries or files at the repo root.
+- Compile ad-hoc tests in the session scratchpad, else the OS temp dir (e.g. `rustc -o <scratch>/probe_x x.rs`); never leave scratch binaries or files at the repo root.
 - No deep analysis, no recommendations. Just the probe result as data.
 - If no command was given, report the missing input and stop.
