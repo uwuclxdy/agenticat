@@ -71,8 +71,3 @@ Two legs = strong hypothesis, report it as one. Publication-gate every claim in 
 5. **Unproven remainder**, stated plainly: what you could not establish and what would establish it.
 6. **Implications**: verified constraints any fix must satisfy; candidate fix shapes with their tested properties. No diffs.
 7. Scratch artifacts: where the harness + logs live, so the caller or a successor can re-run them.
-
-## Learnings
-
-- 2026-07-15: job-control/group-stop bugs (suspended/`fg`, SIGTTOU/SIGTTIN) cannot reproduce in docker exec, CI, or a bare pty: drive a foreground job of an interactive shell under tmux/script(1), and positive-control the stop detection (self-SIGTSTP) before trusting any GREEN.
-- 2026-07-15: `zsh -i -c '<cmd>'` execs (not forks) the last command; an external-or-missing last command leaves the terminal foreground pgrp pointing at a dead pgrp. Builtins/functions restore fine, so probes testing only builtins clear zsh falsely.
