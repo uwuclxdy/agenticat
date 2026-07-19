@@ -5,7 +5,7 @@
 //
 //   bun bin/lint-agents.ts [dir ...] [--portable] [--quiet]
 //
-// --portable: absolute machine paths (~/..., /home/...) are errors instead of
+// --portable: absolute machine paths (tilde and home-dir prefixes) are errors instead of
 //             existence-checked. Use for anything that ships to other machines.
 // Exit 1 on any error; warnings alone exit 0.
 

@@ -67,8 +67,8 @@ License gate: a derived agent or first-party skill needs a permissive source lic
 5. **Propose, then apply on approval**: a picks table (`# | artifact | home | work needed`),
    a drop list (one line each), caveats. Apply only after the user confirms.
 
-6. **Land per artifact**: write the repo copy, re-run the scrub
-   (`grep -rE '/home/|192\.168|cloudify|cloudy-' agents/ skills/`), sync README index tables +
+6. **Land per artifact**: write the repo copy, re-run the scrub (the machine-specific-reference
+   and dash checks in `.github/workflows/lint-agents.yml`), sync README index tables +
    badge counts + `CLAUDE.md` counts, verify the agent survives `bin/install-agents.ts`
    conversion (a new tool name or model alias may need the converter's map updated; see
    `docs/frontmatter-sync-plan.md`), commit `feat(agents|skills): add <name>`. Derived

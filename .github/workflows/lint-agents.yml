@@ -2,9 +2,7 @@ name: lint-agents
 
 on:
   push:
-    paths: ["agents/**", "bin/**", ".github/workflows/lint-agents.yml"]
   pull_request:
-    paths: ["agents/**", "bin/**", ".github/workflows/lint-agents.yml"]
   workflow_dispatch:
 
 permissions:
@@ -32,9 +30,36 @@ jobs:
             [ "$n" -eq "$a" ] || { echo "$t: converted $n of $a defs"; exit 1; }
           done
 
+      # grep rc: 0 = found (fail), 1 = clean (pass), 2 = a target path is missing (fail).
       - name: no machine-specific references
         run: |
-          if grep -rEn '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/; then
-            echo "machine-specific reference found above"
+          rc=0; out=$(grep -rEn '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/ bin/ plugins/ .claude/ install.sh README.md) || rc=$?
+          if [ "$rc" -ne 1 ]; then
+            printf '%s\n' "$out"
+            echo "machine-specific reference found (grep rc=$rc; 1 = clean)"
             exit 1
           fi
+
+      # Structural '| — |' table cells (an intentionally empty column) are the one sanctioned use.
+      - name: no em or en dashes
+        run: |
+          rc=0; out=$(grep -rn -e '—' -e '–' agents/ skills/ bin/ plugins/ .claude/ install.sh README.md) || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            hits=$(printf '%s\n' "$out" | grep -v '| — |' || true)
+            if [ -n "$hits" ]; then
+              printf '%s\n' "$hits"
+              echo "em/en dash found above"
+              exit 1
+            fi
+          elif [ "$rc" -ne 1 ]; then
+            echo "dash grep failed (rc=$rc)"
+            exit 1
+          fi
+
+      - name: manifest validation
+        run: |
+          for f in .claude-plugin/marketplace.json plugins/agents/.claude-plugin/plugin.json plugins/skills/.claude-plugin/plugin.json; do
+            jq -e 'has("$schema")' "$f" >/dev/null || { echo "$f: invalid JSON or missing \$schema"; exit 1; }
+          done
+          jq -e 'has("name") and has("version") and has("description")' gemini-extension.json >/dev/null \
+            || { echo "gemini-extension.json: invalid JSON or missing name/version/description"; exit 1; }
