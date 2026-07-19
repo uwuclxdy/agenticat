@@ -1,8 +1,12 @@
-# repo modernization-audit prompt template
+# Repo Modernization-Audit Prompt Template
 
 Reusable spawn prompt for auditing one TUI repo against current ratatui. Spawn one
 `general-purpose` subagent per repo (sonnet, unnamed, non-background, all repos in one message
 for concurrency). Produced the 2026-07 punch-lists at `<repo>/docs/ratatui-modernization.md`.
+
+Assumes a Claude-Code-style subagent runner (`general-purpose` subagent type, tool-call
+spawning, no `SendMessage`). On another harness, substitute its own fan-out primitive, or run
+the audit inline instead.
 
 Fill `{{REPO}}`, `{{HINTS}}` (size, TUI dir, notable features), keep the rest verbatim:
 
@@ -15,11 +19,11 @@ Target repo: {{REPO}} ({{HINTS}})
 Mission: find every place this codebase hand-rolls something current ratatui already provides,
 plus legacy-idiom usage, so a later session can modernize it.
 
-CRITICAL — your training predates ratatui 0.29/0.30. Do NOT trust your memory of the ratatui
+CRITICAL: your training predates ratatui 0.29/0.30. Do NOT trust your memory of the ratatui
 API. The authoritative reference is references/api-reference.md.
 Before auditing, read its table of contents, the version-specific-notes section, and the
 cheat-sheet section at the end; also read
-references/modernization-checklist.md — it is your checklist.
+references/modernization-checklist.md, your checklist.
 Consult other reference sections as needed; they are generated from ratatui source and outrank
 anything you remember.
 

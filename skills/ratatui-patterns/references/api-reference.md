@@ -1,4 +1,4 @@
-# Ratatui 0.30.x — Comprehensive Public API Reference
+# Ratatui 0.30.x: Public API Reference
 
 > Documented from source tag `ratatui-v0.30.1`; current stable is **0.30.2** (2026-06-19), a
 > bug-fix patch with no API changes vs this document (shadow `CellEffect`s now require
@@ -21,32 +21,32 @@ sub-crates directly.
 
 ---
 
-## Table of contents
+## Table of Contents
 
-1. [Top-level re-exports & prelude](#1-top-level-re-exports--prelude)
-2. [Feature flags](#2-feature-flags)
-3. [Terminal initialization (`ratatui::init` / `DefaultTerminal`)](#3-terminal-initialization)
+1. [Top-Level Re-Exports & Prelude](#1-top-level-re-exports--prelude)
+2. [Feature Flags](#2-feature-flags)
+3. [Terminal Initialization (`ratatui::init` / `DefaultTerminal`)](#3-terminal-initialization)
 4. [Terminal & Frame](#4-terminal--frame)
-5. [Backend trait & backends](#5-backend-trait--backends)
+5. [Backend Trait & Backends](#5-backend-trait--backends)
 6. [Layout (`Constraint`, `Layout`, `Flex`, `Rect`, …)](#6-layout)
 7. [Style (`Style`, `Color`, `Modifier`, `Stylize`)](#7-style)
 8. [Text (`Text`, `Line`, `Span`, `Masked`)](#8-text)
 9. [Buffer & Cell](#9-buffer--cell)
 10. [Symbols](#10-symbols)
-11. [Widget traits (`Widget`, `StatefulWidget`, `WidgetRef`)](#11-widget-traits)
+11. [Widget Traits (`Widget`, `StatefulWidget`, `WidgetRef`)](#11-widget-traits)
 12. [Widgets](#12-widgets)
     - [Block](#block) · [Paragraph](#paragraph) · [List](#list) · [Table](#table) · [Tabs](#tabs)
     - [Gauge / LineGauge](#gauge--linegauge) · [BarChart](#barchart) · [Chart](#chart) · [Sparkline](#sparkline)
-    - [Scrollbar](#scrollbar) · [Canvas + shapes](#canvas--shapes) · [Clear](#clear) · [Fill](#fill)
+    - [Scrollbar](#scrollbar) · [Canvas + Shapes](#canvas--shapes) · [Clear](#clear) · [Fill](#fill)
     - [Calendar](#calendar) · [RatatuiLogo / RatatuiMascot](#ratatuilogo--ratatuimascot)
 13. [Macros](#13-macros)
-14. [Events / crossterm re-export](#14-events--crossterm-re-export)
-15. [0.30-specific notes (crate split, migrations)](#15-030-specific-notes)
-16. [Cheat-sheet: commonly hand-rolled things ratatui already provides](#16-cheat-sheet-commonly-hand-rolled-things-ratatui-already-provides)
+14. [Events / crossterm Re-Export](#14-events--crossterm-re-export)
+15. [0.30-Specific Notes (crate split, migrations)](#15-030-specific-notes)
+16. [Cheat-Sheet: Commonly Hand-Rolled Things ratatui Already Provides](#16-cheat-sheet-commonly-hand-rolled-things-ratatui-already-provides)
 
 ---
 
-## 1. Top-level re-exports & prelude
+## 1. Top-Level Re-Exports & Prelude
 
 `use ratatui::...` exposes (umbrella `lib.rs`):
 
@@ -60,7 +60,7 @@ ratatui::crossterm;        // the `crossterm` crate, re-exported (feature `cross
 ratatui::{init, try_init, init_with_options, try_init_with_options, restore, try_restore, run, DefaultTerminal};
 ```
 
-**Prelude** — `use ratatui::prelude::*;`. Officially de-emphasized (see Issue #1150) but kept for
+**Prelude**: `use ratatui::prelude::*;`. Officially de-emphasized (see Issue #1150) but kept for
 back-compat. It re-exports the common types + modules:
 
 ```rust
@@ -103,7 +103,7 @@ widgets::{
 
 ---
 
-## 2. Feature flags
+## 2. Feature Flags
 
 Umbrella `default = ["all-widgets", "crossterm", "layout-cache", "macros", "underline-color"]`.
 
@@ -113,7 +113,7 @@ Umbrella `default = ["all-widgets", "crossterm", "layout-cache", "macros", "unde
 | `crossterm_0_28` / `crossterm_0_29` | pick crossterm minor (0.29 is the default) |
 | `termion` / `termwiz` | alternate backends |
 | `std` | enable std (implied by any backend) |
-| `serde` | (de)serialize style/color types — save themes to file |
+| `serde` | (de)serialize style/color types: save themes to file |
 | `layout-cache` (default) | cache layout solver results |
 | `palette` | `From<palette::*>` conversions into `Color`; re-exports `palette` crate |
 | `portable-atomic` | atomics on targets lacking native atomic types |
@@ -129,7 +129,7 @@ Umbrella `default = ["all-widgets", "crossterm", "layout-cache", "macros", "unde
 
 ---
 
-## 3. Terminal initialization
+## 3. Terminal Initialization
 
 From `ratatui` umbrella `init` module (feature `crossterm`), all re-exported at crate root.
 These handle raw mode + alternate screen + a **panic hook** that restores the terminal automatically.
@@ -227,10 +227,10 @@ pub enum Viewport {
 let term = ratatui::init_with_options(TerminalOptions { viewport: Viewport::Inline(8) });
 ```
 
-### `Frame<'a>` — the per-draw render handle
+### `Frame<'a>`: The Per-Draw Render Handle
 
 ```rust
-pub fn area(&self) -> Rect;                                  // full drawable area — USE THIS for root layout
+pub fn area(&self) -> Rect;                                  // full drawable area: USE THIS for root layout
 pub fn render_widget<W: Widget>(&mut self, widget: W, area: Rect);
 pub fn render_stateful_widget<W: StatefulWidget>(&mut self, widget: W, area: Rect, state: &mut W::State);
 pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P);  // show a cursor at a cell
@@ -244,12 +244,12 @@ pub fn count(&self) -> usize;                               // frame number
 
 ---
 
-## 5. Backend trait & backends
+## 5. Backend Trait & Backends
 
 `ratatui::backend` re-exports: `Backend`, `ClearType`, `TestBackend`, `WindowSize`, and (per feature)
 `CrosstermBackend`/`TermionBackend`/`TermwizBackend` + their `From*`/`Into*` conversion traits.
 
-### `Backend` trait (`ratatui-core`)
+### `Backend` Trait (`ratatui-core`)
 
 You rarely implement this; use a provided backend.
 
@@ -291,7 +291,7 @@ let mut terminal = Terminal::new(backend)?;
 Conversion traits `IntoCrossterm<C>` / `FromCrossterm<C>` bridge ratatui `Color`/`Style`/`Modifier`
 to crossterm types (used internally; available if you mix raw crossterm styling).
 
-### `TestBackend` (`ratatui-core`) — for unit tests
+### `TestBackend` (`ratatui-core`): For Unit Tests
 
 ```rust
 pub fn new(width: u16, height: u16) -> Self;
@@ -385,7 +385,7 @@ pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers);
 pub fn init_cache(cache_size: NonZeroUsize);                   // optional, defaults to 500
 ```
 
-**USE THIS instead of hand-rolling** split + index juggling — destructure `areas`:
+**USE THIS instead of hand-rolling** split + index juggling: destructure `areas`:
 
 ```rust
 use ratatui::layout::{Layout, Constraint};
@@ -396,7 +396,7 @@ let [header, body, footer] = Layout::vertical([
 ]).areas(frame.area());
 ```
 
-**Centering** — don't compute offsets manually, use `Flex::Center`:
+**Centering**: don't compute offsets manually, use `Flex::Center`:
 
 ```rust
 let [area] = Layout::horizontal([Constraint::Length(40)])
@@ -413,7 +413,7 @@ pub const ZERO: Self; pub const MAX: Self;
 pub const fn area(self) -> u32;
 pub const fn is_empty(self) -> bool;
 pub const fn left/right/top/bottom(self) -> u16;
-pub const fn inner(self, margin: Margin) -> Self;       // shrink by margin — USE THIS for padding
+pub const fn inner(self, margin: Margin) -> Self;       // shrink by margin: USE THIS for padding
 pub const fn outer(self, margin: Margin) -> Self;       // grow
 pub fn offset(self, offset: Offset) -> Self;
 pub const fn resize(self, size: Size) -> Self;
@@ -502,17 +502,17 @@ pub fn from_hsluv(h: palette::Hsluv) -> Self;     // feature palette
 ```
 
 Bundled palettes (constants under `style::palette`):
-- `style::palette::tailwind::{SLATE, RED, BLUE, EMERALD, ...}` — each a `Palette` with shade fields.
-- `style::palette::material::{RED, BLUE, GRAY, ...}` — Material design swatches.
+- `style::palette::tailwind::{SLATE, RED, BLUE, EMERALD, ...}`: each a `Palette` with shade fields.
+- `style::palette::material::{RED, BLUE, GRAY, ...}`: Material design swatches.
 
-### `Modifier` (bitflags)
+### `Modifier` (Bitflags)
 
 ```rust
 pub struct Modifier: u16;   // bitflags
 Modifier::{ BOLD, DIM, ITALIC, UNDERLINED, SLOW_BLINK, RAPID_BLINK, REVERSED, HIDDEN, CROSSED_OUT }
 ```
 
-### `Stylize` trait — the ergonomic shorthand
+### `Stylize` Trait: The Ergonomic Shorthand
 
 `Stylize` is implemented for `&str`, `String`, `Cow<str>`, `Span`, `Line`, `Text`, every widget, etc.
 It returns the styled value, so you chain it.
@@ -560,7 +560,7 @@ let warn = Span::raw("careful").yellow().underlined();
 
 From `ratatui-core::text` (`ratatui::text`). Hierarchy: `Text` (multi-line) → `Line` (one row of spans) → `Span` (a styled string).
 
-### `Span<'a>` — styled string fragment
+### `Span<'a>`: Styled String Fragment
 
 ```rust
 pub fn raw<T: Into<Cow<'a,str>>>(content: T) -> Self;
@@ -574,7 +574,7 @@ pub fn into_centered_line(self) -> Line<'a>;   // + left/right aligned variants
 // From<&str>, From<String>, From<Cow<str>>; Add<Span> -> Line; Stylize; Widget
 ```
 
-### `Line<'a>` — one terminal row, a `Vec<Span>` + alignment
+### `Line<'a>`: One Terminal Row, a `Vec<Span>` + Alignment
 
 ```rust
 pub fn raw<T: Into<Cow<'a,str>>>(content: T) -> Self;
@@ -592,7 +592,7 @@ pub fn iter(&self) -> impl Iterator<Item=&Span>;
 // From<&str>, From<String>, From<Span>, From<Vec<Span>>; Add<Span>, Add<Line>; Widget; Stylize
 ```
 
-### `Text<'a>` — multi-line block, a `Vec<Line>`
+### `Text<'a>`: Multi-Line Block, a `Vec<Line>`
 
 ```rust
 pub fn raw<T: Into<Cow<'a,str>>>(content: T) -> Self;     // splits on '\n'
@@ -607,7 +607,7 @@ pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T);
 // From<&str>/<String>/<Span>/<Line>/<Vec<Line>>; Add; Widget; Stylize
 ```
 
-### `Masked<'a>` — render a string as repeated mask chars
+### `Masked<'a>`: Render a String as Repeated Mask Chars
 
 ```rust
 pub fn new(s: impl Into<Cow<'a,str>>, mask_char: char) -> Self;
@@ -708,7 +708,7 @@ From `ratatui-core::symbols` (`ratatui::symbols`). String/char constants + `Set`
 | `symbols::merge` | `MergeStrategy { Replace, Exact, Fuzzy }` for border-joining |
 | `symbols::Marker` | canvas/braille marker (see below) |
 
-### `Marker` (re-exported as `symbols::Marker`)
+### `Marker` (Re-Exported as `symbols::Marker`)
 
 ```rust
 pub enum Marker { Dot, Block, Bar, Braille, HalfBlock, Quadrant, Sextant, Octant, Custom(char) }
@@ -724,7 +724,7 @@ let b = Block::bordered().border_set(symbols::border::ROUNDED);
 
 ---
 
-## 11. Widget traits
+## 11. Widget Traits
 
 From `ratatui-core::widgets` (`Widget`, `StatefulWidget`) and `ratatui::widgets` (`WidgetRef`, `StatefulWidgetRef`, `BlockExt`, `FrameExt`).
 
@@ -738,12 +738,12 @@ pub trait Widget {
 
 Built-in blanket impls: `Widget for &str`, `for String`, `for Option<W: Widget>`.
 
-**0.30 pattern — implement `Widget for &T` (not `WidgetRef`)** so the widget can render by reference
+**0.30 pattern: implement `Widget for &T` (not `WidgetRef`)** so the widget can render by reference
 without consuming itself. Every built-in widget implements both `Widget for T` and `Widget for &T`:
 
 ```rust
 struct Greeting { name: String }
-impl Widget for &Greeting {                       // render by ref — the modern idiom
+impl Widget for &Greeting {                       // render by ref: the modern idiom
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_string(area.x, area.y, format!("Hi {}", self.name), Style::new());
     }
@@ -763,7 +763,7 @@ pub trait StatefulWidget {
 Used by `List` (`ListState`), `Table` (`TableState`), `Scrollbar` (`ScrollbarState`). Render via
 `frame.render_stateful_widget(widget, area, &mut state)`.
 
-### `WidgetRef` / `StatefulWidgetRef` — feature `unstable-widget-ref`
+### `WidgetRef` / `StatefulWidgetRef`: Feature `unstable-widget-ref`
 
 ```rust
 pub trait WidgetRef { fn render_ref(&self, area: Rect, buf: &mut Buffer); }
@@ -932,7 +932,7 @@ pub struct Row<'a>;    // new<T: IntoIterator<Item: Into<Cell>>>(cells); .height
 pub struct Cell<'a>;   // new<T: Into<Text>>(content); .content(t); .column_span(u16); .style(s)
 ```
 
-`TableState`: like `ListState` plus column/cell selection — `select_column`, `select_cell`,
+`TableState`: like `ListState` plus column/cell selection: `select_column`, `select_cell`,
 `with_selected_cell`, `selected_column`, `selected_cell`, `scroll_right_by/left_by`, etc.
 
 ```rust
@@ -1093,7 +1093,7 @@ let sb = Scrollbar::new(ScrollbarOrientation::VerticalRight)
 frame.render_stateful_widget(sb, area, &mut scrollbar_state);
 ```
 
-### Canvas + shapes
+### Canvas + Shapes
 
 `widgets::canvas` module. Draw arbitrary 2-D shapes onto a Braille/half-block/quadrant grid.
 
@@ -1118,7 +1118,7 @@ FilledLine::new(x1, y1, x2, y2, fill_to_y, color);
 Rectangle::new(x, y, width, height, color);
 Circle::new(x, y, radius, color);
 Points::new(coords: &[(f64,f64)], color);
-Map { resolution: MapResolution, color }   // MapResolution { Low, High } — world map outline
+Map { resolution: MapResolution, color }   // MapResolution { Low, High }: world map outline
 Label<'a>                                   // a positioned text label
 ```
 
@@ -1135,7 +1135,7 @@ let canvas = Canvas::default()
 ### Clear
 
 ```rust
-pub struct Clear;   // resets every cell in `area` — render BEFORE a popup
+pub struct Clear;   // resets every cell in `area`: render BEFORE a popup
 ```
 
 ```rust
@@ -1191,7 +1191,7 @@ frame.render_widget(RatatuiLogo::tiny(), area);
 
 ## 13. Macros
 
-Feature `macros` (default). `use ratatui::macros::*;` — from `ratatui-macros`.
+Feature `macros` (default). `use ratatui::macros::*;`, from `ratatui-macros`.
 
 | Macro | Builds | Example |
 |---|---|---|
@@ -1217,7 +1217,7 @@ let [top, bottom] = vertical![== 3, *= 1].areas(frame.area());   // Length(3), F
 
 ---
 
-## 14. Events / crossterm re-export
+## 14. Events / crossterm Re-Export
 
 Ratatui does **not** ship its own event/input system. It re-exports the chosen backend's crate so you
 read events from there. With the default crossterm backend (crossterm 0.29):
@@ -1259,7 +1259,7 @@ with the same guard that restores the terminal.
 
 ---
 
-## 15. 0.30-specific notes
+## 15. 0.30-Specific Notes
 
 - **Workspace crate split.** `ratatui` is now an umbrella over `ratatui-core`, `ratatui-widgets`,
   `ratatui-crossterm`/`-termion`/`-termwiz`, and `ratatui-macros`. Keep depending only on `ratatui`;
@@ -1273,7 +1273,7 @@ with the same guard that restores the terminal.
   is the method for those.
 - **`Flex`** controls leftover-space distribution in `Layout` (`Start/End/Center/SpaceBetween/SpaceEvenly/SpaceAround`,
   plus `Legacy`). `Table::flex` exposes the same for columns. `Rect::centered*` are convenience wrappers.
-- **`Constraint::Fill(weight)`** — proportional grow constraint (use instead of `Min(0)` hacks).
+- **`Constraint::Fill(weight)`**: proportional grow constraint (use instead of `Min(0)` hacks).
 - **`Layout::areas::<N>()`** returns a fixed `[Rect; N]` you can destructure; `split()` returns the
   `Rc<[Rect]>`-backed `Rects`. Prefer `areas`.
 - **HorizontalAlignment / VerticalAlignment** split out; `Alignment` is now an alias for
@@ -1285,7 +1285,7 @@ with the same guard that restores the terminal.
 
 ---
 
-## 16. Cheat-sheet: commonly hand-rolled things ratatui already provides
+## 16. Cheat-Sheet: Commonly Hand-Rolled Things ratatui Already Provides
 
 | You might write by hand… | Use this instead |
 |---|---|

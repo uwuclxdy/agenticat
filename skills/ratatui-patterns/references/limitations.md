@@ -1,11 +1,11 @@
-# ratatui built-in limitations — what genuinely needs custom code
+# Ratatui Built-In Limitations: What Genuinely Needs Custom Code
 
 Verified against ratatui 0.30.2 across 6 production TUIs (2026-07 audit). Before writing ANY
 custom render code, confirm the need is on this list; if it isn't, expect a built-in in the checklist or
 `api-reference.md`. When a future release closes one of these
 gaps, the updater skill moves the row into the checklist.
 
-## composite / inline elements
+## Composite / Inline Elements
 
 | need | closest built-in | gap | keep custom |
 |---|---|---|---|
@@ -17,17 +17,17 @@ gaps, the updater skill moves the row into the checklist.
 | button / button-group row | none | no button widget exists | spans + manual focus index |
 | responsive tab collapse (chevron overflow when width is tight) | `Tabs` | fixed strip, no degrade mode | custom overflow logic |
 
-## text
+## Text
 
 | need | closest built-in | gap | keep custom |
 |---|---|---|---|
 | text editing (input field, textarea: caret, scroll-clamp, selection) | none | ratatui ships no text-editing widget; only `Frame::set_cursor_position` | custom widget, or crates `tui-textarea`/`tui-input` |
-| word-wrap as DATA (wrap points, `Vec<String>`, bounded-rows-with-ellipsis) | `Paragraph::wrap` | renders wrapped text but exposes no wrap positions; `line_count`/`line_width` (unstable feature) give counts only | own wrapper; dedupe it — 3 repos each had 2 copies |
+| word-wrap as DATA (wrap points, `Vec<String>`, bounded-rows-with-ellipsis) | `Paragraph::wrap` | renders wrapped text but exposes no wrap positions; `line_count`/`line_width` (unstable feature) give counts only | own wrapper; dedupe it: 3 repos each had 2 copies |
 | soft-wrap editor with caret-to-visual-row mapping | `Paragraph::wrap` | wrap would break caret column math | custom (caret index tracked separately from wrapped rows) |
 
-## animation / time
+## Animation / Time
 
-ratatui has zero animation, timer, or blink primitives by design — it draws frames, the app owns
+ratatui has zero animation, timer, or blink primitives by design: it draws frames, the app owns
 time. Everything below stays custom (tick-driven, timing consts named):
 
 - spinners (frame cycling)
@@ -37,7 +37,7 @@ time. Everything below stays custom (tick-driven, timing consts named):
 - toast TTL / stacked notification lifetimes (rendering the toast box is plain `Paragraph` +
   `Clear`; the stack layout + expiry is app logic)
 
-## compositing / effects
+## Compositing / Effects
 
 | need | closest built-in | gap | keep custom |
 |---|---|---|---|
@@ -45,7 +45,7 @@ time. Everything below stays custom (tick-driven, timing consts named):
 | per-cell time-varying color (shimmer, glow) | none | styles are static per draw | recolor spans per tick |
 | xterm-256 nearest-color quantization | `Color` | no color-distance API | own quantizer |
 
-## selection / structure
+## Selection / Structure
 
 | need | closest built-in | gap | keep custom |
 |---|---|---|---|
@@ -53,16 +53,16 @@ time. Everything below stays custom (tick-driven, timing consts named):
 | targeted repaint of part of an already-drawn region | none | widgets draw whole areas | scoped `Buffer::set_stringn` writes |
 | connected topology diagrams (boxes + link lines) | `Canvas` | cell-grid connectors don't map to canvas coords cleanly | raw buffer writes for connectors; borders can still be `Block` |
 
-## design-system conformance (custom look vs built-ins)
+## Design-System Conformance (Custom Look vs Built-Ins)
 
 Case study: a design system with its own custom border/scrollbar/progress rendering and theme.
 It CAN adopt built-ins for: panel border+title (`Block::bordered()`), scrollbar (`Scrollbar`),
 modal centering (`Rect::centered`), equal splits (`Layout` + `Fill`), border seams
-(`merge_borders`), drop shadows (`Block::shadow` — currently unbuilt, adoptable), progress
+(`merge_borders`), drop shadows (`Block::shadow`, currently unbuilt, adoptable), progress
 rendering (`LineGauge`, keeping threshold-color logic app-side).
 
 it CANNOT conform on: gutter caret + focus-row tint over heterogeneous rows, button rows in
 modals, spinner/cursor-blink (no time primitives), text input/textarea, skeleton multi-column
 placeholders (`Fill` covers one column only), min-max f32 sparkline. these stay direct
-buffer/cell writes — that is the correct escape hatch, not a violation. a chosen theme palette
+buffer/cell writes; that is the correct escape hatch, not a violation. a chosen theme palette
 and glyph tiers are design decisions, not API gaps.

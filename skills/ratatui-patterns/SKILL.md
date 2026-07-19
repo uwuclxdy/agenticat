@@ -3,7 +3,7 @@ name: ratatui-patterns
 description: "Modern-ratatui knowledge pack for writing, refactoring, or reviewing Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops; writing TestBackend render tests; or resolving ratatui version upgrades and API questions."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Ratatui Patterns
@@ -13,7 +13,7 @@ data predates 0.29. The biggest failure mode is reimplementing by hand what the 
 provides; the second is asserting API shapes from memory. Both have the same fix: **work from
 the bundled references, not from memory.**
 
-## hard rules
+## Hard Rules
 
 1. Before writing any TUI render/layout/lifecycle code, read
    `references/modernization-checklist.md`. If the thing being built appears in it, use the
@@ -31,20 +31,20 @@ the bundled references, not from memory.**
 7. The event loop can go async (`crossterm`'s `event-stream` feature + `EventStream` for
    `tokio::select!`); `Terminal::draw` stays sync regardless (`references/api-reference.md` §14).
 
-## files
+## Files
 
 | file | when to read |
 |---|---|
-| `references/modernization-checklist.md` | always, first — hand-rolled → built-in map + hunt greps |
+| `references/modernization-checklist.md` | always, first: hand-rolled → built-in map + hunt greps |
 | `references/api-reference.md` | exact signatures, feature flags, full widget/API surface, events (mouse capture, sync vs async loop, kitty key flags) |
 | `references/limitations.md` | before writing custom render code; design-system conformance limits |
 | `references/testing.md` | writing or reviewing TUI tests |
 | `references/patterns.md` | composition idioms, corrected cookbook, widget-choice guidance |
 | `references/audit-prompt.md` | fanning out per-repo modernization audits |
 
-## live docs, on demand
+## Live Docs, on Demand
 
-For anything the bundled references don't answer 1:1, fetch — don't guess:
+For anything the bundled references don't answer 1:1, fetch instead of guessing:
 
 - API detail: `https://docs.rs/ratatui/latest/ratatui/` (append module path, e.g.
   `widgets/struct.Table.html`)
@@ -57,7 +57,7 @@ For anything the bundled references don't answer 1:1, fetch — don't guess:
 If crates.io reports a version newer than the one at the top of this file, flag it and run the
 `ratatui-pro-update` skill before trusting the bundled references.
 
-## related
+## Related
 
 - design language (colors, spacing, motion grammar): the project's design-language skill, if it
   has one. That skill says WHAT it should look like; this one says WHICH ratatui API renders it.
