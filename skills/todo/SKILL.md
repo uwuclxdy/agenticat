@@ -3,7 +3,7 @@ name: todo
 description: "Authors and normalizes tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into pickup-cold-ready tasks."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Todo
@@ -15,6 +15,8 @@ metadata:
 **Every task must be executable by a fresh agent with no session context.** Self-contained: current behavior, expected behavior, and a verify step. If a task needs a decision the user hasn't made, AskUserQuestion before writing it down (`AskUserQuestion` is Claude Code's question tool; other harnesses ship their own native tool: opencode's `question`, gemini-cli's `ask_user`, Codex CLI's `request_user_input`. Use it if present, else fall back to a plain numbered message). Never park open questions inside a task.
 
 Tasks say what needs to change and, sometimes, how. Never where. No `file:line`, no file paths. The executing agent locates the code itself since locations rot faster than intent.
+
+**State observed behavior as fact; label attributed causes as hypotheses.** A task's "current behavior" is what you saw or reproduced. Any "why" you did not verify (an engine's timing, an API's state model, a component's intent) must read as a hypothesis (`hypothesis:`, `suspected:`), never as fact. Baking an unverified root cause into a task sends the executing agent to fix the wrong thing (a retry built on an inferred "the API hasn't synced" missed that the API never stored the data at all). If the cause is load-bearing for the fix, the verify step must confirm it first against the vendor source (swagger/docs/code) or a repro before the fix is built on it.
 
 **Size tasks by scope.** Combine small related nits into one task; split anything too big for a single reviewable change into independent tasks. The unit is "one agent, one clean commit".
 
