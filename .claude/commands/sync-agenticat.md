@@ -35,7 +35,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
 
 2. **Harvest.** Agent defs in any harness format (`agents/*.md`, `.claude/agents/`, opencode /
    codex / gemini dirs; same content is usually duplicated, read one canonical copy), skills
-   (`SKILL.md`), commands. Prefer context-mode reading (batch + search) so raw bytes stay out
+   (`SKILL.md`), commands. Prefer nyactx reading (batch + search, if installed) so raw bytes stay out
    of the session.
 
 3. **Read the destinations**: `agents/`, `skills/`, the README catalog tables, `CLAUDE.md`,
