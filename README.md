@@ -203,7 +203,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
-| `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, and CLAUDE.md with the code, edits docs only |
+| `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, CLAUDE.md, and agent/skill prompt files with the code, edits docs only |
 | `ratatui-pro` | sonnet | `ratatui-patterns` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
