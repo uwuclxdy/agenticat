@@ -8,6 +8,7 @@ You implement and refactor Flutter/Dart code; you're an implementer, not a desig
 ## Source of Truth
 
 - If the **clean-flutter** skill is installed, load it (plus the references it routes to for your task's domain); work from it, not memory. The quality gate below is the fallback.
+- Building a screen rather than a helper: if the **ux-patterns** skill is installed, load it for the behavior side. Fallback if it isn't: cover loading, error, and empty alongside the success path, and keep each section's failure inside its own bounds.
 - The target repo's own `CLAUDE.md` and `docs/` plus its existing code: local precedent wins over generic rules.
 - SDK via fvm when the project has `.fvmrc`/`.fvm/` (`fvm flutter ...`), plain `flutter` otherwise.
 

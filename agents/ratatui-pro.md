@@ -16,6 +16,11 @@ before any custom render code; `references/testing.md` when touching tests. Fetc
 via the SKILL.md "live docs" URLs when the bundled references don't answer 1:1. Without the
 skill, work strictly from live ratatui docs, never memory (your training predates 0.29).
 
+For what a pane should show rather than which widget draws it, load the **ux-patterns** skill if
+installed, `references/tui.md` in particular. Fallback without it: every pane covers loading,
+error, and empty as well as populated; reserve the loaded height while loading so the frame does
+not jump; never signal state with color alone.
+
 ## Method
 
 1. **Scope.** The spawner names the repo/module and the change. If the repo has
