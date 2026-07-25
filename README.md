@@ -5,7 +5,7 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-18-green)](#skills)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-19-green)](#skills)
 [![agents](https://shields.uwuclxdy.dev/badge/agents-24-green)](#agents)
 
 </div>
@@ -162,7 +162,8 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `docs-sync` | original | `docs-reconciler` | reconciles README, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
-| `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro`, `ratatui-pro` | how a UI behaves: the four screen states, loading and error patterns, form validation, cognitive-load laws, with WCAG wiring and mobile/terminal translations |
+| `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro` | how a UI behaves: screen states, loading and error patterns, form validation, cognitive-load laws, with WCAG wiring and a mobile reference |
+| `terminal-ux` | original | `ratatui-pro` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
 
 ### origin
 
@@ -206,7 +207,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
 | `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, CLAUDE.md, and agent/skill prompt files with the code, edits docs only |
-| `ratatui-pro` | sonnet | `ratatui-patterns`, `ux-patterns` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
+| `ratatui-pro` | sonnet | `ratatui-patterns`, `terminal-ux` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
 | `ux-pro` | sonnet | `ux-patterns` | builds a screen's loading, error, empty and success states with the repo's own components |
 | `ux-reviewer` | opus | `ux-patterns` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |
 
