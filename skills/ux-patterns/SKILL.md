@@ -3,7 +3,7 @@ name: ux-patterns
 description: "Interaction-design knowledge pack for the behavior of a UI: loading, error, empty, and success states, form validation, error placement, progressive disclosure, and the accessibility rules governing each. Use when building or reviewing a screen's states, wiring form validation, choosing a spinner or skeleton, wording an error message, placing navigation, or auditing an interface for usability."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # UX Patterns
