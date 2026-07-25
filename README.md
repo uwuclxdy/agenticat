@@ -162,7 +162,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `docs-sync` | original | `docs-reconciler` | reconciles README, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
-| `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro` | how a UI behaves: screen states, loading and error patterns, form validation, cognitive-load laws, with WCAG wiring and a mobile reference |
+| `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro` | how a UI behaves: the five screen states, loading and error patterns, form validation and submission, undo versus confirmation, cognitive-load laws, with WCAG wiring and a mobile reference |
 | `terminal-ux` | original | `ratatui-pro` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
 
 ### origin
@@ -208,7 +208,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
 | `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, CLAUDE.md, and agent/skill prompt files with the code, edits docs only |
 | `ratatui-pro` | sonnet | `ratatui-patterns`, `terminal-ux` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
-| `ux-pro` | sonnet | `ux-patterns` | builds a screen's loading, error, empty and success states with the repo's own components |
+| `ux-pro` | sonnet | `ux-patterns` | builds a screen's loading, success, error, empty and partial states with the repo's own components |
 | `ux-reviewer` | opus | `ux-patterns` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
