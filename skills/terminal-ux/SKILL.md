@@ -3,7 +3,7 @@ name: terminal-ux
 description: "Behavior rules for command-line and terminal programs: exit codes, stdout versus stderr, TTY detection, NO_COLOR and palette choice, progress output, help conventions, destructive-action confirmation, signal and panic handling, plus TUI keyboard and screen-reader concerns. Use when writing or reviewing a CLI, a TUI, argument parsing, terminal output, prompts, or terminal color handling."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Terminal UX
@@ -236,8 +236,9 @@ application state every frame. There is no widget tree to patch.
 
 - Reserve the loaded height while loading, so the frame does not jump when data replaces a
   placeholder. A one-line "Loading..." where twenty rows will appear moves everything below it.
-- Give each pane its own loading, populated, error, and empty state, and keep a failure inside the
-  pane that owns it.
+- Give each pane its own loading, populated, partial, error, and empty state, and keep a failure
+  inside the pane that owns it. Partial is the one that gets skipped: three rows in a pane sized
+  for twenty reads as finished rather than as thin.
 - An empty pane names both the reason and the key that fills it. `No sessions yet. Press n to
   start one.` A key that is never named is invisible. Textual's convention is a persistent footer
   instead; either resolves the same problem.
