@@ -110,10 +110,9 @@ marking so its placeholder shapes are not read as content.
 
 ### 2.2 Thresholds for Spinners
 
-How long the wait is decides what to show. Rough starting values, not measured thresholds:
-
-The 1 second and 10 second limits are measured, from Miller 1968 and Card et al. 1991 by way of
-Nielsen. They are about human attention, so they have not moved with hardware.
+How long the wait is decides what to show. The 1 second and 10 second limits are measured, from
+Miller 1968 and Card et al. 1991 by way of Nielsen. They describe human attention, so they have
+not moved with hardware.
 
 | Wait | Show | Why |
 |---|---|---|
@@ -134,7 +133,7 @@ Nielsen. They are about human attention, so they have not moved with hardware.
 **Don't:**
 - Flash a spinner for a 200ms response. The flicker reads as a glitch and makes the app feel
   slower than showing nothing would.
-- Leave a bare looping animation running past ~10s with no text and no progress.
+- Leave a bare looping animation running past 10s with no text, no progress, and no way out.
 - Run a long wait and then resolve it into an error. Validate what you can before the wait starts.
 
 Why: a spinner communicates "working" and nothing else. Past a few seconds that stops being
