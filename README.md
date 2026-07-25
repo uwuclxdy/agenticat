@@ -5,8 +5,8 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-17-green)](#skills)
-[![agents](https://shields.uwuclxdy.dev/badge/agents-22-green)](#agents)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-18-green)](#skills)
+[![agents](https://shields.uwuclxdy.dev/badge/agents-24-green)](#agents)
 
 </div>
 
@@ -162,11 +162,13 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `docs-sync` | original | `docs-reconciler` | reconciles README, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
+| `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro`, `ratatui-pro` | how a UI behaves: the four screen states, loading and error patterns, form validation, cognitive-load laws, with WCAG wiring and mobile/terminal translations |
 
 ### origin
 
 - `wshobson`: [wshobson/agents](https://github.com/wshobson/agents) (MIT)
 - `s4.codes`: **content from [@s4.codes](https://www.tiktok.com/@s4.codes) (TikTok) as a Claude Skill**; Gemini transcribes the videos, Opus condenses them into the skill.
+- `synsation_`: **content from [@synsation\_](https://www.tiktok.com/@synsation_) (TikTok) as a Claude Skill**, the `Build for Good UX` series; same pipeline as `s4.codes`. Its accessibility reference is authored here from W3C sources instead, since the series does not cover accessibility.
 - `original`: self-authored
 - `anthropics`: [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), vendored with its LICENSE and a modification note
 - `clean-rust` distills the author's own Rust conventions; a dozen standout rules were re-authored after studying [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT)
@@ -195,7 +197,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
 | `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
 | `c-cpp-pro` + | inherit | none | C and C++ with explicit ownership, sanitizers wired to the repo build |
-| `flutter-pro` | inherit | `clean-flutter` | one Flutter/Dart task against the repo's analyze/format/test gate |
+| `flutter-pro` | inherit | `clean-flutter`, `ux-patterns` | one Flutter/Dart task against the repo's analyze/format/test gate |
 | `flutter-reviewer` | opus | `clean-flutter` | read-only Flutter/Dart diff/PR review with file:line and severity |
 | `mobile-tester` | sonnet | `emulator-testing` | drives a local Android AVD or iOS simulator, reports pass/fail with screenshots |
 | `rust-reviewer` | opus | `clean-rust` | read-only Rust diff/PR review: correctness, safety, async, invariants |
@@ -204,7 +206,9 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
 | `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, CLAUDE.md, and agent/skill prompt files with the code, edits docs only |
-| `ratatui-pro` | sonnet | `ratatui-patterns` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
+| `ratatui-pro` | sonnet | `ratatui-patterns`, `ux-patterns` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
+| `ux-pro` | sonnet | `ux-patterns` | builds a screen's loading, error, empty and success states with the repo's own components |
+| `ux-reviewer` | opus | `ux-patterns` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
 - `+` began as [wshobson/agents](https://github.com/wshobson/agents) personas (MIT), rewritten and debloated.
