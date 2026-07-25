@@ -72,13 +72,18 @@ though the criterion asks for any mechanism to disable interaction-triggered mot
 
 ## Where the Spec Runs Out
 
-**An auto-dismissing toast has no answer.** WCAG 2.2 never addresses a message that disappears on
-a timer. The Timing Adjustable Understanding document mentions no notification, toast, or timed
-message anywhere, so this is unaddressed rather than permitted. A literal reading of "for each
-time limit that is set by the content" does not exclude a toast, and none of its exceptions name
-one.
+**An auto-dismissing toast: the criteria are silent, the ARIA guidance is not.** WCAG 2.2 itself
+never addresses a message that disappears on a timer. The Timing Adjustable Understanding document
+mentions no notification, toast, or timed message anywhere. A literal reading of "for each time
+limit that is set by the content" does not exclude a toast, and none of its exceptions name one.
 
-The safe build, which conforms either way:
+The Authoring Practices Guide answers it directly, though, and points at the criterion:
+
+> It is also important to avoid designing alerts that disappear automatically. An alert that
+> disappears too quickly can lead to failure to meet WCAG 2.0 success criterion 2.2.3.
+
+Treat that as the working answer: do not auto-dismiss anything carrying information the user
+needs. The safe build:
 
 - Give the toast a role, so its content reaches AT regardless of how long it stays up.
 - Keep anything a user must act on out of a timed dismissal entirely. Put it inline or in a
@@ -86,10 +91,14 @@ The safe build, which conforms either way:
 - Leave a persistent record of dismissed messages where the information still matters.
 
 **Optimistic UI needs a real failure path.** Announcing success before the server confirms is not
-addressed by name anywhere in the spec. What is clear: when it later fails, the failure must be
-identified and described in text (3.3.1), and for a payment, a deletion, or a legal commitment,
-telling the user it worked before it was checked sits badly against 3.3.4's Checked and Confirmed
-options. Keep optimistic rendering for actions where a rollback is cheap.
+addressed by name anywhere in the spec, and 3.3.4 is the wrong criterion to reach for: its
+options all govern review and correction *before* a submission finalizes, not when a success
+message may render. Its Reversible option points the other way: optimistic rendering backed by a
+real undo satisfies it.
+
+What does bite: when the action later fails, that failure has to be identified and described in
+text (3.3.1). A silent rollback fails it. The rest of the objection is a usability one, not a
+conformance one: a status message that was never true is worse than a slower true one.
 
 ## Not Verified
 

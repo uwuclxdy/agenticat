@@ -3,7 +3,7 @@ name: ux-patterns
 description: "Interaction-design knowledge pack for the behavior of a UI: loading, error, empty, and success states, form validation, error placement, progressive disclosure, and the accessibility rules governing each. Use when building or reviewing a screen's states, wiring form validation, choosing a spinner or skeleton, wording an error message, placing navigation, or auditing an interface for usability."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # UX Patterns
@@ -16,7 +16,10 @@ feedback, forms, and the cognitive-load laws behind layout decisions.
 | This file | Web-first behavior rules |
 | `references/accessibility.md` | The conformance wiring every state needs. Read it alongside any state you build |
 | `references/mobile.md` | What changes on a phone |
-| `references/tui.md` | What changes in a terminal |
+
+For a CLI or a terminal UI, load the **terminal-ux** skill if it is installed. Exit codes, stream
+discipline, TTY detection, and terminal screen-reader behavior have their own canon and are not
+covered here.
 
 Not covered here: type scales, color palettes, visual style, brand. A rule that needs a specific
 palette or type scale is out of scope, so say so rather than inventing values. Contrast appears in
@@ -27,11 +30,13 @@ surrounding code. Two markers override that:
 
 - **WCAG x.x.x (Level)** means a published conformance criterion. Not a preference, and not
   something a repo convention overrides.
-- A named law (Jakob's, Hick's, Tesler's) carries published research behind it. Deviating needs a
-  reason beyond taste.
+- A named law is an aphorism with a citation, not a finding. Jakob's Law was coined by Nielsen as a
+  summary of his own heuristics. Tesler's traces to an interview and has a published counter-
+  argument. Hick's is real research about something narrower than its usual application. Each
+  section states what its law actually rests on; none of them settle an argument by themselves.
 
-Everything unmarked is a strong default with no external standard behind it. Numbers in unmarked
-rules are starting values, not thresholds anyone measured.
+Everything unmarked is a strong default. Numbers are starting values unless a rule says otherwise.
+Two are measured and marked as such: the 1 second and 10 second response-time limits.
 
 ---
 
@@ -107,19 +112,24 @@ marking so its placeholder shapes are not read as content.
 
 How long the wait is decides what to show. Rough starting values, not measured thresholds:
 
-| Wait | Show |
-|---|---|
-| Under ~1s | Nothing. Render the result when it arrives |
-| ~1 to 5s | A plain spinner |
-| ~5 to 10s | A spinner with text naming the operation ("Saving...") |
-| Over ~10s | Progress bar or step indicator, never a bare loop |
+The 1 second and 10 second limits are measured, from Miller 1968 and Card et al. 1991 by way of
+Nielsen. They are about human attention, so they have not moved with hardware.
+
+| Wait | Show | Why |
+|---|---|---|
+| Under 0.1s | Nothing | Reads as instantaneous |
+| Up to 1s | Nothing, or just the result | A train of thought survives this uninterrupted |
+| 1 to 10s | An indicator, with text naming the operation | Attention holds, but only if the screen proves it is working |
+| Past 10s | Percent done, expected completion, and a way to cancel | Attention is gone; people switch tasks and need to know when to come back |
 
 **Do:**
-- Delay the spinner by roughly 300 to 400ms before it appears, and once it appears keep it up for
-  a short minimum. This is what reconciles a spinner on a button with the "nothing under 1s" rule:
-  fast responses never show one, slow ones never flash.
-- Advance the text for long waits ("Connecting", "Fetching your data", "Almost there") so the
-  screen proves something is still happening.
+- Delay the indicator briefly before showing it, then hold it a short minimum. This reconciles a
+  spinner on a button with the sub-1s rule: fast responses never flash one. No source gives a
+  number for that delay, so pick one and keep it consistent rather than citing it as a threshold.
+- Advance the text for long waits ("Connecting", "Fetching your data") so the screen proves
+  something is still happening.
+- Give anything past 10 seconds an interrupt. A user who cannot cancel a long operation is stuck
+  watching it.
 
 **Don't:**
 - Flash a spinner for a 200ms response. The flicker reads as a glitch and makes the app feel
@@ -164,7 +174,7 @@ the less hunting it costs.
 | Placement | Use for | Behavior |
 |---|---|---|
 | Inline | A specific field or control that failed | Sits next to it, persists until fixed |
-| Toast | Non-blocking, informational, recoverable | Appears at a screen edge, dismissable |
+| Toast | Non-blocking, informational, recoverable | Appears at a screen edge, stays until dismissed |
 | Modal | The user genuinely cannot continue | Blocks interaction, carries the action button |
 
 **Do:**
@@ -181,6 +191,11 @@ the status-message criterion precisely because taking focus already announces it
 inside the criterion and reaches a screen reader only if it carries `role="status"` or
 `role="alert"`. A modal has its own obligations instead: focus in on open, focus back on close,
 Escape to dismiss. See `references/accessibility.md`.
+
+**Do not auto-dismiss on a timer.** The ARIA Authoring Practices Guide is direct about it: "It is
+also important to avoid designing alerts that disappear automatically. An alert that disappears
+too quickly can lead to failure to meet WCAG 2.0 success criterion 2.2.3." A timer that suits a
+fast reader cuts off a slow one, someone using magnification, or anyone who looked away.
 
 ---
 
@@ -228,10 +243,13 @@ Scale the response to the size of what the user did.
 Why: uncertainty after an irreversible action is the most expensive feeling an interface can
 produce. It sends people to support, or to doing it twice.
 
-**WCAG 4.1.3 (AA) and 3.3.4 (AA):** a success message that appears without taking focus needs
-`role="status"` to reach a screen reader. Optimistic UI interacts badly with 3.3.4: for a payment,
-a deletion, or a legal commitment, announcing success before the server checked it undercuts the
-criterion's Checked and Confirmed options. Keep optimistic rendering for cheap rollbacks.
+**WCAG 4.1.3 (AA):** a success message that appears without taking focus needs `role="status"` to
+reach a screen reader.
+
+On optimistic UI, the objection is usability rather than conformance: a success message that was
+never true is worse than a slower true one. If it later fails, the failure has to be identified
+and described in text (3.3.1); a silent rollback fails that. Backing optimistic rendering with a
+real undo is the version that holds up.
 
 ---
 
@@ -242,18 +260,36 @@ criterion's Checked and Confirmed options. Keep optimistic rendering for cheap r
 Catch problems at the field, while the user is still there.
 
 **Do:**
-- Validate a field when it loses focus, and re-validate as they fix it.
 - Show constraints up front. Password rules render as a live checklist, not as a rejection after
   submit.
 - Show a character count against its limit while typing.
-- Mark required fields visibly, and keep submit disabled until the form can actually succeed.
+- Mark the *optional* fields. GOV.UK's position is never to asterisk required ones, since the
+  asterisk is unexplained and the required case is the default a user assumes anyway.
 - Pre-fill anything you already know about a signed-in user.
+- On a failed submit: render an error summary at the top, move keyboard focus to it, prefix the
+  page title with "Error:", and link each entry to its field. Keep every answer the user already
+  gave, passing and failing both.
 
 **Don't:**
-- Hold every error until submit, then return the user to the top of a reloaded page to hunt for
-  them.
-- Disable submit with no indication of what is missing. Disabled plus silent is a dead end.
+- Disable the submit button. This is the rule most often gotten wrong. A disabled button is not
+  focusable, so someone tabbing through cannot reach it to find out why it is dead; it has poor
+  contrast; and a user who fixes the last field may never notice it came alive. GOV.UK: "Disabled
+  buttons have poor contrast and can confuse some users, so avoid them if possible." Let the
+  submit happen and answer with an error summary. If you must disable, `aria-disabled="true"`
+  keeps it focusable where the `disabled` attribute does not.
+- Clear fields on a validation failure. Making someone retype a correct answer because a different
+  one was wrong is the fastest way to lose them.
 - Let someone exceed a limit freely and discover it only at submit.
+
+**When to validate is genuinely contested.** GOV.UK says wait for submit: "Do not validate when
+the user moves away from a field. Wait until they try to move to the next part of the service."
+Baymard's testing supports on-blur: "the validity of each field input should be checked when the
+user leaves the field." Both camps agree on the negative, so treat that as the rule: never
+validate a field the user has not finished with.
+
+Two on-blur bugs to handle if you go that way: a password manager filling a field fires blur and
+shows an error prematurely, and a value split across several inputs (a date, a card number) has no
+single meaningful blur.
 
 **WCAG 3.3.2 (A) and 4.1.2 (A):** every input carries a label or instructions, and required and
 invalid states are exposed programmatically. A red border and an asterisk are visual conventions
@@ -300,16 +336,20 @@ Decision time grows with the number and complexity of options.
 
 **Do:**
 - Cut a long option list to the ones that matter, and let search or filters reach the rest.
-- Split a long form across steps. The gain is real for genuinely long forms, though the specific
-  conversion numbers quoted around this rule trace to marketing case studies, not research.
+- Split a long form across steps. The conversion numbers quoted around this rule trace to
+  marketing case studies rather than research, so take the direction and ignore the percentages.
 - Curate rather than enumerate. A short recommended set beats the full catalog.
 
 **Don't:**
 - Render a 200-item menu and call it complete.
 - Put every category into one dropdown because the data model has them.
 
-Attribution: the Hick-Hyman law. It describes choosing among comparable options, so it applies
-to a flat menu more than to a well-grouped one.
+Attribution, and it does not hold up: Hick and Hyman timed decisions in response to clear visual
+stimuli, with a known option set. Applying the law to menu and navigation search is a documented
+misuse, because the user is searching rather than choosing. The advice survives on other evidence:
+novice search time is linear in menu length, and some menu layouts never reach Hick-Hyman
+performance at all because they cannot be learned. Cut the list because searching it is slow, not
+because a law says so.
 
 ### 7.3 Progressive Disclosure: Show What Is Needed Now
 
@@ -352,12 +392,12 @@ engineer's job easier.
 | **States** | Build loading, success, error, empty for every screen | Ship the happy path and let the framework decide the rest |
 | **Failure scope** | Each section owns its data, loading, and errors | One widget's failure taking down the whole page |
 | **Loading type** | Skeleton for regions, progress bar for knowable waits, inline spinner for one control | A spinner on a file upload |
-| **Loading timing** | Delay ~300ms before showing, then hold a minimum; add text past ~5s | Flashing a spinner on a 200ms response; a bare loop past ~10s |
+| **Loading timing** | Nothing under 1s; text with the indicator from 1 to 10s; percent done, ETA and a cancel past 10s | Flashing a spinner on a 200ms response; a bare loop past 10s with no way out |
 | **Error content** | What happened, why, what to do next | Raw backend text, "Something went wrong", silent failure |
 | **Error placement** | Inline by default; modal only when actually blocked | Important errors as toasts; modals for emphasis |
 | **Empty** | Name the reason, offer the action that fills it | A blank region, or bare "No results found" |
 | **Success** | Scale to the action; confirm anything irreversible | Nothing at all after a payment; confetti for a save |
-| **Forms** | Validate on blur, show constraints live, keep submit honest | Errors held until submit; disabled button with no reason |
+| **Forms** | Show constraints live, mark optional fields, answer a failed submit with a focused error summary | Disabling submit; clearing fields on failure; asterisking required fields |
 | **Input** | Normalize formatting server-side | Rejecting a valid value over its punctuation |
 | **Convention** | Standard controls in their standard places | Novelty spent on relocating basics |
 | **Choice** | Cut, filter, curate, split long forms | 200-item menus, every category in one dropdown |
