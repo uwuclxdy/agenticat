@@ -169,7 +169,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 
 - `wshobson`: [wshobson/agents](https://github.com/wshobson/agents) (MIT)
 - `s4.codes`: **content from [@s4.codes](https://www.tiktok.com/@s4.codes) (TikTok) as a Claude Skill**; Gemini transcribes the videos, Opus condenses them into the skill.
-- `synsation_`: **content from [@synsation\_](https://www.tiktok.com/@synsation_) (TikTok) as a Claude Skill**, the `Build for Good UX` series; same pipeline as `s4.codes`. Its accessibility reference is authored here from W3C sources instead, since the series does not cover accessibility.
+- `synsation_`: **content from [@synsation\_](https://www.tiktok.com/@synsation_) (TikTok) as a Claude Skill**, the `Build for Good UX` series, parts 1 to 16; same pipeline as `s4.codes`. Its accessibility reference is authored here from W3C sources instead, since the series does not cover accessibility.
 - `original`: self-authored
 - `anthropics`: [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), vendored with its LICENSE and a modification note
 - `clean-rust` distills the author's own Rust conventions; a dozen standout rules were re-authored after studying [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT)
