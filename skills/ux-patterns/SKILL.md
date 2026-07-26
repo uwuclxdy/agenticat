@@ -3,7 +3,7 @@ name: ux-patterns
 description: "Interaction-design knowledge pack for how a UI behaves: the five screen states (loading, success, error, empty, partial), form validation and submission, error copy, undo versus confirmation, progressive disclosure, plus the accessibility wiring each needs. Use when building a screen's states, wiring validation, choosing a spinner or skeleton, wording an error, or deciding between a confirmation and an undo."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # UX Patterns
@@ -84,14 +84,17 @@ leaves the rest of the page working.
 
 **Do:**
 - Give a failed section its own error box and its own retry control, inside its own bounds.
-- Render each section as soon as its own data arrives.
+- Render each section as soon as its own data arrives, and hold the still-waiting ones with a
+  skeleton in their own bounds (§2.1). A profile with its header and follower counts up and a
+  placeholder grid below is usable; the same screen behind one centered spinner is not.
 
 **Don't:**
 - Block the whole page on a global loading flag until every request resolves.
 - Escalate one widget's failure into a full-page error that hides everything that did load.
 
 Why: a dashboard where the revenue chart is down is still useful for everything else on it. A
-full-page error throws away work that already succeeded.
+full-page error throws away work that already succeeded. One screen's data usually comes from
+several backends at different speeds, so a global flag paces every section to the slowest one.
 
 ---
 
@@ -620,7 +623,7 @@ than as a section. Each row points at where its rule lives here.
 |---|---|---|
 | **States** | Build loading, success, error, empty, partial for every screen | Ship the happy path and let the framework decide the rest |
 | **Partial** | Handle sparse data as its own state, naming what is missing | Rendering three rows through a layout built for twenty |
-| **Failure scope** | Each section owns its data, loading, and errors | One widget's failure taking down the whole page |
+| **Failure scope** | Each section owns its data, loading, and errors; render what has arrived, skeleton the rest | One global flag pacing the page to its slowest backend; one widget's failure taking down the whole page |
 | **Loading type** | Skeleton for regions, progress bar for knowable waits, inline spinner for one control | A spinner on a file upload |
 | **Loading timing** | No loading indicator under 1s; text with the indicator from 1 to 10s; percent done, ETA and a cancel past 10s | Flashing a spinner on a 200ms response; a bare loop past 10s with no way out |
 | **Click feedback** | Acknowledge at the control, then drop duplicate submits | A dead-feeling button that sends the request twice |
