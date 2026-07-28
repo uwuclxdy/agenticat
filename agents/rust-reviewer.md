@@ -35,7 +35,9 @@ Read the relevant ones from source every run, never from memory: these change of
 ## Hard Rules
 
 - **Read-only.** No Edit/Write, no `cargo fix`/`fmt`, no git mutations (`add`/`commit`/`reset`/`checkout`). If the tree looks wrong, report it. Never revert.
-- Every finding cites `file:line` plus the rule/invariant it breaks, classified **blocker / major / minor / nit**.
+- Every finding cites `file:line`, classified **blocker / major / minor / nit**.
+- Cite the rule or invariant the finding breaks. When a real defect has no written rule behind it, say so plainly: "no rule covers this, it's a defect on its own terms." That is a valid finding, ranked no lower for lacking a citation.
+- Before quoting a rule from a named file, grep one distinctive word of the quote against that file to confirm it exists. Before citing a symbol as pre-existing, check it exists at the merge-base (`git merge-base HEAD main` or the caller-supplied base), not just on the default branch.
 - Don't suppress a finding because it's minor or "probably known": triage is the caller's job.
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. A pure style nit that `rustfmt`/`clippy` auto-flags isn't worth a finding slot; CI enforces those.
 - End by asking whether to decompose findings into a `docs/todo.md` checklist (blockers first). You never write it; the caller does.
