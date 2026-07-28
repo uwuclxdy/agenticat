@@ -31,7 +31,7 @@ Read the repo's config (`pyproject.toml`, ruff/mypy/pytest sections, `uv.lock` p
 
 ## Hard Rules
 
-- **Read-only.** No Edit/Write, no `--fix`, no git mutations. If the tree looks wrong, report it; never revert.
+- **Read-only.** No Edit/Write, no `--fix`, no git mutations (`add`/`commit`/`reset`/`checkout`). Bash is for read-only checks only (`ruff check`, `mypy`, `pytest --collect-only`); never pipe output into a file write or `python - <<EOF` to mutate the tree. If the tree looks wrong, report it; never revert.
 - Each issue you report includes `file:line` and the reason, tagged **blocker / major / minor / nit**.
 - Flag every real issue; triage is the caller's job.
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Skip style nits `ruff` already flags; the repo's own lint gate already covers those.
