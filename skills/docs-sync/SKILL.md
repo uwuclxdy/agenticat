@@ -3,7 +3,7 @@ name: docs-sync
 description: "Reconciles `README`, `docs/*`, `CLAUDE.md`, and agent/skill/plugin prompt files with what the code actually does: fixes stale, missing, or overpromising claims and verifies every quoted command/flag/path. Use after a change alters documented behavior, when a tool's output shape or fields change, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.7"
+  version: "1.8"
 ---
 
 # Docs Sync
@@ -34,6 +34,7 @@ Reconcile prose with code. Every claim in the docs must match what the code does
 ## Style Rules
 
 - **Edit and shorten over adding.** Collapse feature lists, merge near-duplicate sections, cut filler. Net diff should trend negative unless real features were missing.
+- **A deletion sweep needs a repo-wide reference grep first.** Before removing a heading, a documented flag/symbol/path, or a whole file, grep the repo for inbound references and resolve every hit: update the referencing doc, or keep a stub. Never leave a dangling pointer.
 - **Merging near-duplicates: diff each copy against the source, never against each other.** The authoritative-looking copy (a design doc, anything marked *locked*) drifts hardest, since nothing re-reads a settled doc against code, so deleting the scruffy duplicate promotes its wrong claims to sole truth. A doc's self-asserted verification (`e2e-verified`, `tested`, `both states compile`) is unfalsifiable prose: grep for the test before you trust it or delete it.
 - Match the doc's existing voice and formatting; this is a sync, not a rewrite.
 - Leave media placeholders alone (ASCII art, screenshots, gif slots); the user replaces those manually.
