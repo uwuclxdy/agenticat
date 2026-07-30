@@ -3,7 +3,7 @@ name: terminal-ux
 description: "Behavior rules for command-line and terminal programs: exit codes, stdout versus stderr, TTY detection, NO_COLOR and palette choice, progress output, help conventions, destructive-action confirmation, signal and panic handling, plus TUI keyboard and screen-reader concerns. Use when writing or reviewing a CLI, a TUI, argument parsing, terminal output, prompts, or terminal color handling."
 metadata:
   author: uwuclxdy
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Terminal UX
@@ -159,7 +159,18 @@ subcommand.
 - Send `--help` and `--version` to stdout and exit successfully, ignoring other arguments once
   either is seen (GNU standard).
 - End `--help` with where to report bugs and where the project lives (GNU standard).
-- Ship shell completion. It is a discovery mechanism, not just a convenience.
+- Ship shell completion. It is a discovery mechanism, not just a convenience. One subcommand
+  generates the script off the parser and prints it to stdout. The user wires it up, so nothing
+  writes to a shell rc on their behalf:
+
+  ```sh
+  # .bashrc
+  source <(mycli completions bash)
+  # .zshrc
+  source <(mycli completions zsh)
+  # fish
+  mycli completions fish > ~/.config/fish/completions/mycli.fish
+  ```
 
 **TUI, convention.** Discoverability is a visible keybinding footer plus a searchable command
 palette, not a printed help block. Keys that do nothing in the current state get hidden or greyed
