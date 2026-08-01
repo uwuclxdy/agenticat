@@ -70,6 +70,7 @@ RFC 430 casing (`snake_case` items, `CamelCase` types, `SCREAMING_SNAKE_CASE` co
 - Group one logical filter into one `.filter_map()` closure (using `?` and early `return None`) instead of fragmented `.filter_map().filter().filter_map()` chains.
 - Don't reimplement the standard library: `split_once('=')` over `.splitn(2, '=').collect()`, `unwrap_or_default()` over `unwrap_or_else(|| T::default())`.
 - One fluent chain over three named single-use intermediates; declare variables next to first use, not at the top of the function.
+- Prefer chained builder calls over `let mut` named variables for linear configuration sequences. When each step returns `Self`, naming the intermediate creates a variable-mixing bug class: two similar blocks in one function, copy-paste produces `first.configure()` where `second.configure()` was meant, and the compiler accepts it. Chaining makes each pipeline self-contained.
 
 ## Types & Traits
 
