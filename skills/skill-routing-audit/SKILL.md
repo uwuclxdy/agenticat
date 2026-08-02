@@ -1,9 +1,9 @@
 ---
 name: skill-routing-audit
-description: "Audits a skill (or all skills) for routing gaps: it holds the right answer but buries it where an agent won't reach it. Targets boundary/negative probes (can it do X, what can't it do, is Y possible) that route to the how-to and miss the answer. Use after authoring or editing a skill, or to sweep all skills."
+description: "Audits a skill (or all skills) for routing gaps: the right answer buried where boundary/negative probes (can it do X, what can't it do) never reach it. Use after authoring or editing a skill, or to sweep all skills."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Skill Routing Audit
@@ -19,6 +19,8 @@ This skill hunts that failure with boundary probes and a skill-only simulation.
 - When a skill that should cover a question gave a vague or wrong answer.
 
 Not for creating a skill from scratch (`skill-creator`) or folding a user's manual edit back into a skill.
+
+Out of scope too: cross-skill misselection (the top-level router picking a different skill entirely) and pairwise overlap between competing skills. This audits burial *inside* an already-selected skill. A skill that never fires at all has a description/triggering problem; that routes to `skill-creator`'s trigger tooling, not here.
 
 ## Method
 
