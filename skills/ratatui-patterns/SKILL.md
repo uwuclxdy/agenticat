@@ -1,9 +1,9 @@
 ---
 name: ratatui-patterns
-description: "Modern-ratatui knowledge pack for writing, refactoring, or reviewing Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops; writing TestBackend render tests; or resolving ratatui version upgrades and API questions."
+description: "Modern-ratatui knowledge pack for Rust TUI code on ratatui or crossterm. Use when touching TUI widgets, layout, styling, or event loops, writing TestBackend render tests, or resolving ratatui upgrades and API questions."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Ratatui Patterns

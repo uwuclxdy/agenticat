@@ -1,9 +1,9 @@
 ---
 name: terminal-ux
-description: "Behavior rules for command-line and terminal programs: exit codes, stdout versus stderr, TTY detection, NO_COLOR and palette choice, progress output, help conventions, destructive-action confirmation, signal and panic handling, plus TUI keyboard and screen-reader concerns. Use when writing or reviewing a CLI, a TUI, argument parsing, terminal output, prompts, or terminal color handling."
+description: "Behavior rules for CLIs and TUIs: exit codes, stdout vs stderr, TTY detection, NO_COLOR, progress output, help conventions, destructive-action confirmation, signal and panic/crash recovery, screen-reader concerns. Use when writing or reviewing a CLI, TUI, argument parsing, prompts, or terminal color handling."
 metadata:
   author: uwuclxdy
-  version: "1.2"
+  version: "1.3"
 ---
 
 # Terminal UX

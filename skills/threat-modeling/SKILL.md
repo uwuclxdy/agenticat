@@ -1,9 +1,9 @@
 ---
 name: threat-modeling
-description: "Threat modeling with STRIDE, attack trees, security-requirement extraction, mitigation and control-library selection (defense-in-depth), and compliance mapping (PCI-DSS/HIPAA/GDPR/OWASP-ASVS). Use when doing a security review, choosing mitigating controls, hardening a design, or building a threat-model doc."
+description: "STRIDE, attack trees, security-requirement extraction, mitigation and control selection (defense-in-depth), compliance mapping (PCI-DSS/HIPAA/GDPR/OWASP-ASVS). Use for a security review, hardening a design, choosing controls, or a threat-model doc."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Threat Modeling

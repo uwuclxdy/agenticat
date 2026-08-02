@@ -1,9 +1,9 @@
 ---
 name: clean-shell
-description: "Defensive Bash and shell script quality: strict-mode `set` flags, traps, idempotent mutation of live systems (deploy, firewall/sshd/sudoers edits, systemd units, ssh remote-exec), ShellCheck rc-file and `# shellcheck disable=` discipline, bats-core tests (`.bats`, `run`, PATH-stub mocking). Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck/bats into CI."
+description: "Defensive Bash/POSIX shell quality: strict-mode `set` flags, traps, idempotent mutation of live systems (deploy, sshd/sudoers, systemd), ShellCheck discipline, bats-core tests. Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck/bats into CI."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Clean Shell

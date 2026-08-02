@@ -1,9 +1,9 @@
 ---
 name: name-check
-description: "Suggests project/crate/plugin names and checks availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains; needs `bun`). Use before naming, renaming, or publishing anything."
+description: "Suggests project/crate/plugin names and checks availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains). Use before naming, renaming, or publishing anything."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Name Check

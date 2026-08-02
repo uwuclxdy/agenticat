@@ -1,9 +1,9 @@
 ---
 name: clean-code
-description: "Language-agnostic clean-code baseline: naming, functions, error handling, comments, duplication. Use before writing or reviewing code in any language, when no language-specific clean-* skill applies."
+description: "Language-agnostic clean-code baseline: naming, functions, error handling, comments, duplication. Use when writing or reviewing code and no language-specific clean-* skill applies."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Clean Code Principles
