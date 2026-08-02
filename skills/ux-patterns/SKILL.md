@@ -1,9 +1,9 @@
 ---
 name: ux-patterns
-description: "Interaction-design knowledge pack for how a UI behaves: the five screen states (loading, success, error, empty, partial), form validation and submission, error copy, undo versus confirmation, progressive disclosure, plus the accessibility wiring each needs. Use when building a screen's states, wiring validation, choosing a spinner or skeleton, wording an error, or deciding between a confirmation and an undo."
+description: "Interaction-design pack for UI behavior: the five screen states (loading, success, error, empty, partial), form validation, error copy, undo vs confirmation, progressive disclosure, and the accessibility wiring each needs. Use when building screen states, wiring validation, choosing spinner vs skeleton, or wording an error."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # UX Patterns
@@ -21,9 +21,10 @@ For a CLI or a terminal UI, load the **terminal-ux** skill if it is installed. E
 discipline, TTY detection, and terminal screen-reader behavior have their own canon and are not
 covered here.
 
-Not covered here: type scales, color palettes, visual style, brand. A rule that needs a specific
-palette or type scale is out of scope, so say so rather than inventing values. Contrast appears in
-the accessibility reference as a conformance floor, never as a palette.
+Not covered here: type scales, color palettes, visual style, brand. Your design-system skill owns
+those. A rule that needs a specific palette or type scale is out of scope, so point at that skill
+rather than inventing values. Contrast appears in the accessibility reference as a conformance
+floor, never as a palette.
 
 Treat these as directional. A repo's established pattern wins over a rule here; match the
 surrounding code. Two markers override that:
