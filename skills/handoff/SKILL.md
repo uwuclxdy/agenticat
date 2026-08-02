@@ -1,9 +1,9 @@
 ---
 name: handoff
-description: "Captures the current session into a continuation prompt for a fresh one, or resumes from a pasted handoff. Use when context is running low, when ending a session mid-task, or when told to 'hand off' or write a handoff. `/handoff reusable` instead maintains a persistent multi-session task-runner state file (`docs/handoff-state.md`) that a fresh session reads, advances a few tasks via agent pairs, and re-saves."
+description: "Captures the session into a continuation prompt, or resumes from a pasted one. Use when context runs low, when ending mid-task, or when told to 'hand off'. `/handoff reusable` instead maintains a persistent multi-session task-runner state file that fresh sessions advance and re-save."
 metadata:
   author: uwuclxdy
-  version: "1.7"
+  version: "1.8"
 ---
 
 # Handoff
@@ -78,12 +78,14 @@ Omit empty sections. Merge sections for tiny handoffs; the order stays. Add more
 
 When the user pastes a continuation prompt, read the referenced files and skills before acting, then follow the `> resume:` directive.
 
+Resume applies to a *pasted continuation prompt* only. A live or stopped subagent from the current session is not handoff territory: ping it with `SendMessage` instead.
+
 ## Reusable Mode (`/handoff reusable`)
 
 For burning a task backlog down over many sessions: maintain a persistent task-runner state file the next session reads, advances a few tasks, and re-saves, instead of a one-shot chat prompt. The default chat-only mode above applies whenever `reusable` is absent.
 
 **Dispatch on the trigger, not on file existence alone.** Three distinct triggers:
-1. `/handoff reusable` **with no state file** → CREATE it (schema below).
+1. `/handoff reusable` **with no state file** → CREATE it (schema below). A natural-language ask for the same thing (a persistent cross-session backlog that future sessions advance and re-save) is this trigger too; the literal `/handoff reusable` is not required.
 2. **a pasted continuation prompt** → RUN the runner protocol from step 1, then save. This is the resume path; it does work.
 3. `/handoff reusable` mid-session **with the file already present** → SAVE-POINT only: run protocol step 7 (save), run no tasks.
 
