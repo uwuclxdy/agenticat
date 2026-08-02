@@ -1,6 +1,6 @@
 ---
 name: ratatui-pro
-description: "Implements, refactors, or tests Rust TUI code using current-ratatui built-ins instead of hand-rolled reimplementations, writing TestBackend tests and running the repo's gate. Use when a ratatui or crossterm widget, layout, or event loop needs building or fixing. Spawn one per module-sized task."
+description: "Implements, refactors, or tests Rust TUI code with current-ratatui built-ins, writing TestBackend tests and running the repo's gate. Use for ratatui/crossterm widgets, layout, or event loops. Spawn one per module-sized task."
 model: sonnet
 ---
 

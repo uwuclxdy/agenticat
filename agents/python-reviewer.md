@@ -1,6 +1,6 @@
 ---
 name: python-reviewer
-description: "Read-only Python diff/PR reviewer: correctness, typing, security, clarity, with file:line and severity. Use when a Python diff, PR, or staged change needs review. Spawn one per diff."
+description: "Read-only Python diff/PR reviewer: correctness, typing, security, clarity. Spawn one per diff. Not for implementing (`python-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 

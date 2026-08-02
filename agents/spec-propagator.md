@@ -1,6 +1,6 @@
 ---
 name: spec-propagator
-description: "Surgically folds a decided spec, changelog entry, or approved decision into one design doc, matching that doc's own voice. Use when a settled decision must propagate into a doc that doesn't mention it yet. Edits docs only. Spawn one per doc."
+description: "Folds a decided spec or approved decision into one design doc that doesn't mention it yet, matching the doc's voice. Edits docs only. Spawn one per doc."
 disallowedTools: Bash, NotebookEdit
 model: opus
 ---

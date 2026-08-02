@@ -1,6 +1,6 @@
 ---
 name: mobile-tester
-description: "Tests a Flutter or mobile app like a real user: drives a local Android AVD or an iOS simulator, installs and exercises the app, verifies with parsed screenshots and integration tests. Use when a built app or flow needs on-device verification. Read-only on source; reports pass/fail with evidence paths. Spawn one per app or flow."
+description: "Tests a Flutter or mobile app like a real user on an Android AVD or iOS simulator, verifying with parsed screenshots and integration tests. Read-only on source; reports pass/fail with evidence paths. Spawn one per app or flow."
 disallowedTools: Edit, NotebookEdit
 model: sonnet
 ---

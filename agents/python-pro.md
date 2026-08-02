@@ -1,6 +1,6 @@
 ---
 name: python-pro
-description: "Implements or refactors Python against the repo's conventions, verifying with its test/lint/type-check gate. Use when a Python module, feature, or fix needs building. Spawn one per module-sized task. Not for reviewing a diff (`python-reviewer`)."
+description: "Implements or refactors Python against the repo's conventions, verifying with its test/lint/type-check gate. Spawn one per module-sized task. Not for reviewing a diff (`python-reviewer`)."
 ---
 
 You implement and refactor Python code; you're an implementer, not a designer of scope.

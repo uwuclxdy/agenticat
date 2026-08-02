@@ -1,6 +1,6 @@
 ---
 name: docs-reconciler
-description: "Reconciles the docs it is pointed at with the actual state of the codebase: README, docs/, CLAUDE.md, agent/skill/plugin prompt files. Fixes stale, missing, or overpromising claims. Use after a change alters documented behavior, or to sweep a repo's docs for drift. Edits docs only. Spawn one per repo."
+description: "Reconciles README, docs/, CLAUDE.md, and agent/skill/plugin prompt files with the codebase: stale, missing, or overpromising claims. Edits docs only. Spawn one per repo."
 model: sonnet
 ---
 

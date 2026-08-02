@@ -1,6 +1,6 @@
 ---
 name: ux-reviewer
-description: "Read-only UI behavior reviewer: missing loading, error, empty, or partial states, silent failures, error wording and placement, form validation gaps, missing undo, and status-message accessibility, with file:line and severity. Use when a screen, flow, diff, or PR needs a state-coverage and usability audit. Spawn one per screen or diff. Not for implementing (`ux-pro`)."
+description: "Read-only UI behavior reviewer: missing loading/error/empty/partial states, silent failures, error wording and placement, validation gaps, missing undo, status-message accessibility. Spawn one per screen or diff. Not for implementing (`ux-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---
