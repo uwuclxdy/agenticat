@@ -210,6 +210,15 @@ this pattern. Never draw one without a visible way out.
 give cleanup a timeout so it cannot hang, and skip remaining cleanup on a second Ctrl-C. If that
 second press leaves things in a destructive state, say so before it happens.
 
+**CLI, gotcha.** A reader that walks away mid-pipe is not a failure of the run. Rust ignores
+`SIGPIPE`, so a write to a pipe whose reader left comes back `EPIPE`, and the std print macros
+panic on it: `prog | head -3` exits 101 with a panic message instead of just stopping. The signal
+disposition fix is wrong for a binary that doubles as a server, so handle it at the emitter. The
+payload stream exits 0, since the reader chose to leave and `head` already printed what it wanted.
+The diagnostic stream swallows the `EPIPE` and keeps the run's own exit code. Splitting by stream
+is not enough: a background log sink must swallow every write error, or one full disk ends a worker
+thread.
+
 **TUI, convention.** A panic that unwinds without restoring the terminal leaves the user with a
 broken shell: raw mode still on, still in the alternate screen. Install a panic hook that disables
 raw mode and leaves the alternate screen before anything else runs. ratatui documents this per
