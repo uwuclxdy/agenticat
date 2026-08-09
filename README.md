@@ -5,7 +5,7 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-19-green)](#skills)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-20-green)](#skills)
 [![agents](https://shields.uwuclxdy.dev/badge/agents-24-green)](#agents)
 
 </div>
@@ -159,6 +159,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
 | `skill-routing-audit` | original | standalone | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
+| `mcp-stateless` | original | standalone | the MCP `2026-07-28` stateless revision: what the handshake removal changed, the wire contract, multi round-trip requests, and how to migrate a server or client off session-era code |
 | `docs-sync` | original | `docs-reconciler` | reconciles README, wiki, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
