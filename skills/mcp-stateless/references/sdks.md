@@ -45,10 +45,13 @@ hand, see below. Confirm with a live handshake, never with a version number.
 Migration guide: `github.com/modelcontextprotocol/rust-sdk` discussions, "Upgrading to RMCP
 3.x". MSRV is 1.88.
 
-**The trap:** in 3.0.0, `ProtocolVersion::LATEST` still resolves to `V_2025_11_25`. A server
-built on the documented `.with_protocol_version(ProtocolVersion::LATEST)` idiom compiles,
-runs, and speaks the **old** protocol. Select `ProtocolVersion::V_2026_07_28` explicitly.
-Re-check whether `LATEST` has moved before relying on either.
+**The trap:** in 3.1.2, `ProtocolVersion::LATEST` still resolves to `V_2025_11_25`. A server's
+advertised versions come from `ServerHandler::supported_protocol_versions()`, which defaults to
+`ProtocolVersion::KNOWN_VERSIONS` (all five, `2026-07-28` included). The `protocol_version` field
+on `ServerInfo` is only the FALLBACK `initialize` negotiation returns when the client asks for a
+revision the SDK does not know, so pinning it to `V_2026_07_28` answers a legacy client with a
+revision it cannot speak. Leave it at the default; narrow `supported_protocol_versions` for a
+modern-only server.
 
 | Area | 2.x | 3.x |
 |---|---|---|
@@ -76,7 +79,7 @@ Users of `#[tool_router]` + `#[tool_handler]` get the return-type change for fre
 hand-rolling.
 
 **Gotchas that survive the version bump** (each cost a real debug cycle; verified against
-`rmcp` 2.2, re-check on 3.x before relying on the exact API name):
+`rmcp` 3.1.2, 2026-08-09):
 
 | Area | Note |
 |---|---|
@@ -128,7 +131,9 @@ Assert, explicitly, on the `server/discover` result:
 Then on `tools/list`: `resultType`, `ttlMs`, `cacheScope`, every tool with its `inputSchema`.
 Exit 0, empty stderr.
 
-Negative probes worth adding, because each one catches a whole class:
+Negative probes worth adding, because each one catches a whole class. Send these AFTER a valid
+`server/discover` opener: a `tools/list` with `params: {}` as the first frame establishes no era,
+and rmcp ends the stdio session with exit 1 instead of returning `-32602`.
 
 ```sh
 # 1. Missing required _meta -> -32602 (and HTTP 400 on Streamable HTTP)
