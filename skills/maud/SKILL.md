@@ -498,5 +498,4 @@ Render trait:  fn render(&self) -> Markup          fn render_to(&self, buf: &mut
 Escapes:       & < > "   (single quote NOT escaped)
 ```
 
-Book: https://maud.lambda.xyz
-API docs: https://docs.rs/maud
+Book: https://maud.lambda.xyz API docs: https://docs.rs/maud
