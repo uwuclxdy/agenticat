@@ -1,8 +1,6 @@
 # Accessibility of States
 
-Authored from W3C primary sources (WCAG 2.2 Recommendation, its Understanding docs, the ARIA
-Authoring Practices Guide), not from the material behind the rest of this skill. Every criterion
-below was checked against w3.org rather than recalled.
+Authored from W3C primary sources (WCAG 2.2 Recommendation, its Understanding docs, the ARIA Authoring Practices Guide), not from the material behind the rest of this skill. Every criterion below was checked against w3.org rather than recalled.
 
 A criterion here is a published conformance requirement. A repo convention does not override one.
 
@@ -29,17 +27,11 @@ A criterion here is a published conformance requirement. A repo convention does 
 
 ## The One That Surprises People
 
-A modal is **exempt** from the status-message criterion, and a toast is not. WCAG's own worked
-example:
+A modal is **exempt** from the status-message criterion, and a toast is not. WCAG's own worked example:
 
-> An author displays an error message in a dialog. Since the dialog takes focus, it is defined as
-> a change of context and does not meet the definition of a status message. As a result of taking
-> focus, the new change of context is already announced by the screen reader, and thus does not
-> need to be included in the scope of this success criterion.
+> An author displays an error message in a dialog. Since the dialog takes focus, it is defined as > a change of context and does not meet the definition of a status message. As a result of taking > focus, the new change of context is already announced by the screen reader, and thus does not > need to be included in the scope of this success criterion.
 
-So "toast or modal" is not a free choice at the accessibility layer. A modal announces itself by
-taking focus, which is the same reason it interrupts whatever the user was doing. A toast
-announces nothing on its own and needs the right role to exist for a screen reader at all.
+So "toast or modal" is not a free choice at the accessibility layer. A modal announces itself by taking focus, which is the same reason it interrupts whatever the user was doing. A toast announces nothing on its own and needs the right role to exist for a screen reader at all.
 
 ## Criteria Reference
 
@@ -65,61 +57,37 @@ announces nothing on its own and needs the right role to exist for a screen read
 | 4.1.2 | Name, Role, Value | A | no |
 | 4.1.3 | Status Messages | AA | no |
 
-Targets: 2.5.8 allows undersized targets when spacing keeps 24px circles centered on each from
-intersecting, when the size comes from the user agent default untouched, or when the size is
-essential to the information. Treat 24px as the floor and 44px as the comfortable size.
+Targets: 2.5.8 allows undersized targets when spacing keeps 24px circles centered on each from intersecting, when the size comes from the user agent default untouched, or when the size is essential to the information. Treat 24px as the floor and 44px as the comfortable size.
 
-3.3.7 is scoped to one process, so it does not ask you to store anything between sessions: "A
-process is defined on the basis of an activity and is not applicable when a user returns after
-closing a session or navigating away." A process can still cross domains, so a checkout that hands
-off to a third-party payment provider stays inside it.
+3.3.7 is scoped to one process, so it does not ask you to store anything between sessions: "A process is defined on the basis of an activity and is not applicable when a user returns after closing a session or navigating away." A process can still cross domains, so a checkout that hands off to a third-party payment provider stays inside it.
 
-Large-scale text is defined by point size only: 18 point, or 14 point bold. The pixel equivalents
-in wide circulation (roughly 24px and 18.66px) are a conversion, not something the spec states.
+Large-scale text is defined by point size only: 18 point, or 14 point bold. The pixel equivalents in wide circulation (roughly 24px and 18.66px) are a conversion, not something the spec states.
 
-`prefers-reduced-motion` is a sufficient technique under 2.3.3, named in the Understanding
-document rather than in the criterion itself. Honoring it is the practical way to satisfy 2.3.3,
-though the criterion asks for any mechanism to disable interaction-triggered motion.
+`prefers-reduced-motion` is a sufficient technique under 2.3.3, named in the Understanding document rather than in the criterion itself. Honoring it is the practical way to satisfy 2.3.3, though the criterion asks for any mechanism to disable interaction-triggered motion.
 
 ## Where the Spec Runs Out
 
-**An auto-dismissing toast: the criteria are silent, the ARIA guidance is not.** WCAG 2.2 itself
-never addresses a message that disappears on a timer. The Timing Adjustable Understanding document
-mentions no notification, toast, or timed message anywhere. A literal reading of "for each time
-limit that is set by the content" does not exclude a toast, and none of its exceptions name one.
+**An auto-dismissing toast: the criteria are silent, the ARIA guidance is not.** WCAG 2.2 itself never addresses a message that disappears on a timer. The Timing Adjustable Understanding document mentions no notification, toast, or timed message anywhere. A literal reading of "for each time limit that is set by the content" does not exclude a toast, and none of its exceptions name one.
 
 The Authoring Practices Guide answers it directly, though, and points at the criterion:
 
-> It is also important to avoid designing alerts that disappear automatically. An alert that
-> disappears too quickly can lead to failure to meet WCAG 2.0 success criterion 2.2.3.
+> It is also important to avoid designing alerts that disappear automatically. An alert that > disappears too quickly can lead to failure to meet WCAG 2.0 success criterion 2.2.3.
 
-Treat that as the working answer: do not auto-dismiss anything carrying information the user
-needs. The safe build:
+Treat that as the working answer: do not auto-dismiss anything carrying information the user needs. The safe build:
 
 - Give the toast a role, so its content reaches AT regardless of how long it stays up.
-- Keep anything a user must act on out of a timed dismissal entirely. Put it inline or in a
-  dialog.
+- Keep anything a user must act on out of a timed dismissal entirely. Put it inline or in a dialog.
 - Leave a persistent record of dismissed messages where the information still matters.
 
-**Optimistic UI needs a real failure path.** Announcing success before the server confirms is not
-addressed by name anywhere in the spec, and 3.3.4 is the wrong criterion to reach for: its
-options all govern review and correction *before* a submission finalizes, not when a success
-message may render. Its Reversible option points the other way: optimistic rendering backed by a
-real undo satisfies it.
+**Optimistic UI needs a real failure path.** Announcing success before the server confirms is not addressed by name anywhere in the spec, and 3.3.4 is the wrong criterion to reach for: its options all govern review and correction *before* a submission finalizes, not when a success message may render. Its Reversible option points the other way: optimistic rendering backed by a real undo satisfies it.
 
-What does bite: when the action later fails, that failure has to be identified and described in
-text (3.3.1). A silent rollback fails it. The rest of the objection is a usability one, not a
-conformance one: a status message that was never true is worse than a slower true one.
+What does bite: when the action later fails, that failure has to be identified and described in text (3.3.1). A silent rollback fails it. The rest of the objection is a usability one, not a conformance one: a status message that was never true is worse than a slower true one.
 
 ## Not Verified
 
 Confirm these against the live spec before relying on them:
 
-- Whether the APG Dialog pattern mandates an accessible name through `aria-labelledby` or
-  `aria-label`. It is standard practice; it was not retrievable verbatim from the page.
+- Whether the APG Dialog pattern mandates an accessible name through `aria-labelledby` or `aria-label`. It is standard practice; it was not retrievable verbatim from the page.
 - The full exception list for 2.5.8, beyond Spacing, User agent control, and Essential.
-- The exact text of 1.1.1 Non-Text Content, cited above through a cross-reference rather than
-  from its own page.
-- Whether an auto-dismissing toast fails 2.2.2's auto-updating clause. That clause carries no
-  five-second floor, unlike its moving-and-blinking sibling, and whether a one-shot toast counts
-  as auto-updating information is unresolved in the source.
+- The exact text of 1.1.1 Non-Text Content, cited above through a cross-reference rather than from its own page.
+- Whether an auto-dismissing toast fails 2.2.2's auto-updating clause. That clause carries no five-second floor, unlike its moving-and-blinking sibling, and whether a one-shot toast counts as auto-updating information is unresolved in the source.
