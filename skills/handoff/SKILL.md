@@ -49,9 +49,7 @@ Produce a continuation prompt for a fresh session or resume from one.
 - <harness traps that produced false results this session (false GREEN/RED shapes), so the next session doesn't re-earn them>
 ```
 
-For an INVESTIGATION handoff (root-causing, not building), add a hypothesis ledger between
-`state` and `next`; this structure is the highest-value thing an investigation session can
-pass on:
+For an INVESTIGATION handoff (root-causing, not building), add a hypothesis ledger between `state` and `next`; this structure is the highest-value thing an investigation session can pass on:
 
 ```markdown
 ## hypotheses to test (NOT established: the next session's job)
