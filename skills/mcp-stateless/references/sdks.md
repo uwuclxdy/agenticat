@@ -2,14 +2,9 @@
 
 ## Where "MCP 3.0" Comes From
 
-The specification has no semantic version. It uses dates: `2024-11-05`, `2025-03-26`,
-`2025-06-18`, `2025-11-25`, `2026-07-28`. Nothing official calls the stateless change "MCP
-3.0".
+The specification has no semantic version. It uses dates: `2024-11-05`, `2025-03-26`, `2025-06-18`, `2025-11-25`, `2026-07-28`. Nothing official calls the stateless change "MCP 3.0".
 
-"3.0" is the **Rust** SDK. `rmcp` went `2.2.0` → `3.0.0` on 2026-07-28, the same day the spec
-landed. Every other SDK numbered its stateless rework differently: TypeScript, Python, and
-C# all shipped a "v2". So "MCP went stateless (3.0)" telescopes two facts into one label, and
-"3.0" only identifies the release if you are on Rust.
+"3.0" is the **Rust** SDK. `rmcp` went `2.2.0` → `3.0.0` on 2026-07-28, the same day the spec landed. Every other SDK numbered its stateless rework differently: TypeScript, Python, and C# all shipped a "v2". So "MCP went stateless (3.0)" telescopes two facts into one label, and "3.0" only identifies the release if you are on Rust.
 
 ## Version Snapshot
 
@@ -36,22 +31,13 @@ curl -s https://proxy.golang.org/github.com/modelcontextprotocol/go-sdk/@latest
 curl -s https://api.nuget.org/v3-flatcontainer/modelcontextprotocol/index.json | jq -r '.versions[-1]'
 ```
 
-**Upgrading the dependency is not the same as speaking the new revision.** TypeScript and Go
-need an explicit opt-in. Python and C# flip on upgrade. Rust needs the version selected by
-hand, see below. Confirm with a live handshake, never with a version number.
+**Upgrading the dependency is not the same as speaking the new revision.** TypeScript and Go need an explicit opt-in. Python and C# flip on upgrade. Rust needs the version selected by hand, see below. Confirm with a live handshake, never with a version number.
 
 ## Rust (`rmcp` 3.x)
 
-Migration guide: `github.com/modelcontextprotocol/rust-sdk` discussions, "Upgrading to RMCP
-3.x". MSRV is 1.88.
+Migration guide: `github.com/modelcontextprotocol/rust-sdk` discussions, "Upgrading to RMCP 3.x". MSRV is 1.88.
 
-**The trap:** in 3.1.2, `ProtocolVersion::LATEST` still resolves to `V_2025_11_25`. A server's
-advertised versions come from `ServerHandler::supported_protocol_versions()`, which defaults to
-`ProtocolVersion::KNOWN_VERSIONS` (all five, `2026-07-28` included). The `protocol_version` field
-on `ServerInfo` is only the FALLBACK `initialize` negotiation returns when the client asks for a
-revision the SDK does not know, so pinning it to `V_2026_07_28` answers a legacy client with a
-revision it cannot speak. Leave it at the default; narrow `supported_protocol_versions` for a
-modern-only server.
+**The trap:** in 3.1.2, `ProtocolVersion::LATEST` still resolves to `V_2025_11_25`. A server's advertised versions come from `ServerHandler::supported_protocol_versions()`, which defaults to `ProtocolVersion::KNOWN_VERSIONS` (all five, `2026-07-28` included). The `protocol_version` field on `ServerInfo` is only the FALLBACK `initialize` negotiation returns when the client asks for a revision the SDK does not know, so pinning it to `V_2026_07_28` answers a legacy client with a revision it cannot speak. Leave it at the default; narrow `supported_protocol_versions` for a modern-only server.
 
 | Area | 2.x | 3.x |
 |---|---|---|
@@ -71,15 +57,11 @@ modern-only server.
 | `structured_content` | `Option<JsonObject>` | `Option<Value>`; use `.as_object()` where you assumed an object |
 | OAuth startup | positional `start_authorization` | `AuthorizationRequest` builder; `discover_metadata` → `resolve_metadata` |
 
-Users of `#[tool_router]` + `#[tool_handler]` get the return-type change for free; individual
-`#[tool]` methods keep compiling. Manual `ServerHandler` impls carry the whole diff.
+Users of `#[tool_router]` + `#[tool_handler]` get the return-type change for free; individual `#[tool]` methods keep compiling. Manual `ServerHandler` impls carry the whole diff.
 
-`requestState` integrity has SDK support: the opt-in `request-state` feature provides
-`RequestStateCodec` (HMAC-SHA256) with associated-data and TTL binding. Use it rather than
-hand-rolling.
+`requestState` integrity has SDK support: the opt-in `request-state` feature provides `RequestStateCodec` (HMAC-SHA256) with associated-data and TTL binding. Use it rather than hand-rolling.
 
-**Gotchas that survive the version bump** (each cost a real debug cycle; verified against
-`rmcp` 3.1.2, 2026-08-09):
+**Gotchas that survive the version bump** (each cost a real debug cycle; verified against `rmcp` 3.1.2, 2026-08-09):
 
 | Area | Note |
 |---|---|
@@ -92,21 +74,13 @@ hand-rolling.
 
 ## TypeScript
 
-The single `@modelcontextprotocol/sdk` package split into `@modelcontextprotocol/server` and
-`@modelcontextprotocol/client`, both at 2.0.0. The old package is frozen at 1.30.0 and is the
-legacy path. A `@modelcontextprotocol/codemod` exists for the v1→v2 source rewrite.
+The single `@modelcontextprotocol/sdk` package split into `@modelcontextprotocol/server` and `@modelcontextprotocol/client`, both at 2.0.0. The old package is frozen at 1.30.0 and is the legacy path. A `@modelcontextprotocol/codemod` exists for the v1→v2 source rewrite.
 
-Two things to check before shipping: the handler entry point serves both eras per request, so
-confirm which one a given request actually took; and the legacy shim for MRTR has no return
-path for server-to-client requests, so a legacy client can silently lose elicitation. Read
-the SDK's own "Supporting protocol revision 2026-07-28" migration page rather than inferring
-from the changelog.
+Two things to check before shipping: the handler entry point serves both eras per request, so confirm which one a given request actually took; and the legacy shim for MRTR has no return path for server-to-client requests, so a legacy client can silently lose elicitation. Read the SDK's own "Supporting protocol revision 2026-07-28" migration page rather than inferring from the changelog.
 
 ## Verify With a Live Handshake
 
-A green build proves the code compiles. It proves nothing about the wire. **The old smoke
-test is now actively wrong**: piping an `initialize` frame tests a method that no longer
-exists, and a modern server answering it with an error looks identical to a broken server.
+A green build proves the code compiles. It proves nothing about the wire. **The old smoke test is now actively wrong**: piping an `initialize` frame tests a method that no longer exists, and a modern server answering it with an error looks identical to a broken server.
 
 For a stdio server, pipe real modern frames in. Note there is no `notifications/initialized`.
 
@@ -121,8 +95,7 @@ Assert, explicitly, on the `server/discover` result:
 
 - `resultType` is `"complete"`.
 - `supportedVersions` contains `2026-07-28`.
-- `capabilities` **contains `tools`**, not `{}`. Forcing `tools/list` gets an answer even
-  from a server that advertised nothing, which masks the failure a real client hits:
+- `capabilities` **contains `tools`**, not `{}`. Forcing `tools/list` gets an answer even from a server that advertised nothing, which masks the failure a real client hits:
   instructions render, tools never appear.
 - `_meta["io.modelcontextprotocol/serverInfo"]` names *your* server, not the SDK.
 - `ttlMs` and `cacheScope` are present.
@@ -131,9 +104,7 @@ Assert, explicitly, on the `server/discover` result:
 Then on `tools/list`: `resultType`, `ttlMs`, `cacheScope`, every tool with its `inputSchema`.
 Exit 0, empty stderr.
 
-Negative probes worth adding, because each one catches a whole class. Send these AFTER a valid
-`server/discover` opener: a `tools/list` with `params: {}` as the first frame establishes no era,
-and rmcp ends the stdio session with exit 1 instead of returning `-32602`.
+Negative probes worth adding, because each one catches a whole class. Send these AFTER a valid `server/discover` opener: a `tools/list` with `params: {}` as the first frame establishes no era, and rmcp ends the stdio session with exit 1 instead of returning `-32602`.
 
 ```sh
 # 1. Missing required _meta -> -32602 (and HTTP 400 on Streamable HTTP)
@@ -144,27 +115,14 @@ and rmcp ends the stdio session with exit 1 instead of returning `-32602`.
 '{"jsonrpc":"2.0","id":5,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}'
 ```
 
-Optionally call one **read-only** tool to exercise a real body. Never auto-call a mutating or
-quota-spending tool from a smoke test.
+Optionally call one **read-only** tool to exercise a real body. Never auto-call a mutating or quota-spending tool from a smoke test.
 
-For an HTTP server, the equivalent gate is deploying two instances behind plain round-robin
-with session affinity off and running the full suite. Any failure there is a hidden session
-dependency, and it is the only test that actually proves statelessness.
+For an HTTP server, the equivalent gate is deploying two instances behind plain round-robin with session affinity off and running the full suite. Any failure there is a hidden session dependency, and it is the only test that actually proves statelessness.
 
-The official conformance suite is the authority beyond this. The MCP Inspector also documents
-how it negotiates legacy against modern, which is a useful reference when a client and server
-disagree about eras.
+The official conformance suite is the authority beyond this. The MCP Inspector also documents how it negotiates legacy against modern, which is a useful reference when a client and server disagree about eras.
 
 ## Server Design Is a Different Question
 
-Deciding which tools to expose, how to carve a large API surface, whether to ship stdio or
-remote HTTP or a bundle: that is product design, not protocol. The `mcp-server-dev` plugin in
-`anthropics/claude-plugins-official` runs a discovery interview for it and is a reasonable
-starting point.
+Deciding which tools to expose, how to carve a large API surface, whether to ship stdio or remote HTTP or a bundle: that is product design, not protocol. The `mcp-server-dev` plugin in `anthropics/claude-plugins-official` runs a discovery interview for it and is a reasonable starting point.
 
-Its protocol claims are stale as of 2026-08. Its own version-pin file records the MCP spec
-claims as last verified 2026-03, which is `2025-11-25` era, and the material still describes
-reading `clientInfo` "on initialize". The same holds for the `mcp-builder` skill in
-`anthropics/skills`, and for the official "Build an MCP server" quickstart on
-`modelcontextprotocol.io`, which was unchanged by the stateless revision. Take design shape
-from them; take protocol shape from the spec.
+Its protocol claims are stale as of 2026-08. Its own version-pin file records the MCP spec claims as last verified 2026-03, which is `2025-11-25` era, and the material still describes reading `clientInfo` "on initialize". The same holds for the `mcp-builder` skill in `anthropics/skills`, and for the official "Build an MCP server" quickstart on `modelcontextprotocol.io`, which was unchanged by the stateless revision. Take design shape from them; take protocol shape from the spec.

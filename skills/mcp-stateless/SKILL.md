@@ -8,39 +8,21 @@ metadata:
 
 # MCP Stateless
 
-The Model Context Protocol went stateless in revision **`2026-07-28`**. It is the largest
-break since launch: the `initialize` handshake, the session id, the standalone SSE stream,
-and server-initiated requests are all gone. Every request now carries everything a server
-needs to answer it.
+The Model Context Protocol went stateless in revision **`2026-07-28`**. It is the largest break since launch: the `initialize` handshake, the session id, the standalone SSE stream, and server-initiated requests are all gone. Every request now carries everything a server needs to answer it.
 
-**Model training data predates this revision.** An MCP server written from memory speaks the
-`2025-11-25` protocol and will be rejected by a modern client. The failure is not a compile
-error and often not a runtime error either: a handshake-era server and a modern client fail
-in ways that read like a config problem. Work from the reference files here, and check
-anything version-sensitive against the live spec.
+**Model training data predates this revision.** An MCP server written from memory speaks the `2025-11-25` protocol and will be rejected by a modern client. The failure is not a compile error and often not a runtime error either: a handshake-era server and a modern client fail in ways that read like a config problem. Work from the reference files here, and check anything version-sensitive against the live spec.
 
 ## Hard Rules
 
-1. **Never write MCP wire code from memory.** Read `references/wire.md` first. If a claim
-   here is older than the revision you are targeting, the live spec wins.
-2. **State is a lie the connection tells you.** A server MUST NOT infer anything from a
-   previous request on the same connection: not the protocol version, not capabilities, not
-   client identity, not conversation continuity. One stdio process is not one session. A
-   client may interleave unrelated requests on it.
-3. **State that must span requests gets an explicit server-minted handle** passed back as an
-   ordinary parameter. There is no session to hang it on.
-4. **A server MUST answer `server/discover`.** It is the only way left to advertise what the
-   server supports, and it is how a dual-era client tells a modern server from a legacy one.
-5. **Every result carries `resultType`.** Omitting it marks the server as legacy. A result
-   with no `resultType` MUST be read as `"complete"`.
-6. **Servers never send JSON-RPC requests.** Sampling, elicitation, and roots all run through
-   multi round-trip requests: the server answers with `input_required`, the client retries.
+1. **Never write MCP wire code from memory.** Read `references/wire.md` first. If a claim here is older than the revision you are targeting, the live spec wins.
+2. **State is a lie the connection tells you.** A server MUST NOT infer anything from a previous request on the same connection: not the protocol version, not capabilities, not client identity, not conversation continuity. One stdio process is not one session. A client may interleave unrelated requests on it.
+3. **State that must span requests gets an explicit server-minted handle** passed back as an ordinary parameter. There is no session to hang it on.
+4. **A server MUST answer `server/discover`.** It is the only way left to advertise what the server supports, and it is how a dual-era client tells a modern server from a legacy one.
+5. **Every result carries `resultType`.** Omitting it marks the server as legacy. A result with no `resultType` MUST be read as `"complete"`.
+6. **Servers never send JSON-RPC requests.** Sampling, elicitation, and roots all run through multi round-trip requests: the server answers with `input_required`, the client retries.
    Read `references/mrtr.md` before wiring any of the three.
-7. **`requestState` comes back from the client unverified.** Sign or encrypt it. A stateless
-   server that trusts an echoed blob has handed the client its internal state machine.
-8. **Verify with a live handshake against the real binary.** A green build proves nothing
-   about protocol conformance, and the old smoke-test recipe (pipe an `initialize` frame)
-   now tests a method that no longer exists. Recipe in `references/sdks.md`.
+7. **`requestState` comes back from the client unverified.** Sign or encrypt it. A stateless server that trusts an echoed blob has handed the client its internal state machine.
+8. **Verify with a live handshake against the real binary.** A green build proves nothing about protocol conformance, and the old smoke-test recipe (pipe an `initialize` frame) now tests a method that no longer exists. Recipe in `references/sdks.md`.
 
 ## What Changed
 
@@ -62,8 +44,7 @@ anything version-sensitive against the live spec.
 
 ## Deprecated, Not Yet Removed
 
-Still in the spec, still functional. New code SHOULD NOT adopt them. The removal clocks differ
-per feature, so read the column rather than assuming one date.
+Still in the spec, still functional. New code SHOULD NOT adopt them. The removal clocks differ per feature, so read the column rather than assuming one date.
 
 | Feature | Migrate to | Earliest removal |
 |---|---|---|
@@ -74,10 +55,7 @@ per feature, so read the column rather than assuming one date.
 | `includeContext: "thisServer"` / `"allServers"` | Omit the field, or `"none"` | Follows Sampling |
 | HTTP+SSE transport (the `2024-11-05` one) | Streamable HTTP | **Three months after SEP-2596 reaches Final**, which may already have elapsed |
 
-The specification now runs a formal feature lifecycle (Active, Deprecated, Removed) with a
-minimum twelve-month deprecation window and a published registry, so a feature disappearing
-without notice is no longer the failure mode. Checking the registry before adopting anything
-is.
+The specification now runs a formal feature lifecycle (Active, Deprecated, Removed) with a minimum twelve-month deprecation window and a published registry, so a feature disappearing without notice is no longer the failure mode. Checking the registry before adopting anything is.
 
 ## Files
 
@@ -92,16 +70,9 @@ Load the one matching the task. Do not load them all.
 
 ## What This Skill Does Not Cover
 
-- **Server design**: which tools to expose, how to carve a large API surface, deployment
-  model, bundling for local install. That is a product question, and the official
-  `mcp-server-dev` plugin (`anthropics/claude-plugins-official`) runs a discovery interview
-  for it. Check its pinned versions before trusting its protocol claims; as of 2026-08 its
-  version-pin file records the MCP spec claims as last verified 2026-03, which is the
-  `2025-11-25` era.
+- **Server design**: which tools to expose, how to carve a large API surface, deployment model, bundling for local install. That is a product question, and the official `mcp-server-dev` plugin (`anthropics/claude-plugins-official`) runs a discovery interview for it. Check its pinned versions before trusting its protocol claims; as of 2026-08 its version-pin file records the MCP spec claims as last verified 2026-03, which is the `2025-11-25` era.
 - **MCP Apps / UI widgets** beyond how the extension is negotiated.
-- **Authorization in depth.** The revision tightened OAuth (issuer validation, credentials
-  keyed by issuer, `application_type` on registration, Client ID Metadata Documents over
-  DCR). `references/migrate.md` lists what changed; the auth spec pages are the authority.
+- **Authorization in depth.** The revision tightened OAuth (issuer validation, credentials keyed by issuer, `application_type` on registration, Client ID Metadata Documents over DCR). `references/migrate.md` lists what changed; the auth spec pages are the authority.
 
 ## Live Docs on Demand
 
@@ -116,5 +87,4 @@ The spec ships agent-readable markdown: append `.md` to any spec URL.
 | Deprecated-features registry | `.../specification/2026-07-28/deprecated.md` |
 | Full schema reference | `.../specification/2026-07-28/schema.md` |
 
-Fetch the schema page before asserting any field name. Field names in this skill were read
-from the spec; field names in a model's memory were not.
+Fetch the schema page before asserting any field name. Field names in this skill were read from the spec; field names in a model's memory were not.
