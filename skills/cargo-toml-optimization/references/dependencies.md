@@ -167,10 +167,7 @@ Supports `not`, `any`, `all` cfg operators. Custom targets: use base filename of
 
 ## Workspace Inheritance
 
-A member pulls a shared dep with `{ workspace = true }` from `[workspace.dependencies]`. It may add
-`optional` and extra `features` (additive; cannot remove workspace-level features); it cannot override
-`version`, `default-features`, `git`, `path`, or `registry`. Centralizes version pins and
-`default-features = false`, preventing multi-version bloat across members.
+A member pulls a shared dep with `{ workspace = true }` from `[workspace.dependencies]`. It may add `optional` and extra `features` (additive; cannot remove workspace-level features); it cannot override `version`, `default-features`, `git`, `path`, or `registry`. Centralizes version pins and `default-features = false`, preventing multi-version bloat across members.
 
 Worked example + `[workspace.package]` field inheritance: `references/workspaces.md`.
 

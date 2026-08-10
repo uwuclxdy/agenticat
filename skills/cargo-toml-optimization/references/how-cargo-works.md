@@ -7,10 +7,7 @@
 
 ## Build Pipeline
 
-`cargo build` runs five stages: parse manifests, resolve the dep graph (write/read `Cargo.lock`), fetch
-missing crates, compile each unit in dependency order (`build.rs` runs before its package), link. Cargo
-compiles independent crates in parallel; the real bottleneck is the critical path, the longest chain of
-sequential deps. See `--timings` below.
+`cargo build` runs five stages: parse manifests, resolve the dep graph (write/read `Cargo.lock`), fetch missing crates, compile each unit in dependency order (`build.rs` runs before its package), link. Cargo compiles independent crates in parallel; the real bottleneck is the critical path, the longest chain of sequential deps. See `--timings` below.
 
 Resolution picks the highest version satisfying every constraint in the graph. Constraint syntax:
 `references/dependencies.md`; resolver versions and feature unification: `references/workspaces.md`.
@@ -21,16 +18,12 @@ Resolution picks the highest version satisfying every constraint in the graph. C
 
 Source: [Cargo.toml vs Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
 
-`Cargo.toml` is your hand-written intent (flexible version constraints); `Cargo.lock` is Cargo's exact
-resolved pins. Edit the lock via `cargo update`, never by hand.
+`Cargo.toml` is your hand-written intent (flexible version constraints); `Cargo.lock` is Cargo's exact resolved pins. Edit the lock via `cargo update`, never by hand.
 
 ### When to Commit Cargo.lock
 
 Guidance changed 2023-08: the old "libraries don't commit `Cargo.lock`" convention is superseded.
-Whether to commit it now depends on the package's own needs, not on binary-vs-library; committing it
-is a reasonable default/starting point even for a library (a dependent's own resolution still governs
-what it builds; the committed lock only pins your own dev/CI runs). Regardless of the choice, CI should
-regularly test against the latest dependency versions.
+Whether to commit it now depends on the package's own needs, not on binary-vs-library; committing it is a reasonable default/starting point even for a library (a dependent's own resolution still governs what it builds; the committed lock only pins your own dev/CI runs). Regardless of the choice, CI should regularly test against the latest dependency versions.
 
 | Project type | Commit Cargo.lock? | Reason |
 |---|---|---|
@@ -95,8 +88,7 @@ Incremental compilation (`incremental/`) further caches inside a single crate re
 
 ### Sharing Cache Between Workspaces
 
-`sccache` (`RUSTC_WRAPPER` / `build.rustc-wrapper`) caches compiled artifacts by input hash and shares
-them across projects and CI runs. Setup plus backends: `config.md`.
+`sccache` (`RUSTC_WRAPPER` / `build.rustc-wrapper`) caches compiled artifacts by input hash and shares them across projects and CI runs. Setup plus backends: `config.md`.
 
 ### cargo clean
 
@@ -200,8 +192,7 @@ A `build.rs` file at the package root is compiled and run ahead of the package i
 
 ### Key stdout Instructions
 
-Build scripts compile native C/C++ libs (via the `cc` crate), link system libraries, run code generation
-(proto, parsers), and detect the target triple. Cargo reads their stdout for these directives:
+Build scripts compile native C/C++ libs (via the `cc` crate), link system libraries, run code generation (proto, parsers), and detect the target triple. Cargo reads their stdout for these directives:
 
 | Instruction | Effect |
 |---|---|

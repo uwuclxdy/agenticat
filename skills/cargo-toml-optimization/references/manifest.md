@@ -2,8 +2,7 @@
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
 > Sources:
-> - https://doc.rust-lang.org/cargo/reference/manifest.html
-> - https://doc.rust-lang.org/cargo/reference/cargo-targets.html
+> - https://doc.rust-lang.org/cargo/reference/manifest.html > - https://doc.rust-lang.org/cargo/reference/cargo-targets.html
 
 ---
 
@@ -46,10 +45,7 @@
 
 ## Include/Exclude Pattern Syntax
 
-Patterns follow gitignore-style globbing. Cargo-specific behavior on top of that: sub-packages (dirs
-holding their own `Cargo.toml`), `target/`, hidden dot-files outside git and git-ignored files are
-auto-excluded no matter what; `Cargo.toml`, a minimized `Cargo.lock` and the `license-file` target
-stay included regardless. In an `include` list, `!pattern` negates (re-excludes) an earlier match.
+Patterns follow gitignore-style globbing. Cargo-specific behavior on top of that: sub-packages (dirs holding their own `Cargo.toml`), `target/`, hidden dot-files outside git and git-ignored files are auto-excluded no matter what; `Cargo.toml`, a minimized `Cargo.lock` and the `license-file` target stay included regardless. In an `include` list, `!pattern` negates (re-excludes) an earlier match.
 
 ---
 
@@ -182,8 +178,7 @@ Availability: `autobins`/`autoexamples`/`autotests`/`autobenches` since Rust 1.2
 
 ## Publishing Requirements (crates.io)
 
-Minimum required: `name`, `version`, `description`, `license` OR `license-file`. Field limits (name /
-keywords / categories) live in `crates-io-metadata.md`.
+Minimum required: `name`, `version`, `description`, `license` OR `license-file`. Field limits (name / keywords / categories) live in `crates-io-metadata.md`.
 
 ## Build/Publish Impact: Key Fields
 

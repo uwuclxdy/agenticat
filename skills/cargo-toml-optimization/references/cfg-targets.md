@@ -1,11 +1,7 @@
 # Rust `cfg(...)` Reference: Cargo Target Configuration
 > _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-> Authoritative source for `[target.'cfg(...)'.dependencies]` in `Cargo.toml`
-> and `[target.'cfg(...)']` in `.cargo/config.toml`.
->
-> **Note:** The Rust Reference marks most value lists as "example values."
-> Run `rustc --print cfg --target <triple>` for the exact set on any given target.
+> Authoritative source for `[target.'cfg(...)'.dependencies]` in `Cargo.toml` > and `[target.'cfg(...)']` in `.cargo/config.toml`. > > **Note:** The Rust Reference marks most value lists as "example values." > Run `rustc --print cfg --target <triple>` for the exact set on any given target.
 
 ---
 
@@ -138,8 +134,7 @@ Disambiguates the ABI or C library. Empty string when no disambiguation is neede
 
 ### `target_abi`
 
-Further ABI disambiguation inside `target_env`. Stabilized in Rust 1.78.0 (unstable `cfg_target_abi`
-feature gate since ~1.51).
+Further ABI disambiguation inside `target_env`. Stabilized in Rust 1.78.0 (unstable `cfg_target_abi` feature gate since ~1.51).
 
 | value | description |
 |---|---|
@@ -335,10 +330,7 @@ async = ["tokio"]
 
 Usage in code: `#[cfg(feature = "serde")]`
 
-Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported**: Cargo warns
-"Found `feature = ...` in `target.'cfg(...)'.dependencies`. This key is not supported for selecting
-dependencies and will not work as expected," and the entry silently never matches. Use
-`[dependencies] serde = { optional = true }` + `[features]` instead.
+Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported**: Cargo warns "Found `feature = ...` in `target.'cfg(...)'.dependencies`. This key is not supported for selecting dependencies and will not work as expected," and the entry silently never matches. Use `[dependencies] serde = { optional = true }` + `[features]` instead.
 
 ---
 

@@ -18,8 +18,7 @@
 
 ## File Hierarchy & Precedence
 
-Cargo walks up from **cwd** (the invocation's current directory, not the workspace root), loading every
-`.cargo/config.toml` it finds along that ancestor chain up to the filesystem root, then `$CARGO_HOME`.
+Cargo walks up from **cwd** (the invocation's current directory, not the workspace root), loading every `.cargo/config.toml` it finds along that ancestor chain up to the filesystem root, then `$CARGO_HOME`.
 Merges all; deeper = higher precedence.
 
 ```
@@ -39,9 +38,7 @@ $HOME/.cargo/config.toml          ← $CARGO_HOME, lowest priority
 - `.cargo/config` (no `.toml`) still accepted for backward compat, but deprecated
 - TOML format only; no JSON or YAML
 - Arrays are concatenated, not replaced, with higher-precedence items appended later
-- Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member
-  directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same
-  command from the workspace root does NOT (the member dir is never an ancestor of the root).
+- Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same command from the workspace root does NOT (the member dir is never an ancestor of the root).
   Workspace membership itself adds nothing to config discovery. Only cwd's own ancestor chain matters.
 
 **`[include]`**: load additional config files inline:
@@ -71,15 +68,11 @@ Included files load first; the including file wins on conflict.
 | `incremental` | bool | from profile | `CARGO_INCREMENTAL` / `CARGO_BUILD_INCREMENTAL` | override profile incremental setting globally |
 | `dep-info-basedir` | path | none | `CARGO_BUILD_DEP_INFO_BASEDIR` | strip path prefix from dep-info files (for build systems that watch deps) |
 
-**rustflags precedence: four mutually exclusive sources, first match wins (they do not merge across
-tiers):**
+**rustflags precedence: four mutually exclusive sources, first match wins (they do not merge across tiers):**
 1. `CARGO_ENCODED_RUSTFLAGS` env
 2. `RUSTFLAGS` env
-3. Target tier: all matching `[target.<triple>].rustflags` **and** `[target.'cfg(...)'].rustflags`
-   entries, joined into one list (triple entry first, then each matching cfg entry in config-file
-   order; multiple matching cfg entries also merge with each other)
-4. `[build].rustflags`: fallback only, used when no target-tier entry matches; dropped entirely the
-   moment one does
+3. Target tier: all matching `[target.<triple>].rustflags` **and** `[target.'cfg(...)'].rustflags` entries, joined into one list (triple entry first, then each matching cfg entry in config-file order; multiple matching cfg entries also merge with each other)
+4. `[build].rustflags`: fallback only, used when no target-tier entry matches; dropped entirely the moment one does
 
 **Note on `--target`:** when cross-compiling, target-tier rustflags only reach the target compiler. Build scripts and proc-macros (host artifacts) are not affected.
 
@@ -133,13 +126,9 @@ linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 ```
 
-lld (LLVM linker; Linux/macOS/Windows; bundled in the rustup toolchain as `rust-lld` for years; default
-linker on x86_64-linux since 1.90):
+lld (LLVM linker; Linux/macOS/Windows; bundled in the rustup toolchain as `rust-lld` for years; default linker on x86_64-linux since 1.90):
 
-`linker = "rust-lld"` alone does **not** work on `x86_64-unknown-linux-gnu`: rust-lld does run (rustc
-uses its own bundled copy at `<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld` even though
-it isn't on `PATH`), but it's invoked as a bare ld-flavor linker with none of the system library search
-paths a cc driver normally injects, so the link fails: `rust-lld: error: unable to find library -lc`.
+`linker = "rust-lld"` alone does **not** work on `x86_64-unknown-linux-gnu`: rust-lld does run (rustc uses its own bundled copy at `<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld` even though it isn't on `PATH`), but it's invoked as a bare ld-flavor linker with none of the system library search paths a cc driver normally injects, so the link fails: `rust-lld: error: unable to find library -lc`.
 Use one of these stable alternatives instead:
 
 ```toml
@@ -156,8 +145,7 @@ rustflags = [
 ]
 ```
 
-(`-C linker-features=+lld -C link-self-contained=+linker` looks like a modern stable replacement but
-is not: on current stable it still requires `-Z unstable-options`, i.e. nightly.)
+(`-C linker-features=+lld -C link-self-contained=+linker` looks like a modern stable replacement but is not: on current stable it still requires `-Z unstable-options`, i.e. nightly.)
 
 ### 3. Shared target-dir
 
@@ -191,8 +179,7 @@ Useful to reduce jobs on machines with low RAM (each rustc invocation peaks ~1GB
 
 ## Runtime-Speed Lever: `target-cpu=native`
 
-Not a build-speed lever. If anything it slows compilation (deeper codegen passes to exploit the extra
-instructions) in exchange for faster generated code:
+Not a build-speed lever. If anything it slows compilation (deeper codegen passes to exploit the extra instructions) in exchange for faster generated code:
 
 ```toml
 [build]
@@ -231,10 +218,8 @@ runner = ["qemu-arm", "-cpu", "cortex-m4"]
 ```
 
 **Precedence when both a triple and a cfg() table match** differs by key:
-- `linker` / `runner`: `[target.<triple>]` wins over `[target.'cfg(...)']` (it's an error if more than
-  one `cfg()` table's `linker` matches).
-- `rustflags` / `rustdocflags`: entries from every matching triple + cfg table are **joined together**
-  (see the rustflags precedence note under `[build]` above); neither one "wins".
+- `linker` / `runner`: `[target.<triple>]` wins over `[target.'cfg(...)']` (it's an error if more than one `cfg()` table's `linker` matches).
+- `rustflags` / `rustdocflags`: entries from every matching triple + cfg table are **joined together** (see the rustflags precedence note under `[build]` above); neither one "wins".
 
 **Build script override** (`target.<triple>.<links-key>`): skip build script entirely and supply its output directly:
 ```toml

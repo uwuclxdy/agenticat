@@ -1,8 +1,7 @@
 # cargo Profiles Reference
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-> Source: https://doc.rust-lang.org/cargo/reference/profiles.html
-> Profiles alter compiler settings per build mode. Only the workspace root `Cargo.toml` is read; profile settings in dependency manifests are ignored.
+> Source: https://doc.rust-lang.org/cargo/reference/profiles.html > Profiles alter compiler settings per build mode. Only the workspace root `Cargo.toml` is read; profile settings in dependency manifests are ignored.
 
 ---
 
@@ -285,8 +284,7 @@ opt-level = 1
 
 ## Cheat-Sheet
 
-Fuller variants of SKILL.md's inline profiles: these add `debug-assertions = false` +
-`overflow-checks = false`, which SKILL omits. Benchmark size choices; `"z"` is not always smallest.
+Fuller variants of SKILL.md's inline profiles: these add `debug-assertions = false` + `overflow-checks = false`, which SKILL omits. Benchmark size choices; `"z"` is not always smallest.
 
 ### (a) Max Runtime Speed
 

@@ -8,15 +8,11 @@ metadata:
 
 # Cargo.toml Optimization
 
-Tune a Rust manifest (`Cargo.toml`) and its build config (`.cargo/config.toml`) toward one goal at a
-time. Runtime speed, binary size, compile time, dependency hygiene: these pull against each other, so
-name the target before editing. Then take a baseline measurement, change a single lever, re-measure.
+Tune a Rust manifest (`Cargo.toml`) and its build config (`.cargo/config.toml`) toward one goal at a time. Runtime speed, binary size, compile time, dependency hygiene: these pull against each other, so name the target before editing. Then take a baseline measurement, change a single lever, re-measure.
 
 ## Measure First
 
-Advice you haven't measured is guessing. opt-level `"z"` is not always smaller than `"s"` or `3`. Fat
-LTO can cost minutes of link time for a percent of runtime. The real bottleneck is often one crate on
-the critical path rather than the whole graph.
+Advice you haven't measured is guessing. opt-level `"z"` is not always smaller than `"s"` or `3`. Fat LTO can cost minutes of link time for a percent of runtime. The real bottleneck is often one crate on the critical path rather than the whole graph.
 
 | Question | Command |
 |---|---|
@@ -30,12 +26,9 @@ Build cache, `Cargo.lock` rules, `build.rs` cost: `references/how-cargo-works.md
 ## Two Files, Two Jobs
 
 - **`Cargo.toml`** lists what to build: dependencies, features, profile definitions, workspace layout.
-- **`.cargo/config.toml`** governs how it gets built: linker, `rustflags`, `sccache`, target, env. It can
-  override any profile field; that override then wins over the `Cargo.toml` profile.
+- **`.cargo/config.toml`** governs how it gets built: linker, `rustflags`, `sccache`, target, env. It can override any profile field; that override then wins over the `Cargo.toml` profile.
 
-Trap: `[profile.*]` and `[patch]` are read **only from the workspace root**; the same tables in a member
-crate are ignored with a warning, not applied. (`[workspace]` in a member is different: it makes that
-crate its own workspace root.)
+Trap: `[profile.*]` and `[patch]` are read **only from the workspace root**; the same tables in a member crate are ignored with a warning, not applied. (`[workspace]` in a member is different: it makes that crate its own workspace root.)
 
 ## Profiles: The Core of It
 
@@ -96,13 +89,10 @@ To raise opt-level on a single hot dependency without touching the rest: `[profi
 
 Detail in `references/dependencies.md`, `references/workspaces.md`. Highest-value moves:
 
-- `default-features = false` on heavy deps, then add back only the features you use. Single biggest key
-  for cutting compile time plus binary size. Audit what a crate's defaults pull in with `cargo tree -e features`.
-- `resolver = "2"` (edition 2021+) or `"3"` (edition 2024+). Stops dev-only, build-script, or
-  off-target features from inflating the production build. Often the biggest correctness + size win.
+- `default-features = false` on heavy deps, then add back only the features you use. Single biggest key for cutting compile time plus binary size. Audit what a crate's defaults pull in with `cargo tree -e features`.
+- `resolver = "2"` (edition 2021+) or `"3"` (edition 2024+). Stops dev-only, build-script, or off-target features from inflating the production build. Often the biggest correctness + size win.
   In a virtual workspace it must be set explicitly under `[workspace]`.
-- `[workspace.dependencies]` pins one version of each shared crate for every member. Duplicate compiles
-  of the same crate at different semver-compatible versions go away.
+- `[workspace.dependencies]` pins one version of each shared crate for every member. Duplicate compiles of the same crate at different semver-compatible versions go away.
 - `dep:<name>` and `crate?/feature` (weak) to keep optional deps from leaking as public feature API.
 - `[target.'cfg(...)'.dependencies]` so OS/arch-specific crates don't compile on irrelevant targets.
 
@@ -130,9 +120,7 @@ Unused or duplicate deps, plus license/security audits, with the tools to find t
 
 ## Routing
 
-The references embed the actual data (all 104 crates.io category slugs, SPDX identifiers, cfg/target
-values, every rustc `-C` flag), so the skill answers without a web lookup. The doc links are only a
-fallback if upstream changes. Read the one reference matching the task:
+The references embed the actual data (all 104 crates.io category slugs, SPDX identifiers, cfg/target values, every rustc `-C` flag), so the skill answers without a web lookup. The doc links are only a fallback if upstream changes. Read the one reference matching the task:
 
 | Task | Reference |
 |---|---|
@@ -173,7 +161,4 @@ Canonical entry points (each reference file links its exact pages inline):
 
 ## Maintenance
 
-Reference data is captured against Rust/Cargo stable (edition 2024 / resolver v3 era). Every
-`references/*.md` carries its own capture date at the top, next to the upstream URL it came from; dates
-differ per file as they get refreshed. To refresh one file: re-fetch its source link, diff, update the
-file, bump its date.
+Reference data is captured against Rust/Cargo stable (edition 2024 / resolver v3 era). Every `references/*.md` carries its own capture date at the top, next to the upstream URL it came from; dates differ per file as they get refreshed. To refresh one file: re-fetch its source link, diff, update the file, bump its date.

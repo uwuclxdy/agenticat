@@ -71,8 +71,7 @@ Every `-C` flag accepted by rustc. "Cargo field" column: named `[profile.*]` key
 
 ## Profile Field -> `-C` Flag Map
 
-Most fields map to the same-named flag (the main table's "how to set from Cargo" column covers them). The
-non-obvious cases:
+Most fields map to the same-named flag (the main table's "how to set from Cargo" column covers them). The non-obvious cases:
 
 | `[profile.*]` field | emitted `-C` flag | notes |
 |--------------------|--------------------|-------|
@@ -159,11 +158,7 @@ Combine with `-C lto=thin` and `-C codegen-units=1` for maximum effect.
 
 ### Precedence
 
-Four mutually exclusive sources, first match wins, no merging across tiers: `CARGO_ENCODED_RUSTFLAGS`
-env > `RUSTFLAGS` env > target tier (`[target.<triple>].rustflags` + matching
-`[target.'cfg(...)'].rustflags`, joined) > `[build].rustflags` fallback (dropped the moment any target
-entry applies). Full breakdown: `config.md` under `[build]`. Host-artifact interaction: the
-cross-compilation caveat below.
+Four mutually exclusive sources, first match wins, no merging across tiers: `CARGO_ENCODED_RUSTFLAGS` env > `RUSTFLAGS` env > target tier (`[target.<triple>].rustflags` + matching `[target.'cfg(...)'].rustflags`, joined) > `[build].rustflags` fallback (dropped the moment any target entry applies). Full breakdown: `config.md` under `[build]`. Host-artifact interaction: the cross-compilation caveat below.
 
 ### Array Form in `.cargo/config.toml`
 

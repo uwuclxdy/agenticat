@@ -347,10 +347,7 @@ Better: split into separate crates, use runtime config, or use `cfg-if` for prec
 
 ### Feature Unification in the Dependency Graph
 
-When multiple packages depend on the same crate with different features, Cargo builds it once with the
-union of all requested features (resolver v2 scopes that unification per context, see above). A feature
-activated by package A does not activate it in package B's own code; it only changes how the shared
-dependency is built.
+When multiple packages depend on the same crate with different features, Cargo builds it once with the union of all requested features (resolver v2 scopes that unification per context, see above). A feature activated by package A does not activate it in package B's own code; it only changes how the shared dependency is built.
 
 ### CLI Flags
 

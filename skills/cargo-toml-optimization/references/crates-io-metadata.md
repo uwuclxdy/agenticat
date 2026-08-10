@@ -242,5 +242,4 @@ All fields below are required or enforced by crates.io at publish time.
 
 ### Optional Fields (with crates.io-Specific Limits when Present)
 
-`keywords` and `categories` also enforce publish-time limits; see the keywords Rules and categories Rules
-tables above.
+`keywords` and `categories` also enforce publish-time limits; see the keywords Rules and categories Rules tables above.

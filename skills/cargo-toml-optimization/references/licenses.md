@@ -93,11 +93,7 @@ Identifiers as they appear on crates.io (SPDX list v3.28.0).
 
 ### Why `MIT OR Apache-2.0`
 
-Apache-2.0 adds an explicit patent grant MIT lacks but breaks GPLv2 compatibility on its own; pairing it
-with MIT under `OR` restores that compatibility while keeping the patent grant. Each user then picks
-either license. It is the de-facto crates.io default; the
-[Rust API guidelines](https://rust-lang.github.io/api-guidelines/necessities.html) recommend it for
-maximum compatibility.
+Apache-2.0 adds an explicit patent grant MIT lacks but breaks GPLv2 compatibility on its own; pairing it with MIT under `OR` restores that compatibility while keeping the patent grant. Each user then picks either license. It is the de-facto crates.io default; the [Rust API guidelines](https://rust-lang.github.io/api-guidelines/necessities.html) recommend it for maximum compatibility.
 
 ### `Apache-2.0 WITH LLVM-exception` Variant
 
