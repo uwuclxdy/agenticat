@@ -1,9 +1,7 @@
 # Ratatui Modernization Checklist: Hand-Rolled → Built-In
 
 Current stable: **ratatui 0.30.2** (verify with the updater skill if months have passed).
-Every row below is something a pre-0.29-trained model reimplements by hand that the library
-now provides. Frequency column = how many of our 6 audited TUIs hand-rolled it in the 2026-07
-audit (several TUIs hand-rolled it each time). Exact signatures live in `api-reference.md`;
+Every row below is something a pre-0.29-trained model reimplements by hand that the library now provides. Frequency column = how many of our 6 audited TUIs hand-rolled it in the 2026-07 audit (several TUIs hand-rolled it each time). Exact signatures live in `api-reference.md`;
 check there before writing code.
 
 ## Tier 1: Check These on Every TUI Touch
@@ -76,5 +74,4 @@ rg 'WidgetRef'                                     # → impl Widget for &T
 rg 'default-features\s*=\s*false' Cargo.toml       # check layout-cache survived
 ```
 
-`Style::default().fg(...)` inside a central theme module is usually fine (semantic color
-accessors); the offense is verbose chains at call sites.
+`Style::default().fg(...)` inside a central theme module is usually fine (semantic color accessors); the offense is verbose chains at call sites.

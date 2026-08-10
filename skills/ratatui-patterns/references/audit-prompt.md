@@ -1,12 +1,8 @@
 # Repo Modernization-Audit Prompt Template
 
-Reusable spawn prompt for auditing one TUI repo against current ratatui. Spawn one
-`general-purpose` subagent per repo (sonnet, unnamed, non-background, all repos in one message
-for concurrency). Produced the 2026-07 punch-lists at `<repo>/docs/ratatui-modernization.md`.
+Reusable spawn prompt for auditing one TUI repo against current ratatui. Spawn one `general-purpose` subagent per repo (sonnet, unnamed, non-background, all repos in one message for concurrency). Produced the 2026-07 punch-lists at `<repo>/docs/ratatui-modernization.md`.
 
-Assumes a Claude-Code-style subagent runner (`general-purpose` subagent type, tool-call
-spawning, no `SendMessage`). On another harness, substitute its own fan-out primitive, or run
-the audit inline instead.
+Assumes a Claude-Code-style subagent runner (`general-purpose` subagent type, tool-call spawning, no `SendMessage`). On another harness, substitute its own fan-out primitive, or run the audit inline instead.
 
 Fill `{{REPO}}`, `{{HINTS}}` (size, TUI dir, notable features), keep the rest verbatim:
 
@@ -54,6 +50,4 @@ Failure behavior: if the repo path or a reference file is missing/unreadable, re
 which input failed and stop. Never widen scope or substitute a target.
 ```
 
-For a design-system/widget-library repo, add: a limitations analysis classifying every
-design-language feature as REPLACEABLE / PARTIAL / BEYOND-API with the reason, returned as a
-full table (feeds `limitations.md`).
+For a design-system/widget-library repo, add: a limitations analysis classifying every design-language feature as REPLACEABLE / PARTIAL / BEYOND-API with the reason, returned as a full table (feeds `limitations.md`).

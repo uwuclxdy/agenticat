@@ -1,9 +1,6 @@
 # Ratatui Built-In Limitations: What Genuinely Needs Custom Code
 
-Verified against ratatui 0.30.2 across 6 production TUIs (2026-07 audit). Before writing ANY
-custom render code, confirm the need is on this list; if it isn't, expect a built-in in the checklist or
-`api-reference.md`. When a future release closes one of these
-gaps, the updater skill moves the row into the checklist.
+Verified against ratatui 0.30.2 across 6 production TUIs (2026-07 audit). Before writing ANY custom render code, confirm the need is on this list; if it isn't, expect a built-in in the checklist or `api-reference.md`. When a future release closes one of these gaps, the updater skill moves the row into the checklist.
 
 ## Composite / Inline Elements
 
@@ -27,15 +24,12 @@ gaps, the updater skill moves the row into the checklist.
 
 ## Animation / Time
 
-ratatui has zero animation, timer, or blink primitives by design: it draws frames, the app owns
-time. Everything below stays custom (tick-driven, timing consts named):
+ratatui has zero animation, timer, or blink primitives by design: it draws frames, the app owns time. Everything below stays custom (tick-driven, timing consts named):
 
 - spinners (frame cycling)
-- attention shimmer / status pulse (per-glyph traveling-crest color sweep, tick-driven recolor
-  of spans; no built-in primitive)
+- attention shimmer / status pulse (per-glyph traveling-crest color sweep, tick-driven recolor of spans; no built-in primitive)
 - cursor blink
-- toast TTL / stacked notification lifetimes (rendering the toast box is plain `Paragraph` +
-  `Clear`; the stack layout + expiry is app logic)
+- toast TTL / stacked notification lifetimes (rendering the toast box is plain `Paragraph` + `Clear`; the stack layout + expiry is app logic)
 
 ## Compositing / Effects
 
@@ -56,13 +50,6 @@ time. Everything below stays custom (tick-driven, timing consts named):
 ## Design-System Conformance (Custom Look vs Built-Ins)
 
 Case study: a design system with its own custom border/scrollbar/progress rendering and theme.
-It CAN adopt built-ins for: panel border+title (`Block::bordered()`), scrollbar (`Scrollbar`),
-modal centering (`Rect::centered`), equal splits (`Layout` + `Fill`), border seams
-(`merge_borders`), drop shadows (`Block::shadow`, currently unbuilt, adoptable), progress
-rendering (`LineGauge`, keeping threshold-color logic app-side).
+It CAN adopt built-ins for: panel border+title (`Block::bordered()`), scrollbar (`Scrollbar`), modal centering (`Rect::centered`), equal splits (`Layout` + `Fill`), border seams (`merge_borders`), drop shadows (`Block::shadow`, currently unbuilt, adoptable), progress rendering (`LineGauge`, keeping threshold-color logic app-side).
 
-it CANNOT conform on: gutter caret + focus-row tint over heterogeneous rows, button rows in
-modals, spinner/cursor-blink (no time primitives), text input/textarea, skeleton multi-column
-placeholders (`Fill` covers one column only), min-max f32 sparkline. these stay direct
-buffer/cell writes; that is the correct escape hatch, not a violation. a chosen theme palette
-and glyph tiers are design decisions, not API gaps.
+it CANNOT conform on: gutter caret + focus-row tint over heterogeneous rows, button rows in modals, spinner/cursor-blink (no time primitives), text input/textarea, skeleton multi-column placeholders (`Fill` covers one column only), min-max f32 sparkline. these stay direct buffer/cell writes; that is the correct escape hatch, not a violation. a chosen theme palette and glyph tiers are design decisions, not API gaps.

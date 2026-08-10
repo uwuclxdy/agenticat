@@ -1,13 +1,10 @@
 # Ratatui 0.30.x: Public API Reference
 
-> Documented from source tag `ratatui-v0.30.1`; current stable is **0.30.2** (2026-06-19), a
-> bug-fix patch with no API changes vs this document (shadow `CellEffect`s now require
-> `Send + Sync`; wide-cell diffing and scrollbar-thumb clamp fixes).
+> Documented from source tag `ratatui-v0.30.1`; current stable is **0.30.2** (2026-06-19), a > bug-fix patch with no API changes vs this document (shadow `CellEffect`s now require > `Send + Sync`; wide-cell diffing and scrollbar-thumb clamp fixes).
 > Single source of truth for "what does ratatui give you out of the box". Grep-friendly.
 
 Ratatui 0.30 is a **workspace split into crates**. The `ratatui` umbrella crate re-exports everything;
-each item below notes its origin crate. You almost always `use ratatui::...` and never depend on the
-sub-crates directly.
+each item below notes its origin crate. You almost always `use ratatui::...` and never depend on the sub-crates directly.
 
 | Crate | Role |
 |---|---|
@@ -60,8 +57,7 @@ ratatui::crossterm;        // the `crossterm` crate, re-exported (feature `cross
 ratatui::{init, try_init, init_with_options, try_init_with_options, restore, try_restore, run, DefaultTerminal};
 ```
 
-**Prelude**: `use ratatui::prelude::*;`. Officially de-emphasized (see Issue #1150) but kept for
-back-compat. It re-exports the common types + modules:
+**Prelude**: `use ratatui::prelude::*;`. Officially de-emphasized (see Issue #1150) but kept for back-compat. It re-exports the common types + modules:
 
 ```rust
 use ratatui::prelude::*;
@@ -166,8 +162,7 @@ let mut terminal = ratatui::init();
 ratatui::restore();
 ```
 
-`init()` installs a panic hook that calls `restore()` before the default hook, so a panic mid-draw
-won't leave the user's terminal corrupted.
+`init()` installs a panic hook that calls `restore()` before the default hook, so a panic mid-draw won't leave the user's terminal corrupted.
 
 ---
 
@@ -246,8 +241,7 @@ pub fn count(&self) -> usize;                               // frame number
 
 ## 5. Backend Trait & Backends
 
-`ratatui::backend` re-exports: `Backend`, `ClearType`, `TestBackend`, `WindowSize`, and (per feature)
-`CrosstermBackend`/`TermionBackend`/`TermwizBackend` + their `From*`/`Into*` conversion traits.
+`ratatui::backend` re-exports: `Backend`, `ClearType`, `TestBackend`, `WindowSize`, and (per feature) `CrosstermBackend`/`TermionBackend`/`TermwizBackend` + their `From*`/`Into*` conversion traits.
 
 ### `Backend` Trait (`ratatui-core`)
 
@@ -288,8 +282,7 @@ let backend = CrosstermBackend::new(std::io::stdout());
 let mut terminal = Terminal::new(backend)?;
 ```
 
-Conversion traits `IntoCrossterm<C>` / `FromCrossterm<C>` bridge ratatui `Color`/`Style`/`Modifier`
-to crossterm types (used internally; available if you mix raw crossterm styling).
+Conversion traits `IntoCrossterm<C>` / `FromCrossterm<C>` bridge ratatui `Color`/`Style`/`Modifier` to crossterm types (used internally; available if you mix raw crossterm styling).
 
 ### `TestBackend` (`ratatui-core`): For Unit Tests
 
@@ -738,8 +731,7 @@ pub trait Widget {
 
 Built-in blanket impls: `Widget for &str`, `for String`, `for Option<W: Widget>`.
 
-**0.30 pattern: implement `Widget for &T` (not `WidgetRef`)** so the widget can render by reference
-without consuming itself. Every built-in widget implements both `Widget for T` and `Widget for &T`:
+**0.30 pattern: implement `Widget for &T` (not `WidgetRef`)** so the widget can render by reference without consuming itself. Every built-in widget implements both `Widget for T` and `Widget for &T`:
 
 ```rust
 struct Greeting { name: String }
@@ -760,8 +752,7 @@ pub trait StatefulWidget {
 }
 ```
 
-Used by `List` (`ListState`), `Table` (`TableState`), `Scrollbar` (`ScrollbarState`). Render via
-`frame.render_stateful_widget(widget, area, &mut state)`.
+Used by `List` (`ListState`), `Table` (`TableState`), `Scrollbar` (`ScrollbarState`). Render via `frame.render_stateful_widget(widget, area, &mut state)`.
 
 ### `WidgetRef` / `StatefulWidgetRef`: Feature `unstable-widget-ref`
 
@@ -773,16 +764,13 @@ pub trait StatefulWidgetRef {
 }
 ```
 
-> **Deprecated direction in 0.30.** These are gated behind `unstable-widget-ref` and are being replaced
-> by the `Widget for &T` pattern. Prefer `impl Widget for &MyWidget`. Use `WidgetRef` only if you need
-> trait-object boxing (`Box<dyn WidgetRef>`). `FrameExt::render_widget_ref` exists for these.
+> **Deprecated direction in 0.30.** These are gated behind `unstable-widget-ref` and are being replaced > by the `Widget for &T` pattern. Prefer `impl Widget for &MyWidget`. Use `WidgetRef` only if you need > trait-object boxing (`Box<dyn WidgetRef>`). `FrameExt::render_widget_ref` exists for these.
 
 ---
 
 ## 12. Widgets
 
-All from `ratatui-widgets`, re-exported under `ratatui::widgets`. Every widget implements
-`Widget` + `Widget for &T` (and `Styled`/`Stylize`); stateful ones add `StatefulWidget`.
+All from `ratatui-widgets`, re-exported under `ratatui::widgets`. Every widget implements `Widget` + `Widget for &T` (and `Styled`/`Stylize`); stateful ones add `StatefulWidget`.
 
 ### Block
 
@@ -841,8 +829,7 @@ pub const fn proportional(v: u16) -> Self;
 // From<u16>
 ```
 
-`Shadow` (block drop-shadow): `Shadow::overlay()/block()/light_shade()/medium_shade()/dark_shade()`,
-`.style(...)`, `.offset(Offset)`; custom via `Shadow::custom(impl CellEffect)`. `dimmed()` → `Dimmed` effect.
+`Shadow` (block drop-shadow): `Shadow::overlay()/block()/light_shade()/medium_shade()/dark_shade()`, `.style(...)`, `.offset(Offset)`; custom via `Shadow::custom(impl CellEffect)`. `dimmed()` → `Dimmed` effect.
 
 ### Paragraph
 
@@ -932,8 +919,7 @@ pub struct Row<'a>;    // new<T: IntoIterator<Item: Into<Cell>>>(cells); .height
 pub struct Cell<'a>;   // new<T: Into<Text>>(content); .content(t); .column_span(u16); .style(s)
 ```
 
-`TableState`: like `ListState` plus column/cell selection: `select_column`, `select_cell`,
-`with_selected_cell`, `selected_column`, `selected_cell`, `scroll_right_by/left_by`, etc.
+`TableState`: like `ListState` plus column/cell selection: `select_column`, `select_cell`, `with_selected_cell`, `selected_column`, `selected_cell`, `scroll_right_by/left_by`, etc.
 
 ```rust
 let table = Table::new(
@@ -1212,15 +1198,13 @@ let line = line!["hello".red(), " world".bold()];
 let [top, bottom] = vertical![== 3, *= 1].areas(frame.area());   // Length(3), Fill(1)
 ```
 
-> The macros are sugar; the builder APIs (`Line::from`, `Layout::vertical`, `Constraint::Length`) do
-> the same thing without the feature.
+> The macros are sugar; the builder APIs (`Line::from`, `Layout::vertical`, `Constraint::Length`) do > the same thing without the feature.
 
 ---
 
 ## 14. Events / crossterm Re-Export
 
-Ratatui does **not** ship its own event/input system. It re-exports the chosen backend's crate so you
-read events from there. With the default crossterm backend (crossterm 0.29):
+Ratatui does **not** ship its own event/input system. It re-exports the chosen backend's crate so you read events from there. With the default crossterm backend (crossterm 0.29):
 
 ```rust
 ratatui::crossterm;   // == the `crossterm` crate (event, terminal, cursor, style, ...)
@@ -1238,48 +1222,27 @@ if event::poll(std::time::Duration::from_millis(50))? {
 }
 ```
 
-Backend-specific style bridges: `IntoCrossterm`/`FromCrossterm` (and termion/termwiz equivalents)
-convert ratatui `Color`/`Style`/`Modifier` to the backend's types.
+Backend-specific style bridges: `IntoCrossterm`/`FromCrossterm` (and termion/termwiz equivalents) convert ratatui `Color`/`Style`/`Modifier` to the backend's types.
 
-**Mouse events are opt-in.** `ratatui::init()`/`run()` do not enable mouse capture. Call
-`crossterm::execute!(stdout, event::EnableMouseCapture)` before reading, and
-`event::DisableMouseCapture` on teardown. Once enabled, clicks/hover/drag arrive as
-`Event::Mouse(MouseEvent)`.
+**Mouse events are opt-in.** `ratatui::init()`/`run()` do not enable mouse capture. Call `crossterm::execute!(stdout, event::EnableMouseCapture)` before reading, and `event::DisableMouseCapture` on teardown. Once enabled, clicks/hover/drag arrive as `Event::Mouse(MouseEvent)`.
 
-**Sync vs async event loop.** `event::poll`/`event::read` above are blocking/sync. For
-`tokio::select!` over crossterm events plus other async streams, enable crossterm's
-`event-stream` feature and use `crossterm::event::EventStream`, a
-`Stream<Item = io::Result<Event>>`. `Terminal::draw` itself stays synchronous either way.
+**Sync vs async event loop.** `event::poll`/`event::read` above are blocking/sync. For `tokio::select!` over crossterm events plus other async streams, enable crossterm's `event-stream` feature and use `crossterm::event::EventStream`, a `Stream<Item = io::Result<Event>>`. `Terminal::draw` itself stays synchronous either way.
 
-**Detecting Shift+Enter / Ctrl+Enter distinctly.** Default terminals collapse many Ctrl/Shift+key
-combos to identical bytes as plain keys, so a stock `KeyEvent` can't tell them apart. Needs the
-Kitty keyboard protocol: `crossterm::execute!(stdout, PushKeyboardEnhancementFlags(..))` /
-`PopKeyboardEnhancementFlags`, terminal support varies. Push on init, pop on teardown, paired
-with the same guard that restores the terminal.
+**Detecting Shift+Enter / Ctrl+Enter distinctly.** Default terminals collapse many Ctrl/Shift+key combos to identical bytes as plain keys, so a stock `KeyEvent` can't tell them apart. Needs the Kitty keyboard protocol: `crossterm::execute!(stdout, PushKeyboardEnhancementFlags(..))` / `PopKeyboardEnhancementFlags`, terminal support varies. Push on init, pop on teardown, paired with the same guard that restores the terminal.
 
 ---
 
 ## 15. 0.30-Specific Notes
 
-- **Workspace crate split.** `ratatui` is now an umbrella over `ratatui-core`, `ratatui-widgets`,
-  `ratatui-crossterm`/`-termion`/`-termwiz`, and `ratatui-macros`. Keep depending only on `ratatui`;
+- **Workspace crate split.** `ratatui` is now an umbrella over `ratatui-core`, `ratatui-widgets`, `ratatui-crossterm`/`-termion`/`-termwiz`, and `ratatui-macros`. Keep depending only on `ratatui`;
   the split is transparent through re-exports.
-- **`ratatui::init()` / `restore()` / `run()` + `DefaultTerminal`.** The blessed lifecycle. `init()`
-  enables raw mode + alternate screen and installs a panic hook that restores the terminal. `run()`
-  wraps a whole closure. No more hand-written `enable_raw_mode()` + `execute!(EnterAlternateScreen)`.
-- **`Widget for &T` is the migration target away from `WidgetRef`.** Implement `impl Widget for &MyWidget`
-  to render by reference. `WidgetRef`/`StatefulWidgetRef` are gated behind `unstable-widget-ref` and on
-  the way out (keep them only for `Box<dyn WidgetRef>` trait objects). `FrameExt::render_widget_ref`
-  is the method for those.
-- **`Flex`** controls leftover-space distribution in `Layout` (`Start/End/Center/SpaceBetween/SpaceEvenly/SpaceAround`,
-  plus `Legacy`). `Table::flex` exposes the same for columns. `Rect::centered*` are convenience wrappers.
+- **`ratatui::init()` / `restore()` / `run()` + `DefaultTerminal`.** The blessed lifecycle. `init()` enables raw mode + alternate screen and installs a panic hook that restores the terminal. `run()` wraps a whole closure. No more hand-written `enable_raw_mode()` + `execute!(EnterAlternateScreen)`.
+- **`Widget for &T` is the migration target away from `WidgetRef`.** Implement `impl Widget for &MyWidget` to render by reference. `WidgetRef`/`StatefulWidgetRef` are gated behind `unstable-widget-ref` and on the way out (keep them only for `Box<dyn WidgetRef>` trait objects). `FrameExt::render_widget_ref` is the method for those.
+- **`Flex`** controls leftover-space distribution in `Layout` (`Start/End/Center/SpaceBetween/SpaceEvenly/SpaceAround`, plus `Legacy`). `Table::flex` exposes the same for columns. `Rect::centered*` are convenience wrappers.
 - **`Constraint::Fill(weight)`**: proportional grow constraint (use instead of `Min(0)` hacks).
-- **`Layout::areas::<N>()`** returns a fixed `[Rect; N]` you can destructure; `split()` returns the
-  `Rc<[Rect]>`-backed `Rects`. Prefer `areas`.
-- **HorizontalAlignment / VerticalAlignment** split out; `Alignment` is now an alias for
-  `HorizontalAlignment`.
-- **Border dashing + merging.** Many new `BorderType` dashed variants and `Block::merge_borders`
-  (`MergeStrategy`) for joining adjacent block borders. `Block::shadow` adds drop shadows.
+- **`Layout::areas::<N>()`** returns a fixed `[Rect; N]` you can destructure; `split()` returns the `Rc<[Rect]>`-backed `Rects`. Prefer `areas`.
+- **HorizontalAlignment / VerticalAlignment** split out; `Alignment` is now an alias for `HorizontalAlignment`.
+- **Border dashing + merging.** Many new `BorderType` dashed variants and `Block::merge_borders` (`MergeStrategy`) for joining adjacent block borders. `Block::shadow` adds drop shadows.
 - **High-density canvas markers**: `Marker::{Quadrant, Sextant, Octant}` (alongside `Braille`, `HalfBlock`).
 - **Backend writer pin**: crossterm 0.29 is default; `crossterm_0_28` selectable.
 
