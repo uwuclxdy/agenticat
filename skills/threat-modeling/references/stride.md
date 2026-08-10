@@ -68,10 +68,7 @@ Denial of service, and Elevation of privilege.
 ```
                  IMPACT
              Low  Med  High  Crit
-   Low        1    2    3     4
-   Med        2    4    6     8
-   High       3    6    9    12
-   Crit       4    8   12    16
+   Low        1    2    3     4 Med        2    4    6     8 High       3    6    9    12 Crit       4    8   12    16
 ```
 
 Rows = likelihood, columns = impact; score = impact x likelihood.
@@ -101,8 +98,7 @@ figure for the system.
 
 ### Template 2: STRIDE Data Model and Questionnaires
 
-Risk banding lives in Template 1's matrix (score = impact × likelihood); controls live in
-`references/mitigations.md`. Use these six review questionnaires, one per category:
+Risk banding lives in Template 1's matrix (score = impact × likelihood); controls live in `references/mitigations.md`. Use these six review questionnaires, one per category:
 
 **Spoofing**
 - Can an attacker impersonate a legitimate user?
@@ -151,13 +147,11 @@ Applicable STRIDE categories per DFD element type (canonical Microsoft SDL mappi
 | Data store | T, I, D; R (log/audit stores only) |
 | Data flow | T, I, D |
 
-Rank trust-boundary crossings by trust-level gap (widest first). Flag any unencrypted flow
-that crosses a trust boundary as a priority finding.
+Rank trust-boundary crossings by trust-level gap (widest first). Flag any unencrypted flow that crosses a trust boundary as a priority finding.
 
 ### Template 4: STRIDE per Interaction
 
-STRIDE threats keyed by `(source type, target type)`. Apply to each interaction between two
-components:
+STRIDE threats keyed by `(source type, target type)`. Apply to each interaction between two components:
 
 | Source → Target | STRIDE threats |
 |---|---|

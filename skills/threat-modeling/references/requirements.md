@@ -4,23 +4,15 @@
 
 ### Template 1: Security Requirement Model
 
-**Security domains** (10): authentication, authorization, data protection, audit logging,
-input validation, error handling, session management, cryptography, network security,
-availability.
+**Security domains** (10): authentication, authorization, data protection, audit logging, input validation, error handling, session management, cryptography, network security, availability.
 
 **Compliance frameworks** (7): PCI-DSS, HIPAA, GDPR, SOC2, NIST CSF, ISO 27001, OWASP.
 
-A security requirement carries: id, title, description, requirement type (functional /
-non-functional / constraint), domain, priority (critical / high / medium / low), rationale,
-acceptance criteria, test cases, `threat_refs`, `compliance_refs`. Trace threats to
-requirements through `threat_refs`.
+A security requirement carries: id, title, description, requirement type (functional / non-functional / constraint), domain, priority (critical / high / medium / low), rationale, acceptance criteria, test cases, `threat_refs`, `compliance_refs`. Trace threats to requirements through `threat_refs`.
 
 ### Template 2: Threat-to-Requirement Extractor
 
-Map each STRIDE category to its security domains, then draft one requirement per pattern with
-matching acceptance criteria and test cases. Priority = impact × likelihood banding (use the
-risk matrix in `references/stride.md`). Ids run `SR-001`, `SR-002`, ... `{target}` is the
-threatened component.
+Map each STRIDE category to its security domains, then draft one requirement per pattern with matching acceptance criteria and test cases. Priority = impact × likelihood banding (use the risk matrix in `references/stride.md`). Ids run `SR-001`, `SR-002`, ... `{target}` is the threatened component.
 
 | STRIDE | Domains | Example requirement | Example acceptance criterion | Example test |
 |---|---|---|---|---|
@@ -33,8 +25,7 @@ threatened component.
 
 ### Template 3: Compliance Mapping
 
-Map a requirement to controls by its domain. Control ids anchored to **PCI DSS v4.0.1** and
-**OWASP ASVS 5.0** (chapter-level); PCI DSS v3.2.1 and ASVS 4.0 numbering are retired.
+Map a requirement to controls by its domain. Control ids anchored to **PCI DSS v4.0.1** and **OWASP ASVS 5.0** (chapter-level); PCI DSS v3.2.1 and ASVS 4.0 numbering are retired.
 
 | Framework | Domain | Control ids |
 |---|---|---|
@@ -59,8 +50,6 @@ Map a requirement to controls by its domain. Control ids anchored to **PCI DSS v
 | OWASP ASVS 5.0 | data protection | V14 |
 | OWASP ASVS 5.0 | audit logging | V16 |
 
-No control-id mapping table exists for SOC2, NIST CSF, or ISO 27001. Template 1 lists them as
-recognized frameworks, not as ones with ready-made control ids.
+No control-id mapping table exists for SOC2, NIST CSF, or ISO 27001. Template 1 lists them as recognized frameworks, not as ones with ready-made control ids.
 
-Gap analysis: a control with no mapped requirement is a missing control; one with a single
-mapped requirement is weak coverage.
+Gap analysis: a control with no mapped requirement is a missing control; one with a single mapped requirement is weak coverage.

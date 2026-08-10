@@ -4,8 +4,7 @@
 
 ### Template 1: Attack Tree Data Model
 
-**Node types:** `OR` (any child suffices), `AND` (all children required), `LEAF` (concrete
-attack step). A tree carries a name, description, root node, and version.
+**Node types:** `OR` (any child suffices), `AND` (all children required), `LEAF` (concrete attack step). A tree carries a name, description, root node, and version.
 
 **Leaf score axes** (higher = harder / costlier / louder):
 
@@ -15,8 +14,7 @@ attack step). A tree carries a name, description, root node, and version.
 | cost | free 0, low 1, medium 2, high 3, very-high 4 |
 | detection risk | none 0, low 1, medium 2, high 3, certain 4 |
 
-Each leaf also carries `time_hours` (float), `requires_insider` / `requires_physical` (bool),
-and optional `mitigations` and `cve_refs` lists.
+Each leaf also carries `time_hours` (float), `requires_insider` / `requires_physical` (bool), and optional `mitigations` and `cve_refs` lists.
 
 **Worked example: account-takeover tree** (leaf attrs as difficulty/cost/detection):
 
@@ -35,16 +33,8 @@ and optional `mitigations` and `cve_refs` lists.
 
 ### Template 2: Attack Path Analysis
 
-Enumerate root-to-leaf paths (OR branches into one path per child; AND takes the cartesian
-product of its children's sub-paths), then score each path: sum cost / difficulty / time over
-its leaves, count leaves as steps, carry `requires_insider` / `requires_physical` if any leaf
-needs them. Coverage % = paths with any mitigated leaf / total paths; prioritize the leaves
-that appear in the most paths (highest coverage impact first).
+Enumerate root-to-leaf paths (OR branches into one path per child; AND takes the cartesian product of its children's sub-paths), then score each path: sum cost / difficulty / time over its leaves, count leaves as steps, carry `requires_insider` / `requires_physical` if any leaf needs them. Coverage % = paths with any mitigated leaf / total paths; prioritize the leaves that appear in the most paths (highest coverage impact first).
 
-Rank paths by the axis that matches the adversary being modeled: cheapest (opportunistic),
-easiest (lowest total difficulty, commodity skill), or stealthiest (lowest detection risk, the
-patient adversary). Default to cheapest, and rank by stealthiest as well whenever the model
-includes an attacker who will pay more to stay unseen; the two rarely pick the same path.
+Rank paths by the axis that matches the adversary being modeled: cheapest (opportunistic), easiest (lowest total difficulty, commodity skill), or stealthiest (lowest detection risk, the patient adversary). Default to cheapest, and rank by stealthiest as well whenever the model includes an attacker who will pay more to stay unseen; the two rarely pick the same path.
 
-Deliberate: detection risk is scored as the worst single leaf (max), not summed; one loud
-step exposes the whole path, unlike cost/difficulty which accumulate per path.
+Deliberate: detection risk is scored as the worst single leaf (max), not summed; one loud step exposes the whole path, unlike cost/difficulty which accumulate per path.
