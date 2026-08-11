@@ -36,6 +36,8 @@ Terminal accessibility gets its own file, `references/accessibility.md`. There i
 
 `curl`'s progress meter goes to stderr despite not being an error, because it is messaging about the run rather than the payload.
 
+**A machine-readable output format is a TRUST BOUNDARY, and the boundary rule reads as though it only covers input.** Any user-supplied bytes entering a line-oriented or delimited format need quoting AT THE PRINTER, never a narrowing of what the input layer accepts. A `key=value` printer whose value is a path straight off argv, with nothing escaped, emits forged keys ahead of the real ones the moment that path contains a newline, at exit 0, and a first-wins reader believes them. Measured 2026-08-11 against a shipped flag: `--source=$'/tmp/x\nparts=one'` produced a verdict about a directory that does not exist. Quote or escape every value, or emit a format that carries its own quoting (json, NUL-delimited) rather than one that trusts its payload.
+
 **TUI, house style.** The question is different: which stream do you paint to. ratatui recommends stdout, so that `app | grep foo` renders nothing and fails visibly like other commands. Painting to stderr keeps the interface alive when stdout is piped, which is unconventional and costs performance. Bubble Tea and Textual take no documented position.
 
 ---

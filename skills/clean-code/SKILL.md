@@ -174,6 +174,8 @@ Language caveat: this is object-oriented advice. With compiler-checked exhaustiv
 
 Throw exceptions instead of returning error codes. Keep the algorithm and its error handling in separate functions. Where failure modes are known, write the `try-catch-finally` skeleton (and the exceptions it throws) first, then fill in the logic.
 
+**A message that masks one field and interpolates an exception object beside it re-leaks what it just hid.** A caught error's own rendering carries the thing the redaction removed: `str(OSError)` carries the absolute path, and the same shape recurs wherever a wrapper's `Display` quotes its source. Interpolate the narrow field (`strerror`, `errno`, `reason`, a status code), never the exception.
+
 **Do:**
 - Use `try/catch` for a clean list of steps.
   - Good: `try { createAccount(); createProfile(); } catch (error) { showError(); }`
@@ -260,6 +262,12 @@ Avoid comments that explain what code does, since they eventually rot into outda
   - Bad: Leaving `// User must be 18 or older` above code that was updated to `if (user.age >= 21)`.
 - Write "mumbling" comments that lack context.
   - Bad: `// R.J. said this might cause a race condition... not sure if it works`
+
+### 5.1.1 A Count in a Comment Is a Claim With an Expiry
+
+A comment carrying a count or a universal ("both call sites", "every output is 64x48", "nothing observes this") is measured against one state of one file, and the round that adds a pin is the round that makes the previous round's count false. Two rules keep it honest: name the file the count was measured in and how to re-derive it, or downgrade the sentence to the measurement behind it. And when a comment states what NO test covers, the quantifier belongs over the ASSERTIONS, never over the artifacts the suite produces: "no test reads a value above the cap" and "no output above the cap exists" are different claims with different truth values over the same suite, and the second is the one that ships false.
+
+**A short restatement beside a longer precise statement is where drift lands.** Two artifacts say the same thing, only one of them ever gets re-derived, and the compression is what goes stale. Point at the precise statement rather than restating it shorter.
 
 ### 5.2 Rely on Version Control, Not Comments
 
