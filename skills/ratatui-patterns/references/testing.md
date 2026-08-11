@@ -19,8 +19,7 @@ fn renders_header() {
 ```
 
 - `assert_buffer_lines([...])` is the primary assertion: exact rows, catches layout drift.
-- `TestBackend::assert_buffer(&Buffer)` for comparing against a constructed `Buffer` (e.g.
-  `Buffer::with_lines(..)` then `buf.set_style(..)` when styles matter, not just glyphs).
+- `TestBackend::assert_buffer(&Buffer)` for comparing against a constructed `Buffer` (e.g. `Buffer::with_lines(..)` then `buf.set_style(..)` when styles matter, not just glyphs).
 - Style-aware checks: build the expected `Buffer` and set styles on it; string lines compare symbols only.
 
 ## Audit-Driven Rules (What Our Repos Got Wrong)

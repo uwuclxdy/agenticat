@@ -18,8 +18,7 @@ Each control carries: id, name, type, layer, effectiveness, implementation + mai
 
 Effectiveness and status describe a deployment, not a control type, so the seed library below carries neither column; assign both per system at modeling time.
 
-A threat's controls have a **gap** when any of these hold (count only active controls, i.e.
-status past not-implemented):
+A threat's controls have a **gap** when any of these hold (count only active controls, i.e. status past not-implemented):
 
 - weighted coverage < 50%: add controls or strengthen existing ones
 - fewer than 2 distinct layers: no defense in depth; add controls at other layers

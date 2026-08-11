@@ -53,12 +53,8 @@ For an INVESTIGATION handoff (root-causing, not building), add a hypothesis ledg
 
 ```markdown
 ## hypotheses to test (NOT established: the next session's job)
-- **H1: <claim>.** decomposed: mechanism / trigger / attribution (these live and die
-  separately). evidence for, evidence against, and the KILL CRITERION: the concrete result
-  that proves it dead ("if all versions are RED, H1-attribution is dead; say so and pivot").
-- <mark which prior verdicts are inherited and must be re-verified rather than trusted;
-  flag any authoritative-looking doc whose claims the next session should check against
-  primary sources>
+- **H1: <claim>.** decomposed: mechanism / trigger / attribution (these live and die separately). evidence for, evidence against, and the KILL CRITERION: the concrete result that proves it dead ("if all versions are RED, H1-attribution is dead; say so and pivot").
+- <mark which prior verdicts are inherited and must be re-verified rather than trusted; flag any authoritative-looking doc whose claims the next session should check against primary sources>
 ```
 
 Omit empty sections. Merge sections for tiny handoffs; the order stays. Add more sections in between if context needed for the next session doesn't fit in any of the above sections.
@@ -106,9 +102,7 @@ For burning a task backlog down over many sessions: maintain a persistent task-r
 **Continuation prompt** is SHORT, STABLE, and stored in the file so it can be re-emitted verbatim every session. Substitute `<name>` and `<N>` once when the file is created, never after:
 
 ```
-/handoff reusable: resume <name> queue. read @docs/handoff-state.md and run its runner protocol
-from step 1 (a resume DOES tasks, it is not a save-point). the file wins over this prompt on any
-conflict. blocked items stay in @docs/todo.md, do not start them.
+/handoff reusable: resume <name> queue. read @docs/handoff-state.md and run its runner protocol from step 1 (a resume DOES tasks, it is not a save-point). the file wins over this prompt on any conflict. blocked items stay in @docs/todo.md, do not start them.
 ```
 
 **Runner protocol** (baked into the state file; a resume executes it):

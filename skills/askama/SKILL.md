@@ -577,8 +577,7 @@ Conditionals:  {% if %}...{% else if %}...{% else %}...{% endif %}
 Match:         {% match v %}{% when Some with (x) %}...{% when None %}...{% endmatch %}
 Vars:          {% let x = y %}  {% let mut it = … %}  {% set x = 1 %}  {% decl x %}  {% mut x += 1 %}
 Let block:     {% let s %}…rendered…{% endlet %}   (captures block output into `s`)
-Macros:        {% macro m(a) %}...{% endmacro %}   {% call m(a) %}   expr-call: {{ m(a) }}
-               {% call(x) m(a) %}body{% endcall %}    inside macro: {{ caller() }} / {{ caller(x) }}
+Macros:        {% macro m(a) %}...{% endmacro %}   {% call m(a) %}   expr-call: {{ m(a) }}   {% call(x) m(a) %}body{% endcall %}    inside macro: {{ caller() }} / {{ caller(x) }}
 Imports:       {% import "m.html" as ns %}   {% call ns::m(a) %}
 Include:       {% include "part.html" %}
 Filters:       {{ x | lower | trim }}   block: {% filter lower %}...{% endfilter %}

@@ -36,8 +36,7 @@ Modern-ratatui knowledge pack. Current stable: **ratatui 0.30.2** (2026-06). Mod
 
 For anything the bundled references don't answer 1:1, fetch instead of guessing:
 
-- API detail: `https://docs.rs/ratatui/latest/ratatui/` (append module path, e.g.
-  `widgets/struct.Table.html`)
+- API detail: `https://docs.rs/ratatui/latest/ratatui/` (append module path, e.g. `widgets/struct.Table.html`)
 - release highlights: `https://ratatui.rs/highlights/v0302/` (version digits, no dots)
 - breaking changes: `https://raw.githubusercontent.com/ratatui/ratatui/main/BREAKING-CHANGES.md`
 - concepts/recipes: `https://ratatui.rs/concepts/` and `https://ratatui.rs/recipes/`

@@ -12,8 +12,7 @@ metadata:
 
 1. **Scope first** (before a rename or release). Establish from context (ask if unsure):
    - what the thing does, in one line
-   - which registries matter: crates.io, AUR, PyPI, npm, GitHub, KDE store, domain... 
-   Check only relevant registries depending on the project.
+   - which registries matter: crates.io, AUR, PyPI, npm, GitHub, KDE store, domain... Check only relevant registries depending on the project.
    - rename cost: unpublished (cheap, anything goes) vs already public (flag every rename consequence)
 2. **Generate 10-30 candidates.** Brainstorm and balance three axes:
    - explicit: name states the function (`kate-markdown-preview` over `katdown`)

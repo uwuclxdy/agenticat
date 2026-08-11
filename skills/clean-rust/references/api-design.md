@@ -60,7 +60,7 @@ Pick enum tagging deliberately; the default rarely matches an external API:
 
 | Strategy | Attribute | Wire form | Tuple variants |
 |---|---|---|---|
-| External (default) | — | `{"Circle":{"radius":5}}` | yes |
+| External (default) | n/a | `{"Circle":{"radius":5}}` | yes |
 | Internal | `#[serde(tag = "type")]` | `{"type":"Circle","radius":5}` | **no** |
 | Adjacent | `#[serde(tag = "t", content = "c")]` | `{"t":"Circle","c":{"radius":5}}` | yes |
 | Untagged | `#[serde(untagged)]` | `{"radius":5}` | yes |

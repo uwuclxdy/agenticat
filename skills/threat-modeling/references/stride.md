@@ -38,9 +38,7 @@ Brief description of the system and its purpose.
 
 ## 3. STRIDE Analysis
 
-One table per category; each row is a threat scored by impact and likelihood
-(Low/Medium/High/Critical). Draw mitigations from the control library in
-`references/mitigations.md`.
+One table per category; each row is a threat scored by impact and likelihood (Low/Medium/High/Critical). Draw mitigations from the control library in `references/mitigations.md`.
 
 ### 3.1 Spoofing
 
@@ -58,8 +56,7 @@ One table per category; each row is a threat scored by impact and likelihood
 
 ### 3.3 Remaining Categories
 
-Repeat one table per category for Repudiation, Information disclosure,
-Denial of service, and Elevation of privilege.
+Repeat one table per category for Repudiation, Information disclosure, Denial of service, and Elevation of privilege.
 
 ## 4. Risk Assessment
 
@@ -86,9 +83,7 @@ Bands: 12 and up Critical, 6 to 11 High, 3 to 5 Medium, below 3 Low.
 
 ## 5. Mitigation Plan
 
-Sequence the work by risk score, Critical first, and run every row through the gap checks in
-`references/mitigations.md` before accepting it. Record residual risk per threat, not as one
-figure for the system.
+Sequence the work by risk score, Critical first, and run every row through the gap checks in `references/mitigations.md` before accepting it. Record residual risk per threat, not as one figure for the system.
 
 | Threat | Controls | Residual risk |
 |--------|----------|---------------|

@@ -90,8 +90,7 @@ To raise opt-level on a single hot dependency without touching the rest: `[profi
 Detail in `references/dependencies.md`, `references/workspaces.md`. Highest-value moves:
 
 - `default-features = false` on heavy deps, then add back only the features you use. Single biggest key for cutting compile time plus binary size. Audit what a crate's defaults pull in with `cargo tree -e features`.
-- `resolver = "2"` (edition 2021+) or `"3"` (edition 2024+). Stops dev-only, build-script, or off-target features from inflating the production build. Often the biggest correctness + size win.
-  In a virtual workspace it must be set explicitly under `[workspace]`.
+- `resolver = "2"` (edition 2021+) or `"3"` (edition 2024+). Stops dev-only, build-script, or off-target features from inflating the production build. Often the biggest correctness + size win. In a virtual workspace it must be set explicitly under `[workspace]`.
 - `[workspace.dependencies]` pins one version of each shared crate for every member. Duplicate compiles of the same crate at different semver-compatible versions go away.
 - `dep:<name>` and `crate?/feature` (weak) to keep optional deps from leaking as public feature API.
 - `[target.'cfg(...)'.dependencies]` so OS/arch-specific crates don't compile on irrelevant targets.

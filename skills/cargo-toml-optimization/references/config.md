@@ -38,8 +38,7 @@ $HOME/.cargo/config.toml          ← $CARGO_HOME, lowest priority
 - `.cargo/config` (no `.toml`) still accepted for backward compat, but deprecated
 - TOML format only; no JSON or YAML
 - Arrays are concatenated, not replaced, with higher-precedence items appended later
-- Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same command from the workspace root does NOT (the member dir is never an ancestor of the root).
-  Workspace membership itself adds nothing to config discovery. Only cwd's own ancestor chain matters.
+- Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same command from the workspace root does NOT (the member dir is never an ancestor of the root). Workspace membership itself adds nothing to config discovery. Only cwd's own ancestor chain matters.
 
 **`[include]`**: load additional config files inline:
 ```toml

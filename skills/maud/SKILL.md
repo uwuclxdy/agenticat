@@ -68,7 +68,7 @@ Turn on the matching feature flag from the table below and `Markup` implements t
 
 | Framework | Feature flag | Trait `Markup` implements | Dep pins |
 |---|---|---|---|
-| default | — | — | nothing enabled |
+| default | n/a | n/a | nothing enabled |
 | Actix-web | `actix-web` | `actix_web::Responder` | `actix-web-dep` + `futures-util` |
 | Axum | `axum` | `IntoResponse` | `axum-core` `^0.5` + `http` `^1` |
 | Rocket | `rocket` | Rocket's `Responder` | `rocket` `^0.5` |
@@ -76,7 +76,7 @@ Turn on the matching feature flag from the table below and `Markup` implements t
 | Poem | `poem` | `poem::IntoResponse` | `poem` `^3` |
 | Tide | `tide` | `From<PreEscaped<String>>` for `tide::Response` | `tide` `^0.16.0` |
 | Submillisecond | `submillisecond` (new in 0.27.0) | `IntoResponse` | `submillisecond` `^0.4.1` |
-| Rouille | manual, see below | none | — |
+| Rouille | manual, see below | none | n/a |
 
 Dependency version pins came from the docs.rs feature graph, single source. Verify against `Cargo.toml` if exact ranges matter.
 
