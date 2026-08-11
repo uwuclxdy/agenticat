@@ -87,7 +87,7 @@ For burning a task backlog down over many sessions: maintain a persistent task-r
 2. **a pasted continuation prompt** → RUN the runner protocol from step 1, then save. This is the resume path; it does work.
 3. `/handoff reusable` mid-session **with the file already present** → SAVE-POINT only: run protocol step 7 (save), run no tasks.
 
-`/handoff reusable <N>` sets tasks-per-session (default 3); an explicit `<N>` updates both the file's protocol and its embedded prompt.
+`/handoff reusable <N>` sets tasks-per-session (default 5); an explicit `<N>` updates both the file's protocol and its embedded prompt.
 
 **State file** = `docs/handoff-state.md` in the repo (gitignored, cross-session memory, not committed). Outside a repo or with no `docs/`, ask where it should live.
 
