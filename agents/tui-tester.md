@@ -31,7 +31,12 @@ tmux -L "$S" new-session -d -s t -x 120 -y 30 \
 tmux -L "$S" pipe-pane -t t -o "cat >> $SCRATCH/raw.log"   # full escape-level transcript
 tmux -L "$S" send-keys -t t Down Enter        # named keys: Up Down Left Right Tab Enter Escape BSpace C-c F1..
 tmux -L "$S" send-keys -t t -l 'abc'          # literal text (never interpreted)
-tmux -L "$S" send-keys -t t -H 1b             # raw hex byte (esc)
+tmux -L "$S" send-keys -t t -H 1b             # raw hex byte (esc); tmux 3.7b DROPS multi-byte
+                                              # sequences that start with ESC or contain '[' (measured:
+                                              # 1b5b43 -> nothing, 5b43 -> nothing) and rewrites 0d to 0a.
+                                              # named keys deliver correct terminal bytes (Right -> 1b 5b 43):
+                                              # use them for arrows/enter/escape, reserve -H for bytes
+                                              # named keys can't express
 tmux -L "$S" capture-pane -t t -p             # rendered screen, plain text
 tmux -L "$S" capture-pane -t t -p -e          # with SGR escapes, for color asserts
 tmux -L "$S" resize-window -t t -x 80 -y 24   # live SIGWINCH mid-run
@@ -60,7 +65,7 @@ For a flow worth replaying (a repro for the caller, or a rerun on another box), 
 ]
 ```
 
-`expect` = regex awaited in the rendered screen; `send` = raw keys as JSON escapes (enter `\r`, esc ``, arrows `[A`..`[D`, tab `\t`, ctrl-c ``). Replay locally by translating each step to poll-capture then `send-keys -H <hex of the decoded bytes>`. The identical file replays on any box that understands the same steps schema.
+`expect` = regex awaited in the rendered screen; `send` = raw keys as JSON escapes (enter `\r`, esc ``, arrows `[A`..`[D`, tab `\t`, ctrl-c ``). Replay locally by translating each step to poll-capture then a `send-keys` call: named keys for every step that is an arrow, enter, escape or tab shape, `-H <hex>` only for bytes named keys can't express (the tmux drop trap above). The identical file replays on any box that understands the same steps schema. Authoring or editing a steps file can land raw ESC bytes instead of JSON escapes, so validate it parses before replay: `python3 -c 'import json,sys; json.load(open(sys.argv[1]))' <file>`.
 
 ## Matrix
 
