@@ -3,7 +3,7 @@ name: docs-sync
 description: "Reconciles `README`, `docs/*`, `CLAUDE.md`, and agent/skill/plugin prompt files with what the code does: stale, missing, or overpromising claims; verifies quoted commands/flags/paths. Use when a change alters documented behavior, a tool's output shape changes, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.9"
+  version: "1.10"
 ---
 
 # Docs Sync
@@ -42,6 +42,7 @@ Reconcile prose with code. Every claim in the docs must match what the code does
 - Match the doc's existing voice and formatting; this is a sync, not a rewrite.
 - Leave media placeholders alone (ASCII art, screenshots, gif slots); the user replaces those manually.
 - Version numbers: only touch ones the code/Cargo.toml/pyproject contradicts.
+- **A minimum-version claim belongs to the API surface it was measured on.** Upstream states a floor per surface. A program calling a second, newer surface inherits the newer floor, and the old number keeps reading as verified in every doc that copied it. Check which surface upstream attaches the number to, then check every surface the code calls. Where upstream states no floor for one of them, name the source of whatever number you ship.
 - **A durable doc names its artifact, never points at one.** "the old X", `HEAD~3`, "the previous wording" rot the moment anything lands after them. Quote the literal string, or pin an immutable ref (sha/tag) that still resolves in a year.
 - **A dated record reconciles against its own date, never today's code.** Release notes and applied audit rows describe a past state. Rewriting one to match current code destroys the record; every check still reads green. Before touching a citation inside a dated artifact, `git show <sha>:<path>` as of the date it claims. Leave it standing if it was true then, and note separately that the file is since gone.
 - `docs/todo.md` carries OPEN work only. A landed item gets propagated into its owning test or doc, then deleted. Never restated as a shipped record.
