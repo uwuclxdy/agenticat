@@ -3,7 +3,7 @@ name: mcp-stateless
 description: "MCP knowledge pack for the stateless 2026-07-28 revision: per-request `_meta`, `server/discover`, `resultType`, multi round-trip requests, stdio and Streamable HTTP transports. Use when building, reviewing, or migrating an MCP server or client, or when code still calls `initialize`, `Mcp-Session-Id`, or `resources/subscribe`."
 metadata:
   author: uwuclxdy
-  version: "1.0"
+  version: "1.0.1"
 ---
 
 # MCP Stateless

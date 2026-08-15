@@ -78,6 +78,8 @@ The single `@modelcontextprotocol/sdk` package split into `@modelcontextprotocol
 
 Two things to check before shipping: the handler entry point serves both eras per request, so confirm which one a given request actually took; and the legacy shim for MRTR has no return path for server-to-client requests, so a legacy client can silently lose elicitation. Read the SDK's own "Supporting protocol revision 2026-07-28" migration page rather than inferring from the changelog.
 
+Three traps, each cost a real debug session (measured on `@modelcontextprotocol/server@2.0.0`, independently by two lanes, 2026-08-15): the transport doc's `server.connect(transport)` example is the *hand-constructed* path, and it is broken in the modern direction, not the obvious one. `server/discover` answers `-32601` at HTTP 200, but `tools/list` answers HTTP 200 with a bare `{"tools":[]}` carrying no `resultType`, no `ttlMs`, no `cacheScope`: a legacy-shaped result that reads like a working server. The connect path answers `text/event-stream` where `createMcpHandler` answers `application/json`. Only the `createMcpHandler` entry installs the modern handlers on its per-request instances; for stateless HTTP serving, use `createMcpHandler(() => new McpServer(info, { capabilities: { tools: {} } }), { legacy: 'reject' })`. Second: under `createMcpHandler`, `capabilities: {}` makes `tools/list` answer 404 `-32601`; the "forcing `tools/list` gets an answer" note in the smoke-test section below does not apply to it. Third: `supportedProtocolVersions` is inert on the modern leg (discover and `-32022` answer the modern revision regardless of what you pass), and on the legacy leg it picks WHICH 2025-era revision via `legacyVersions[0] ?? LATEST_PROTOCOL_VERSION`, where `LATEST_PROTOCOL_VERSION` is `"2025-11-25"`. A modern-only list empties `legacyVersions`, and the empty list is exactly what reaches that hardcoded fallback. `legacy: 'reject'` is the whole modern-only guard; the option itself is at best useless.
+
 ## Verify With a Live Handshake
 
 A green build proves the code compiles. It proves nothing about the wire. **The old smoke test is now actively wrong**: piping an `initialize` frame tests a method that no longer exists, and a modern server answering it with an error looks identical to a broken server.
@@ -95,8 +97,7 @@ Assert, explicitly, on the `server/discover` result:
 
 - `resultType` is `"complete"`.
 - `supportedVersions` contains `2026-07-28`.
-- `capabilities` **contains `tools`**, not `{}`. Forcing `tools/list` gets an answer even from a server that advertised nothing, which masks the failure a real client hits:
-  instructions render, tools never appear.
+- `capabilities` **contains `tools`**, not `{}`. Under `createMcpHandler` a forced `tools/list` with no `tools` capability answers 404 `-32601` (measured 2.0.0, 2026-08-15), so the discovery assert is the only place a missing capability is visible: instructions render, tools never appear.
 - `_meta["io.modelcontextprotocol/serverInfo"]` names *your* server, not the SDK.
 - `ttlMs` and `cacheScope` are present.
 - `instructions` is present if you set any.
