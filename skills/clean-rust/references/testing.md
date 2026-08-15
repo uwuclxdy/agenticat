@@ -48,3 +48,7 @@ Keep live end-to-end tests in-tree without making the suite flaky: `#[ignore = "
 ## Dependency Bumps
 
 Gate dep bumps on `cargo test`, not `cargo build`: a minor bump can compile clean while silently dropping a transitively-enabled feature and breaking behavior only tests observe.
+
+## Platform-Gated Test Code
+
+A suite can lint clean on one OS and red another on code the cfg gates hide: `#[cfg(unix)]` items and their helpers read unused on windows, and windows-only lints (platform-sized enum variants) never fire on linux. Cross-`--target` clippy closes most of it, except crates whose C build scripts need the target's own compiler. The local approximation: flip `#[cfg(unix)]` to `#[cfg(any())]` across the test files only, run `cargo clippy --all-targets --all-features --release -- -D warnings`, then restore byte-identically (python `s.replace` + count asserts + snapshot). That surfaces exactly the dead-code/unused-import class the other platform's leg reds on. Never flip src/ gates: production cfg pairs keep each other used, so flipping one side manufactures false dead-code.
