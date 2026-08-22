@@ -3,8 +3,7 @@
 > Documented from source tag `ratatui-v0.30.1`; current stable is **0.30.2** (2026-06-19), a > bug-fix patch with no API changes vs this document (shadow `CellEffect`s now require > `Send + Sync`; wide-cell diffing and scrollbar-thumb clamp fixes).
 > Single source of truth for "what does ratatui give you out of the box". Grep-friendly.
 
-Ratatui 0.30 is a **workspace split into crates**. The `ratatui` umbrella crate re-exports everything;
-each item below notes its origin crate. You almost always `use ratatui::...` and never depend on the sub-crates directly.
+Ratatui 0.30 is a **workspace split into crates**. The `ratatui` umbrella crate re-exports everything; each item below notes its origin crate. You almost always `use ratatui::...` and never depend on the sub-crates directly.
 
 | Crate | Role |
 |---|---|
@@ -127,8 +126,7 @@ Umbrella `default = ["all-widgets", "crossterm", "layout-cache", "macros", "unde
 
 ## 3. Terminal Initialization
 
-From `ratatui` umbrella `init` module (feature `crossterm`), all re-exported at crate root.
-These handle raw mode + alternate screen + a **panic hook** that restores the terminal automatically.
+From `ratatui` umbrella `init` module (feature `crossterm`), all re-exported at crate root. These handle raw mode + alternate screen + a **panic hook** that restores the terminal automatically.
 
 ```rust
 pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
@@ -507,8 +505,7 @@ Modifier::{ BOLD, DIM, ITALIC, UNDERLINED, SLOW_BLINK, RAPID_BLINK, REVERSED, HI
 
 ### `Stylize` Trait: The Ergonomic Shorthand
 
-`Stylize` is implemented for `&str`, `String`, `Cow<str>`, `Span`, `Line`, `Text`, every widget, etc.
-It returns the styled value, so you chain it.
+`Stylize` is implemented for `&str`, `String`, `Cow<str>`, `Span`, `Line`, `Text`, every widget, etc. It returns the styled value, so you chain it.
 
 ```rust
 // core methods
@@ -619,8 +616,7 @@ let text: Text = "line1\nline2".into();                 // auto-splits newlines
 let span: Span = "hi".bold().into();
 ```
 
-`ToLine` / `ToSpan` / `ToText` traits give `.to_line()` / `.to_span()` / `.to_text()` on any `Display`.
-`StyledGrapheme<'a>` is the per-grapheme styled unit produced by `styled_graphemes()`.
+`ToLine` / `ToSpan` / `ToText` traits give `.to_line()` / `.to_span()` / `.to_text()` on any `Display`. `StyledGrapheme<'a>` is the per-grapheme styled unit produced by `styled_graphemes()`.
 
 ---
 
@@ -1234,8 +1230,7 @@ Backend-specific style bridges: `IntoCrossterm`/`FromCrossterm` (and termion/ter
 
 ## 15. 0.30-Specific Notes
 
-- **Workspace crate split.** `ratatui` is now an umbrella over `ratatui-core`, `ratatui-widgets`, `ratatui-crossterm`/`-termion`/`-termwiz`, and `ratatui-macros`. Keep depending only on `ratatui`;
-  the split is transparent through re-exports.
+- **Workspace crate split.** `ratatui` is now an umbrella over `ratatui-core`, `ratatui-widgets`, `ratatui-crossterm`/`-termion`/`-termwiz`, and `ratatui-macros`. Keep depending only on `ratatui`; the split is transparent through re-exports.
 - **`ratatui::init()` / `restore()` / `run()` + `DefaultTerminal`.** The blessed lifecycle. `init()` enables raw mode + alternate screen and installs a panic hook that restores the terminal. `run()` wraps a whole closure. No more hand-written `enable_raw_mode()` + `execute!(EnterAlternateScreen)`.
 - **`Widget for &T` is the migration target away from `WidgetRef`.** Implement `impl Widget for &MyWidget` to render by reference. `WidgetRef`/`StatefulWidgetRef` are gated behind `unstable-widget-ref` and on the way out (keep them only for `Box<dyn WidgetRef>` trait objects). `FrameExt::render_widget_ref` is the method for those.
 - **`Flex`** controls leftover-space distribution in `Layout` (`Start/End/Center/SpaceBetween/SpaceEvenly/SpaceAround`, plus `Legacy`). `Table::flex` exposes the same for columns. `Rect::centered*` are convenience wrappers.
@@ -1278,5 +1273,4 @@ Backend-specific style bridges: `IntoCrossterm`/`FromCrossterm` (and termion/ter
 
 ---
 
-*Generated from ratatui source `ratatui-v0.30.1`. Signatures are real (extracted from source);
-private/`pub(crate)` items omitted. Items gated by non-default features are noted inline.*
+*Generated from ratatui source `ratatui-v0.30.1`. Signatures are real (extracted from source); private/`pub(crate)` items omitted. Items gated by non-default features are noted inline.*

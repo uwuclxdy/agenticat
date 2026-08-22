@@ -49,7 +49,6 @@ ratatui has zero animation, timer, or blink primitives by design: it draws frame
 
 ## Design-System Conformance (Custom Look vs Built-Ins)
 
-Case study: a design system with its own custom border/scrollbar/progress rendering and theme.
-It CAN adopt built-ins for: panel border+title (`Block::bordered()`), scrollbar (`Scrollbar`), modal centering (`Rect::centered`), equal splits (`Layout` + `Fill`), border seams (`merge_borders`), drop shadows (`Block::shadow`, currently unbuilt, adoptable), progress rendering (`LineGauge`, keeping threshold-color logic app-side).
+Case study: a design system with its own custom border/scrollbar/progress rendering and theme. It CAN adopt built-ins for: panel border+title (`Block::bordered()`), scrollbar (`Scrollbar`), modal centering (`Rect::centered`), equal splits (`Layout` + `Fill`), border seams (`merge_borders`), drop shadows (`Block::shadow`, currently unbuilt, adoptable), progress rendering (`LineGauge`, keeping threshold-color logic app-side).
 
 it CANNOT conform on: gutter caret + focus-row tint over heterogeneous rows, button rows in modals, spinner/cursor-blink (no time primitives), text input/textarea, skeleton multi-column placeholders (`Fill` covers one column only), min-max f32 sparkline. these stay direct buffer/cell writes; that is the correct escape hatch, not a violation. a chosen theme palette and glyph tiers are design decisions, not API gaps.

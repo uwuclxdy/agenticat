@@ -24,8 +24,7 @@ fn renders_header() {
 
 ## Audit-Driven Rules (What Our Repos Got Wrong)
 
-1. **No buffer→String + `.contains()` assertions.** 5/6 repos hand-rolled buffer flattening with substring checks: misses layout regressions, duplicates helper code per test file.
-   Use `assert_buffer_lines` for exact-match cases; if only a fragment is stable, one SHARED flatten helper per repo, not per file.
+1. **No buffer→String + `.contains()` assertions.** 5/6 repos hand-rolled buffer flattening with substring checks: misses layout regressions, duplicates helper code per test file. Use `assert_buffer_lines` for exact-match cases; if only a fragment is stable, one SHARED flatten helper per repo, not per file.
 2. **Exercise the state, not just the happy path.** A render fn tested only through app-level draws with default state can have zero real coverage: one repo ran `render_overlays` in every test while toasts/modals were always empty, so none of the modal/toast code ever executed. Construct fixtures that populate the state the branch needs.
 3. **Pure render fns are unit-test candidates.** Anything `fn(&mut Frame/Buffer, Rect, &Data)` with no I/O is deterministic, widget libraries especially (one repo had 6 pure render fns with zero coverage while `insta` sat unused in dev-deps).
 4. **Smoke tests are not coverage.** Panic-smoke (`terminal.draw(..).unwrap()`) proves it doesn't crash, not that it renders right. Fine as a floor, not as the test suite.

@@ -4,10 +4,8 @@ Salvaged from pre-0.30 guides, corrected against the 0.30 API reference. Everyth
 
 ## Layout
 
-- Solver is cassowary: over-constrained layouts resolve "best effort", may be non-obvious.
-  Fix conflicts by intent: fixed elements `Length`, one grower `Fill(1)`.
-- Classic conflict: `[Length(20), Percentage(100)]`. The percentage fights the fixed column.
-  Use `[Length(20), Fill(1)]`.
+- Solver is cassowary: over-constrained layouts resolve "best effort", may be non-obvious. Fix conflicts by intent: fixed elements `Length`, one grower `Fill(1)`.
+- Classic conflict: `[Length(20), Percentage(100)]`. The percentage fights the fixed column. Use `[Length(20), Fill(1)]`.
 - `Layout::init_cache(NonZeroUsize)` takes `NonZeroUsize`, not a bare int (changed post-0.26).
 - `Flex` variants: `Start, End, Center, SpaceBetween, SpaceEvenly, SpaceAround, Legacy`.
 - Layouts are unit-testable: `Layout::vertical([...]).areas(Rect::new(0,0,w,h))` is pure.
@@ -78,8 +76,7 @@ Use `Canvas` for arbitrary-coordinate drawing: plots, particles, games, custom s
 ## Third-Party Crate: ratatui-image
 
 - `Picker::from_query_stdio()` probes terminal graphics capabilities over stdio termios; call it AFTER raw-mode init (`ratatui::init()` / `enable_raw_mode()`), never before. Before raw mode it saves/restores COOKED termios internally, which silently kills all keyboard input for the rest of the session (no panic, no error; just a dead app).
-- Default features pull in `libchafa`, a system C lib, for the chafa protocol. To stay pure-Rust:
-  `default-features = false, features = ["crossterm"]` + a jpeg/png-only decode dep (e.g. `image` with only the needed format features enabled); no chafa dependency, no build-time system-lib requirement.
+- Default features pull in `libchafa`, a system C lib, for the chafa protocol. To stay pure-Rust: `default-features = false, features = ["crossterm"]` + a jpeg/png-only decode dep (e.g. `image` with only the needed format features enabled); no chafa dependency, no build-time system-lib requirement.
 - **Protocol detection is conservatively wrong for whole terminal classes.** `from_query_stdio()` blacklists Kitty AND Sixel on any `KONSOLE_VERSION` session (konsole's sixel is buggy; neither implements kitty placeholders), then reaches iTerm2 only through a `TERM_PROGRAM` allowlist konsole isn't on, so every konsole session silently floors at `Halfblocks`, though konsole has spoken the iTerm2 inline-image protocol (`1337;File=`) since 22.04. Verified against konsole 26.07 + ratatui-image 11.0.6 (`picker.rs`), 2026-07. Raise the floor after querying, gated on the fallback so a detected protocol always wins and the workaround retires itself when upstream lifts the blacklist:
 
 ```rust
@@ -92,6 +89,5 @@ if picker.protocol_type() == ProtocolType::Halfblocks
 ```
 
   Generalizes past this one crate: a "renders badly" symptom reads as a layout/sizing bug, and can survive a whole feature's life that way. Probe the raw escape at the real tty first (`printf '\033]1337;File=inline=1;width=16;size=%d:%s\a' "$bytes" "$(base64 -w0 img.jpg)"`) and believe that over the library's verdict. Not runnable through tmux (passthrough eats it) or any non-tty stdout: it needs the user's own terminal.
-- **`Resize::Fit` anchors top-left and never upscales.** An image handed a fixed `Rect` letterboxes against whichever edges it doesn't fill, and the widget takes no right/center option. Ask the protocol what it will occupy, then build the rect yourself:
-  `protocol.size_for(Resize::Fit(None), Size::new(w, h))` returns fitted CELLS, accounts for the terminal's font aspect, and caps at the source's natural size (`min(available, image.width())`), so a small source stays small no matter how much room it's offered. A right-aligned rect is then `x: area.right() - fitted.width`. Corollary for sizing an image column beside text: cap the image's allowance at what the text's width floor spares, and the fitted rect can never starve the text, so one gate does the work instead of two that drift apart.
+- **`Resize::Fit` anchors top-left and never upscales.** An image handed a fixed `Rect` letterboxes against whichever edges it doesn't fill, and the widget takes no right/center option. Ask the protocol what it will occupy, then build the rect yourself: `protocol.size_for(Resize::Fit(None), Size::new(w, h))` returns fitted CELLS, accounts for the terminal's font aspect, and caps at the source's natural size (`min(available, image.width())`), so a small source stays small no matter how much room it's offered. A right-aligned rect is then `x: area.right() - fitted.width`. Corollary for sizing an image column beside text: cap the image's allowance at what the text's width floor spares, and the fitted rect can never starve the text, so one gate does the work instead of two that drift apart.
 - Cover/thumbnail asset aspect drives the layout, not the reverse. A column beside text wants a square-ish source; a wide crop can only fill it by shrinking to a sliver. Check the CDN's variants before picking one (osu!: `list@2x` 300x300 is square, `card@2x` 2.9:1, `cover@2x` 3.6:1, `slimcover@2x` 5.3:1).
