@@ -3,7 +3,7 @@ name: todo
 description: "Authors and normalizes tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into pickup-cold-ready tasks."
 metadata:
   author: uwuclxdy
-  version: "1.6"
+  version: "1.7"
 ---
 
 # Todo
@@ -65,5 +65,6 @@ When the user dumps loose notes ("inconsistent cursor..", "remove j/k"):
 ## Resolving
 
 - `docs/todo.md` holds OPEN work only. A landed item gets propagated to where it can't rot (a test that fails when the behavior changes, else the owning `docs/` page or `CLAUDE.md`), then deleted from the list instead of left as a checked-off record. A ship narrative parked in the backlog drifts against the code it describes; nothing re-reads it to notice.
+- **A blocked task's gate names the OBSERVABLE it waits on, never the event.** One written as "has the export arrived" cleared on delivery across two sessions and the delivered file was useless both times, because what was actually needed was a populated download link inside it. Phrase every gate as a check someone can run and get a yes/no from.
 - Never delete an unresolved or in-progress task without the user saying so. Deletion is reserved for a task you have confirmed landed and propagated; it is never a way to prune work you chose to skip.
 - When asked to "resolve the todo", route execution through your multi-task runner or workflows (one task each); this skill only owns the file.
