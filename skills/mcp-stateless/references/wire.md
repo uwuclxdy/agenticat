@@ -101,11 +101,9 @@ One endpoint, POST only.
 
 **Security, before anything else.** Servers **MUST** validate the `Origin` header on all incoming connections to prevent DNS rebinding, and **MUST** answer `403 Forbidden` when a present `Origin` is invalid. A local server **SHOULD** bind to `127.0.0.1` only, never `0.0.0.0`. Servers **SHOULD** authenticate all connections. This predates the stateless revision and is the control most often skipped in a from-memory implementation.
 
-**Client request rules.** Every JSON-RPC message is a new POST. The client **MUST** send an `Accept` header listing **both** `application/json` and `text/event-stream`, because the server chooses per request which one it answers with and the client **MUST** support both.
-The body is a single JSON-RPC request or notification; a client **MUST NOT** send JSON-RPC responses.
+**Client request rules.** Every JSON-RPC message is a new POST. The client **MUST** send an `Accept` header listing **both** `application/json` and `text/event-stream`, because the server chooses per request which one it answers with and the client **MUST** support both. The body is a single JSON-RPC request or notification; a client **MUST NOT** send JSON-RPC responses.
 
-**Required request headers.** `MCP-Protocol-Version` must equal the body's `_meta` value.
-`Mcp-Method` carries the JSON-RPC method on all requests. `Mcp-Name` carries `params.name` or `params.uri` on `tools/call`, `resources/read`, and `prompts/get`. Optional `Mcp-Param-{Name}` headers mirror tool arguments annotated `x-mcp-header`.
+**Required request headers.** `MCP-Protocol-Version` must equal the body's `_meta` value. `Mcp-Method` carries the JSON-RPC method on all requests. `Mcp-Name` carries `params.name` or `params.uri` on `tools/call`, `resources/read`, and `prompts/get`. Optional `Mcp-Param-{Name}` headers mirror tool arguments annotated `x-mcp-header`.
 
 Values that cannot be plain ASCII use the sentinel `=?base64?{Base64EncodedValue}?=`. This applies to `Mcp-Name` as well, since tool and prompt names are only SHOULD-constrained to header-safe characters.
 
@@ -150,8 +148,7 @@ The wire format also works unchanged over Unix domain sockets or TCP. Custom tra
 
 ## Caching
 
-Servers **MUST** put `ttlMs` and `cacheScope` on `"complete"` results of six operations:
-`server/discover`, `tools/list`, `prompts/list`, `resources/list`, `resources/templates/list`, `resources/read`.
+Servers **MUST** put `ttlMs` and `cacheScope` on `"complete"` results of six operations: `server/discover`, `tools/list`, `prompts/list`, `resources/list`, `resources/templates/list`, `resources/read`.
 
 - `ttlMs`: integer milliseconds, **MUST** be `>= 0`. `0` means immediately stale. Absent means clients assume `0`, which should only happen against an older server. Negative is ignored and treated as `0`.
 - `cacheScope`: `"public"` or `"private"`. `"public"` means the response holds no user-specific data, so any client, shared gateway, or proxy **MAY** store it and serve it to any user. `"private"` means a cached copy **MAY** be reused within the same authorization context and **MUST NOT** be shared across authorization contexts. A different access token requires a different cache. That binds client-side caches too, not only intermediaries.

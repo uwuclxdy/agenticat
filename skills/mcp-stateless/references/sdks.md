@@ -102,8 +102,7 @@ Assert, explicitly, on the `server/discover` result:
 - `ttlMs` and `cacheScope` are present.
 - `instructions` is present if you set any.
 
-Then on `tools/list`: `resultType`, `ttlMs`, `cacheScope`, every tool with its `inputSchema`.
-Exit 0, empty stderr.
+Then on `tools/list`: `resultType`, `ttlMs`, `cacheScope`, every tool with its `inputSchema`. Exit 0, empty stderr.
 
 Negative probes worth adding, because each one catches a whole class. Send these AFTER a valid `server/discover` opener: a `tools/list` with `params: {}` as the first frame establishes no era, and rmcp ends the stdio session with exit 1 instead of returning `-32602`.
 

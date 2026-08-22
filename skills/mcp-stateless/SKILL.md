@@ -3,7 +3,7 @@ name: mcp-stateless
 description: "MCP knowledge pack for the stateless 2026-07-28 revision: per-request `_meta`, `server/discover`, `resultType`, multi round-trip requests, stdio and Streamable HTTP transports. Use when building, reviewing, or migrating an MCP server or client, or when code still calls `initialize`, `Mcp-Session-Id`, or `resources/subscribe`."
 metadata:
   author: uwuclxdy
-  version: "1.0.1"
+  version: "1.0.2"
 ---
 
 # MCP Stateless
@@ -19,8 +19,7 @@ The Model Context Protocol went stateless in revision **`2026-07-28`**. It is th
 3. **State that must span requests gets an explicit server-minted handle** passed back as an ordinary parameter. There is no session to hang it on.
 4. **A server MUST answer `server/discover`.** It is the only way left to advertise what the server supports, and it is how a dual-era client tells a modern server from a legacy one.
 5. **Every result carries `resultType`.** Omitting it marks the server as legacy. A result with no `resultType` MUST be read as `"complete"`.
-6. **Servers never send JSON-RPC requests.** Sampling, elicitation, and roots all run through multi round-trip requests: the server answers with `input_required`, the client retries.
-   Read `references/mrtr.md` before wiring any of the three.
+6. **Servers never send JSON-RPC requests.** Sampling, elicitation, and roots all run through multi round-trip requests: the server answers with `input_required`, the client retries. Read `references/mrtr.md` before wiring any of the three.
 7. **`requestState` comes back from the client unverified.** Sign or encrypt it. A stateless server that trusts an echoed blob has handed the client its internal state machine.
 8. **Verify with a live handshake against the real binary.** A green build proves nothing about protocol conformance, and the old smoke-test recipe (pipe an `initialize` frame) now tests a method that no longer exists. Recipe in `references/sdks.md`.
 

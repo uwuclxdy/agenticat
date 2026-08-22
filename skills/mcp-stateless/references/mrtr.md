@@ -82,8 +82,7 @@ The retry carries `inputResponses` and `requestState` as **siblings of `argument
 
 It round-trips through the client, so treat it as untrusted input on the way back in.
 
-Servers **MUST** integrity-protect it (HMAC or AEAD) and **MUST** reject state that fails verification, whenever it influences authorization, resource access, or business logic.
-Integrity protection **MAY** be skipped only when tampering can cause nothing worse than the request failing.
+Servers **MUST** integrity-protect it (HMAC or AEAD) and **MUST** reject state that fails verification, whenever it influences authorization, resource access, or business logic. Integrity protection **MAY** be skipped only when tampering can cause nothing worse than the request failing.
 
 To bound replay, servers **SHOULD** put these inside the protected payload and verify each on receipt:
 
@@ -103,9 +102,7 @@ These bound the replay window and stop cross-user and cross-request reuse. They 
 
 The deprecation and the channel change are separate facts, and conflating them is a common misread. Roots and sampling are *deprecated*; the mechanism that used to deliver them (server-initiated requests) is *removed*. Even during the deprecation window they only work through MRTR.
 
-**Elicitation lost its completion signal.** `notifications/elicitation/complete` and the `elicitationId` field of URL-mode elicitation requests, both added in `2025-11-25`, are gone.
-The client learns the outcome by retrying the original request. A server that needs to correlate a URL-mode elicitation across retries encodes its own identifier in `requestState`.
-Error code `-32042` (URL elicitation required) is reserved and **MUST NOT** be emitted.
+**Elicitation lost its completion signal.** `notifications/elicitation/complete` and the `elicitationId` field of URL-mode elicitation requests, both added in `2025-11-25`, are gone. The client learns the outcome by retrying the original request. A server that needs to correlate a URL-mode elicitation across retries encodes its own identifier in `requestState`. Error code `-32042` (URL elicitation required) is reserved and **MUST NOT** be emitted.
 
 ## Tasks Interact With This
 
