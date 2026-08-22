@@ -3,7 +3,7 @@ name: name-check
 description: "Suggests project/crate/plugin names and checks availability across registries (crates.io, npm, PyPI, AUR, GitHub, domains). Use before naming, renaming, or publishing anything."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Name Check
@@ -17,8 +17,7 @@ metadata:
 2. **Generate 10-30 candidates.** Brainstorm and balance three axes:
    - explicit: name states the function (`kate-markdown-preview` over `katdown`)
    - brandable: short, lowercase, occasionally punny (`flit`, `nook`, `perch`)
-   - user-fit: closest to the user's stated direction
-   Mark each candidate with which axis it leans toward. Reserve companion names too when relevant (`flit` + `flitd` + `flit-mcp`).
+   - user-fit: closest to the user's stated direction Mark each candidate with which axis it leans toward. Reserve companion names too when relevant (`flit` + `flitd` + `flit-mcp`).
 3. **Check availability in parallel.** Fan out searches (web + registry pages) per candidate:
    - exact match on each relevant registry
    - general web collision: existing project, product, or company with the same name in the same space
