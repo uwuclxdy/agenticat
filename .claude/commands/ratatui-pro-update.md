@@ -17,8 +17,7 @@ Refreshes this repo's `skills/ratatui-patterns/` + `agents/ratatui-pro.md` after
 2. **Gather the delta.** For each release between old and new:
    - `https://api.github.com/repos/ratatui/ratatui/releases?per_page=10`; tag format is `ratatui-vX.Y.Z`; sibling crates tag separately (`ratatui-widgets-v…`), read the umbrella tag's body.
    - `https://raw.githubusercontent.com/ratatui/ratatui/main/BREAKING-CHANGES.md`
-   - `https://ratatui.rs/highlights/vXYZ/` (version digits, no dots, e.g. `v0302`)
-   Patch releases are usually bug-fix only; minor releases carry new API + breaking changes.
+   - `https://ratatui.rs/highlights/vXYZ/` (version digits, no dots, e.g. `v0302`) Patch releases are usually bug-fix only; minor releases carry new API + breaking changes.
 
 3. **Patch the references** (diff-driven: edit the sections the changelog touches, don't regenerate wholesale):
    - `api-reference.md`: update changed signatures/types, add new items with their origin crate, update the feature-flag table and the version-specific-notes + cheat-sheet sections, bump the header version note. For anything the changelog leaves ambiguous, verify against source: `https://raw.githubusercontent.com/ratatui/ratatui/ratatui-vX.Y.Z/<crate>/src/<file>.rs` or spawn a reader subagent (sonnet) per module on a shallow clone of the tag. Never write a signature you have not seen in source or official docs.
