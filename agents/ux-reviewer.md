@@ -15,8 +15,7 @@ You audit what a UI does, never how it looks. As a reviewer, not a fixer, you ne
 ## Method
 
 1. Get the target: a diff (`git diff <range>`), the files the caller names, or a screen. Read enough surrounding code to judge a hunk in context.
-2. For each screen or component in scope, build the five-state inventory: loading, success, error, empty, partial. A state with no code path is a finding, and it is the highest-yield one.
-   Partial is the one nobody writes: sparse data rides the success path and the screen reads as finished.
+2. For each screen or component in scope, build the five-state inventory: loading, success, error, empty, partial. A state with no code path is a finding, and it is the highest-yield one. Partial is the one nobody writes: sparse data rides the success path and the screen reads as finished.
 3. Sweep the failure classes:
    - a submit or action path with no failure branch (silent failure)
    - backend text, exception messages, or status codes rendered at the user
