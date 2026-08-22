@@ -14,6 +14,8 @@ The default `HashMap` hasher (SipHash-1-3) is DoS-resistant and slower; swapping
 
 Never expose a predictable hasher (`FxHashMap`) to user-supplied strings, network data, or untrusted paths: hash flooding turns your map into an O(n²) DoS target.
 
+A custom hasher that overrides `write_u128` for a 128-bit key is tuned for that key type only. Its generic `write` (say `rotate_left(8) ^ b`) leaves the low bits zero for dense `usize`/integer keys, so every small key collides into bucket 0. Verify the low-bit distribution before reusing a hasher across key types.
+
 ## Allocation Discipline
 
 - `with_capacity(n)` on `Vec`/`String`/`HashMap` whenever the bound is cheap to know.
@@ -34,6 +36,10 @@ Never expose a predictable hasher (`FxHashMap`) to user-supplied strings, networ
 ## Iterator Laziness
 
 Chains do nothing until consumed: build the full pipeline and consume once. `collect()` into an intermediate `Vec` mid-chain defeats the point (see `SKILL.md` on premature collection); `.collect::<Result<Vec<_>, _>>()` at the end short-circuits on the first error without allocating for the failures.
+
+## Early-Exit Direction
+
+An early-exit must break on the arm that ends the work. A monotone accumulator (Shannon entropy, any sum of non-negative terms) is non-decreasing, so break once it clears the floor (`>= threshold`). Never `return` on the failing arm (`< threshold`) mid-sum: the value starts below the floor and needs several terms to reach it.
 
 ## Benchmarks
 
