@@ -3,13 +3,12 @@ name: emulator-testing
 description: "Boots and drives Android AVDs and iOS simulators from the CLI (adb, `xcrun simctl`, `integration_test`, Alchemist goldens). Use for headless app tests, screenshot verification, or emulator boot/GPU issues."
 metadata:
   author: uwuclxdy
-  version: "1.6"
+  version: "1.7"
 ---
 
 # Emulator Testing
 
-Drive a booted Android emulator or iOS simulator from the CLI for agent-in-the-loop testing:
-launch it headless, wait for a real boot, act on it with `adb`/`simctl`, verify with a real file parser (not a vibe check), shut it down clean.
+Drive a booted Android emulator or iOS simulator from the CLI for agent-in-the-loop testing: launch it headless, wait for a real boot, act on it with `adb`/`simctl`, verify with a real file parser (not a vibe check), shut it down clean.
 
 **Out of scope**: installing the Android SDK, creating AVDs, or setting up Xcode/simulators.
 Assume `$ANDROID_HOME`/`PATH` and an existing AVD, or Xcode + simulator runtimes, are already in place. This skill is about driving them.
@@ -92,8 +91,7 @@ Works against any installed app, Flutter or not.
 | Filtered logs | `adb logcat --pid=$(adb shell pidof -s com.example.app)` or `adb logcat -s <tag>` |
 | Install / uninstall | `adb install -r app.apk` / `adb uninstall com.example.app` |
 
-No simulator equivalent: iOS's `simctl` (§4) has no touch/text input-injection primitive.
-Use `integration_test`/XCUITest-level tooling for iOS UI instead (see §4).
+No simulator equivalent: iOS's `simctl` (§4) has no touch/text input-injection primitive. Use `integration_test`/XCUITest-level tooling for iOS UI instead (see §4).
 
 ### Verify Screenshots with a Real Parser, Not Prose
 
@@ -132,9 +130,7 @@ await binding.takeScreenshot('screen-1');
 
 Skipping `convertFlutterSurfaceToImage()` on Android produces blank/black captures. Not needed on iOS or web.
 
-Persistence caveat (verified empirically): under plain `flutter test integration_test/`, `takeScreenshot()` only buffers the PNG bytes in the binding; nothing writes them to disk.
-Persisting needs the `flutter drive` path with a driver that consumes them (`integration_test`'s `flutter_driver` extension + a `responseDataCallback` writing files).
-Without that wiring, capture independently via `adb exec-out screencap -p` instead.
+Persistence caveat (verified empirically): under plain `flutter test integration_test/`, `takeScreenshot()` only buffers the PNG bytes in the binding; nothing writes them to disk. Persisting needs the `flutter drive` path with a driver that consumes them (`integration_test`'s `flutter_driver` extension + a `responseDataCallback` writing files). Without that wiring, capture independently via `adb exec-out screencap -p` instead.
 
 ### Dart & Flutter MCP Server (Dev-Loop Tooling, Not a Test Runner)
 
@@ -168,9 +164,7 @@ xcrun simctl shutdown MyTestPhone
 
 `simctl` has no touch/text input-injection primitive (no `adb input tap`/`swipe`/`text` equivalent, see §2). Use `integration_test`/XCUITest-level tooling (or `idb`) for iOS UI input, not raw `simctl` calls.
 
-Flutter on the same host: `flutter build ios --simulator --debug` needs no code signing;
-`flutter test integration_test/ -d <simulator_udid>` runs directly against a booted sim.
-Physical-device builds need a Team ID + provisioning profile. Always target the simulator for agent-driven testing to sidestep signing entirely.
+Flutter on the same host: `flutter build ios --simulator --debug` needs no code signing; `flutter test integration_test/ -d <simulator_udid>` runs directly against a booted sim. Physical-device builds need a Team ID + provisioning profile. Always target the simulator for agent-driven testing to sidestep signing entirely.
 
 ### The ssh-Headless Gotcha (Load-Bearing, Verify Before Relying on This)
 
@@ -180,8 +174,7 @@ The iOS Simulator is a GUI app at heart and needs an active macOS **GUI session*
 - **nobody** logged into the GUI → the simulator driver fails to start, surfacing as a driver-startup timeout or a hung `simctl`/`xcodebuild` call.
 - **fix**: enable automatic login for a user on your macOS host (System Settings → Users & Groups) so a GUI session always exists after boot/reboot, independent of ssh activity.
 
-First-run gotcha: `sudo xcodebuild -license accept` is an interactive prompt the first time;
-accept it once by hand before handing the host to an agent.
+First-run gotcha: `sudo xcodebuild -license accept` is an interactive prompt the first time; accept it once by hand before handing the host to an agent.
 
 ---
 
