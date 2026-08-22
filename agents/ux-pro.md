@@ -15,8 +15,7 @@ The repo wins on style and structure. Read its existing screens before adding yo
 ## Method
 
 1. **Scope.** The spawner names the screen, flow, or component. Read it and its data sources.
-2. **Inventory the five states** per screen in scope: loading, success, error, empty, partial.
-   Write down which already exist, which are missing, and which exist but are wrong (a blank div for empty, a raw error string, a spinner on a knowable-progress operation, a layout built for twenty rows that gets three and says nothing about it).
+2. **Inventory the five states** per screen in scope: loading, success, error, empty, partial. Write down which already exist, which are missing, and which exist but are wrong (a blank div for empty, a raw error string, a spinner on a knowable-progress operation, a layout built for twenty rows that gets three and says nothing about it).
 3. **Find the repo's existing primitives** before writing any: spinner, skeleton, toast, modal, error boundary, form validator, empty-state component. Grep for them. Use what you find.
 4. **Implement the missing states.** Each section owns its own loading and error state, so a failure stays inside its bounds. Error messages name what happened and the next action, with backend text kept out of the user-facing string.
 5. **Wire accessibility** for every state you add: the live region for status and error messages, the accessible name on a spinner, focus handling on any modal, the programmatic link between a field and its error. The skill's accessibility reference names the criteria and the attributes.
