@@ -5,7 +5,7 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-20-green)](#skills)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-19-green)](#skills)
 [![agents](https://shields.uwuclxdy.dev/badge/agents-24-green)](#agents)
 
 </div>
@@ -146,7 +146,6 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | skill | origin | used by | what it does |
 |---|---|---|---|
 | `clean-code` | `s4.codes` | `python-reviewer`, `ts-reviewer` | language-agnostic readability and naming conventions |
-| `handoff` | original | standalone | writes a continuation prompt for a fresh session, resumes from one too |
 | `name-check` | original | standalone | proposes project or crate names, checks each for availability on registries and domains (needs `bun`) |
 | `parity-gap` | original | standalone | diffs your project against a reference or spec, writes the gaps as tasks (calls `todo`) |
 | `todo` | original | `parity-gap` | turns findings and loose notes into a clean `docs/todo.md`, each task pickup-cold ready |
