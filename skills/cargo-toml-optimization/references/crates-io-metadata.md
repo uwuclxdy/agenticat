@@ -6,8 +6,7 @@
 - https://crates.io/category_slugs (authoritative slug list, rendered from categories.toml)
 - https://doc.rust-lang.org/cargo/reference/manifest.html (Cargo manifest field rules)
 
-The canonical source-of-truth for categories is:
-https://github.com/rust-lang/crates.io/blob/main/src/boot/categories.toml
+The canonical source-of-truth for categories is: https://github.com/rust-lang/crates.io/blob/main/src/boot/categories.toml
 
 ---
 

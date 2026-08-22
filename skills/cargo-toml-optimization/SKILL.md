@@ -3,7 +3,7 @@ name: cargo-toml-optimization
 description: "Tunes a Rust `Cargo.toml` or `.cargo/config.toml`: profiles, features, workspaces, dependency hygiene. Use when cutting compile time or binary size, or trimming deps."
 metadata:
   author: uwuclxdy
-  version: "1.7"
+  version: "1.8"
 ---
 
 # Cargo.toml Optimization
@@ -32,8 +32,7 @@ Trap: `[profile.*]` and `[patch]` are read **only from the workspace root**; the
 
 ## Profiles: The Core of It
 
-Most `Cargo.toml` tuning happens here. A profile applies to every target (lib, bin, test, bench).
-Per-setting detail (every value, every default) is in `references/profiles.md`. Start from one of these:
+Most `Cargo.toml` tuning happens here. A profile applies to every target (lib, bin, test, bench). Per-setting detail (every value, every default) is in `references/profiles.md`. Start from one of these:
 
 **Balanced release** (near-fat-LTO quality, ~2x faster link than full fat LTO):
 
@@ -109,13 +108,11 @@ rustflags = ["-C", "link-arg=-fuse-ld=mold"]   # or rust-lld; mold is Linux-only
 rustc-wrapper = "sccache"   # cache compiled artifacts across builds + CI runs (cargo install sccache)
 ```
 
-`target-cpu=native` (via `rustflags`) squeezes out runtime speed but produces a **non-portable** binary.
-Never ship it from CI or to other machines.
+`target-cpu=native` (via `rustflags`) squeezes out runtime speed but produces a **non-portable** binary. Never ship it from CI or to other machines.
 
 ## Trim Dead Weight
 
-Unused or duplicate deps, plus license/security audits, with the tools to find them: `references/dep-hygiene.md`. Quick hits:
-`cargo tree -d` (duplicates), `cargo machete` (unused), `cargo deny check` (audit + version bans).
+Unused or duplicate deps, plus license/security audits, with the tools to find them: `references/dep-hygiene.md`. Quick hits: `cargo tree -d` (duplicates), `cargo machete` (unused), `cargo deny check` (audit + version bans).
 
 ## Routing
 

@@ -9,8 +9,7 @@
 
 `cargo build` runs five stages: parse manifests, resolve the dep graph (write/read `Cargo.lock`), fetch missing crates, compile each unit in dependency order (`build.rs` runs before its package), link. Cargo compiles independent crates in parallel; the real bottleneck is the critical path, the longest chain of sequential deps. See `--timings` below.
 
-Resolution picks the highest version satisfying every constraint in the graph. Constraint syntax:
-`references/dependencies.md`; resolver versions and feature unification: `references/workspaces.md`.
+Resolution picks the highest version satisfying every constraint in the graph. Constraint syntax: `references/dependencies.md`; resolver versions and feature unification: `references/workspaces.md`.
 
 ---
 
@@ -22,8 +21,7 @@ Source: [Cargo.toml vs Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-t
 
 ### When to Commit Cargo.lock
 
-Guidance changed 2023-08: the old "libraries don't commit `Cargo.lock`" convention is superseded.
-Whether to commit it now depends on the package's own needs, not on binary-vs-library; committing it is a reasonable default/starting point even for a library (a dependent's own resolution still governs what it builds; the committed lock only pins your own dev/CI runs). Regardless of the choice, CI should regularly test against the latest dependency versions.
+Guidance changed 2023-08: the old "libraries don't commit `Cargo.lock`" convention is superseded. Whether to commit it now depends on the package's own needs, not on binary-vs-library; committing it is a reasonable default/starting point even for a library (a dependent's own resolution still governs what it builds; the committed lock only pins your own dev/CI runs). Regardless of the choice, CI should regularly test against the latest dependency versions.
 
 | Project type | Commit Cargo.lock? | Reason |
 |---|---|---|

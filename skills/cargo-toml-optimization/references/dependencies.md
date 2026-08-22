@@ -46,8 +46,7 @@ foo = ">= 1.2, < 1.5"  # multiple requirements (comma-separated)
 
 ### Pre-Releases
 
-Excluded by default. Must be explicit: `"1.0.0-alpha"` (then alpha/beta/rc and final 1.x all match).
-Do not use pre-release versions in stable library crates.
+Excluded by default. Must be explicit: `"1.0.0-alpha"` (then alpha/beta/rc and final 1.x all match). Do not use pre-release versions in stable library crates.
 
 ---
 

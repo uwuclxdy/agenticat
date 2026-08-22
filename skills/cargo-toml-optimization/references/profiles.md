@@ -98,8 +98,7 @@ Controls `-C lto`, `-C linker-plugin-lto`, `-C embed-bitcode`. LTO trades link t
 | `"thin"` | Thin LTO, all crates | moderate | good |
 | `true` / `"fat"` | Fat LTO, all crates | slow | best |
 
-When `codegen-units = 1` or `opt-level = 0`, `false` behaves the same as `"off"`.
-Cross-language LTO (C/C++ + Rust) requires manual `RUSTFLAGS`.
+When `codegen-units = 1` or `opt-level = 0`, `false` behaves the same as `"off"`. Cross-language LTO (C/C++ + Rust) requires manual `RUSTFLAGS`.
 
 Cannot be set in `[profile.*.package.*]` overrides.
 
@@ -133,8 +132,7 @@ Controls `-C incremental`. Saves compilation state to disk for faster rebuilds.
 | `true` | yes | |
 | `false` | | yes |
 
-Only applies to workspace members and `path` dependencies.
-Overridable via `CARGO_INCREMENTAL` env var or `build.incremental` in `.cargo/config.toml`.
+Only applies to workspace members and `path` dependencies. Overridable via `CARGO_INCREMENTAL` env var or `build.incremental` in `.cargo/config.toml`.
 
 ---
 

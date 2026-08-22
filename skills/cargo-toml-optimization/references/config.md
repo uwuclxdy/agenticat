@@ -18,8 +18,7 @@
 
 ## File Hierarchy & Precedence
 
-Cargo walks up from **cwd** (the invocation's current directory, not the workspace root), loading every `.cargo/config.toml` it finds along that ancestor chain up to the filesystem root, then `$CARGO_HOME`.
-Merges all; deeper = higher precedence.
+Cargo walks up from **cwd** (the invocation's current directory, not the workspace root), loading every `.cargo/config.toml` it finds along that ancestor chain up to the filesystem root, then `$CARGO_HOME`. Merges all; deeper = higher precedence.
 
 ```
 <cwd>/.cargo/config.toml          ← highest priority
@@ -127,8 +126,7 @@ rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 
 lld (LLVM linker; Linux/macOS/Windows; bundled in the rustup toolchain as `rust-lld` for years; default linker on x86_64-linux since 1.90):
 
-`linker = "rust-lld"` alone does **not** work on `x86_64-unknown-linux-gnu`: rust-lld does run (rustc uses its own bundled copy at `<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld` even though it isn't on `PATH`), but it's invoked as a bare ld-flavor linker with none of the system library search paths a cc driver normally injects, so the link fails: `rust-lld: error: unable to find library -lc`.
-Use one of these stable alternatives instead:
+`linker = "rust-lld"` alone does **not** work on `x86_64-unknown-linux-gnu`: rust-lld does run (rustc uses its own bundled copy at `<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld` even though it isn't on `PATH`), but it's invoked as a bare ld-flavor linker with none of the system library search paths a cc driver normally injects, so the link fails: `rust-lld: error: unable to find library -lc`. Use one of these stable alternatives instead:
 
 ```toml
 # (a) clang driver + system lld (needs clang + lld installed)
