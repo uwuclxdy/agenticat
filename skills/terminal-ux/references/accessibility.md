@@ -12,8 +12,7 @@ A CLI is close to ideal for a screen reader by construction. A TUI fights it.
 
 > The CLI (The Stream): This operates on a standard input/output model (stdin/stdout). You type a > command, the system appends the result below, and the cursor moves down. This is linear and > chronological. For a screen reader... this is ideal. The TUI (The Grid): This treats the terminal > window not as a stream of text, but as a 2D grid of pixels... It abandons the temporal flow for a > spatial layout.
 
-Practitioner consensus is that command-line accessibility on Linux is solved at the shell level.
-The open problems are all in full-screen apps and in terminal emulator choice.
+Practitioner consensus is that command-line accessibility on Linux is solved at the shell level. The open problems are all in full-screen apps and in terminal emulator choice.
 
 ## Cursor Discipline
 
@@ -75,12 +74,9 @@ Structured and tabular output is flagged by GitHub as unsolved rather than solve
 
 ## Sources
 
-- GitHub Engineering, Building a more accessible GitHub CLI:
-  `https://github.blog/engineering/user-experience/building-a-more-accessible-github-cli/`
-- The Inclusive Lens, The text mode lie:
-  `https://xogium.me/the-text-mode-lie-why-modern-tuis-are-a-nightmare-for-accessibility`
-- Blind Computing, The State of Linux Command Line Accessibility:
-  `https://blindcomputing.org/linux/state-of-cli-accessibility/`
+- GitHub Engineering, Building a more accessible GitHub CLI: `https://github.blog/engineering/user-experience/building-a-more-accessible-github-cli/`
+- The Inclusive Lens, The text mode lie: `https://xogium.me/the-text-mode-lie-why-modern-tuis-are-a-nightmare-for-accessibility`
+- Blind Computing, The State of Linux Command Line Accessibility: `https://blindcomputing.org/linux/state-of-cli-accessibility/`
 - charmbracelet/huh README, accessibility section
 
 ratatui's own documentation says nothing about accessibility. That is a silence, not a position.

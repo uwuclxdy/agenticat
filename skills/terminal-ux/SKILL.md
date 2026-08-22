@@ -3,7 +3,7 @@ name: terminal-ux
 description: "Behavior rules for CLIs and TUIs: exit codes, stdout vs stderr, TTY detection, NO_COLOR, progress output, help conventions, destructive-action confirmation, signal and panic/crash recovery, screen-reader concerns. Use when writing or reviewing a CLI, TUI, argument parsing, prompts, or terminal color handling."
 metadata:
   author: uwuclxdy
-  version: "1.3"
+  version: "1.4"
 ---
 
 # Terminal UX
@@ -46,16 +46,14 @@ Terminal accessibility gets its own file, `references/accessibility.md`. There i
 
 **CLI, convention.** Zero on success, non-zero on failure, with distinct codes for the failure modes that a script would want to branch on.
 
-An error message carries: what failed, a human description, how to fix it, and where to read more.
-`clig.dev` and the 12-factor writeup describe the same anatomy independently.
+An error message carries: what failed, a human description, how to fix it, and where to read more. `clig.dev` and the 12-factor writeup describe the same anatomy independently.
 
 **Do:**
 - Rewrite expected errors for humans. Treat it as guiding someone who did something wrong, not as reporting an exception.
 - Put the most important line last. The eye lands at the end of the output.
 - Collapse repeated identical errors under one header.
 - Keep tracebacks and debug dumps behind a flag or an env var. Log files get timestamps, get truncated, and carry no ANSI codes.
-- Print the logs you hid behind a progress bar when the run fails. Success can stay quiet;
-  failure cannot, or debugging is impossible. A successful run may print nothing.
+- Print the logs you hid behind a progress bar when the run fails. Success can stay quiet; failure cannot, or debugging is impossible. A successful run may print nothing.
 
 **Don't:**
 - Exit zero on a failure because the program technically finished.
@@ -164,8 +162,7 @@ Turn color off when any of these hold:
 
 **CLI, convention.** On `SIGINT`, exit as fast as you can. Say something before cleanup starts, give cleanup a timeout so it cannot hang, and skip remaining cleanup on a second Ctrl-C. If that second press leaves things in a destructive state, say so before it happens.
 
-**CLI, gotcha.** A reader that walks away mid-pipe is not a failure of the run. Rust ignores `SIGPIPE`, so a write to a pipe whose reader left comes back `EPIPE`, and the std print macros panic on it: `prog | head -3` exits 101 with a panic message instead of just stopping. The signal disposition fix is wrong for a binary that doubles as a server, so handle it at the emitter. The payload stream exits 0, since the reader chose to leave and `head` already printed what it wanted.
-The diagnostic stream swallows the `EPIPE` and keeps the run's own exit code. Splitting by stream is not enough: a background log sink must swallow every write error, or one full disk ends a worker thread.
+**CLI, gotcha.** A reader that walks away mid-pipe is not a failure of the run. Rust ignores `SIGPIPE`, so a write to a pipe whose reader left comes back `EPIPE`, and the std print macros panic on it: `prog | head -3` exits 101 with a panic message instead of just stopping. The signal disposition fix is wrong for a binary that doubles as a server, so handle it at the emitter. The payload stream exits 0, since the reader chose to leave and `head` already printed what it wanted. The diagnostic stream swallows the `EPIPE` and keeps the run's own exit code. Splitting by stream is not enough: a background log sink must swallow every write error, or one full disk ends a worker thread.
 
 **TUI, convention.** A panic that unwinds without restoring the terminal leaves the user with a broken shell: raw mode still on, still in the alternate screen. Install a panic hook that disables raw mode and leaves the alternate screen before anything else runs. ratatui documents this per backend and treats it as mandatory rather than optional.
 
