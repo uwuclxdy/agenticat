@@ -1,6 +1,7 @@
 ---
 name: emulator-testing
-description: "Boots and drives Android AVDs and iOS simulators from the CLI (adb, `xcrun simctl`, `integration_test`, Alchemist goldens). Use for headless app tests, screenshot verification, or emulator boot/GPU issues."
+description: "Boots and drives Android AVDs and iOS simulators from the CLI."
+when_to_use: "Use for headless app tests, screenshot verification, or emulator boot and GPU issues."
 metadata:
   author: uwuclxdy
   version: "1.7"

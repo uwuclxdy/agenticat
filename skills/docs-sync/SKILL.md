@@ -1,6 +1,7 @@
 ---
 name: docs-sync
-description: "Reconciles `README`, `docs/*`, `CLAUDE.md`, and agent/skill/plugin prompt files with what the code does: stale, missing, or overpromising claims; verifies quoted commands/flags/paths. Use when a change alters documented behavior, a tool's output shape changes, or to sweep all docs."
+description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what the code does."
+when_to_use: "Use when a change alters documented behavior or a tool's output shape, or to sweep all docs."
 metadata:
   author: uwuclxdy
   version: "1.10"

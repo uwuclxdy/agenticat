@@ -1,6 +1,7 @@
 ---
 name: clean-shell
-description: "Defensive Bash/POSIX shell quality: strict-mode `set` flags, traps, idempotent mutation of live systems (deploy, sshd/sudoers, systemd), ShellCheck discipline, bats-core tests. Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck/bats into CI."
+description: "Defensive Bash and POSIX shell rules: strict-mode flags, traps, idempotent mutation, ShellCheck discipline, bats tests."
+when_to_use: "Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck and bats into CI."
 metadata:
   author: uwuclxdy
   version: "1.1"

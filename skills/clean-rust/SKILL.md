@@ -1,6 +1,7 @@
 ---
 name: clean-rust
-description: "Idiomatic Rust 2024 conventions: ownership, error handling, async, unsafe, traits, iterators, performance. Use when writing or reviewing Rust, running clippy, or checking 'idiomatic rust'."
+description: "Idiomatic Rust 2024 rules: ownership, error handling, async, unsafe, traits, iterators, clippy."
+when_to_use: "Use when writing, reviewing, or linting Rust. For language-agnostic style, `clean-code`."
 metadata:
   author: uwuclxdy
   version: "1.11"

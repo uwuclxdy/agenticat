@@ -1,6 +1,7 @@
 ---
 name: todo
-description: "Authors and normalizes tasks into `docs/todo.md`. Use when writing a todo list, capturing audit findings, or turning loose notes into pickup-cold-ready tasks."
+description: "Authors and normalizes tasks into `docs/todo.md`."
+when_to_use: "Use when writing a todo list, capturing audit findings, or turning loose notes into pickup-cold-ready tasks."
 metadata:
   author: uwuclxdy
   version: "1.7"

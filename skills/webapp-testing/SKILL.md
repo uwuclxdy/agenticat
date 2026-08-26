@@ -1,6 +1,7 @@
 ---
 name: webapp-testing
-description: "Playwright toolkit for local web apps: Python scripts that navigate, click, fill forms, capture screenshots, and read console logs against a dev server or static HTML. Use to verify or debug frontend behavior."
+description: "Playwright toolkit for local web apps: navigate, click, fill forms, screenshots, console logs."
+when_to_use: "Use to verify or debug frontend behavior against a dev server or static HTML."
 license: Complete terms in LICENSE.txt
 metadata:
   author: "Anthropic, PBC, vendored from anthropics/skills (Apache-2.0)"

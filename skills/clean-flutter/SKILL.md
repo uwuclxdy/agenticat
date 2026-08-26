@@ -1,6 +1,7 @@
 ---
 name: clean-flutter
-description: "Idiomatic Flutter/Dart conventions: feature-first architecture, Riverpod, freezed, go_router, const correctness. Use when writing or reviewing Dart, widgets, `BuildContext`, `build_runner`, or state management."
+description: "Idiomatic Flutter and Dart rules: feature-first layout, Riverpod, freezed, go_router, const correctness."
+when_to_use: "Use when writing or reviewing Dart, widgets, `BuildContext`, `build_runner`, or state management."
 metadata:
   author: uwuclxdy
   version: "1.4"

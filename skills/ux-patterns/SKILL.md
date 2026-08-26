@@ -1,6 +1,7 @@
 ---
 name: ux-patterns
-description: "Interaction-design pack for UI behavior: the five screen states (loading, success, error, empty, partial), form validation, error copy, undo vs confirmation, progressive disclosure, and the accessibility wiring each needs. Use when building screen states, wiring validation, choosing spinner vs skeleton, or wording an error."
+description: "Interaction-design pack for UI behavior: the five screen states, form validation, error copy, undo vs confirmation, accessibility wiring."
+when_to_use: "Use when building screen states, wiring validation, choosing spinner vs skeleton, or wording an error."
 metadata:
   author: uwuclxdy
   version: "1.5"
