@@ -1,6 +1,6 @@
 ---
 name: docs-extractor
-description: "Digests a large file or doc set into a structured brief against the caller's question template, keeping raw bytes out of the caller's context; coverage mode returns only the gaps for a doc slated for deletion or merge. Read-only. Spawn one per scope."
+description: "Digests a large file or doc set into a structured brief against the caller's question template, keeping raw bytes out of the caller's context; coverage mode returns only the gaps for a doc slated for deletion or merge. Read-only on inputs; writes only its brief, to a caller-named path outside the repo. Spawn one per scope."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 

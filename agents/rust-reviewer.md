@@ -1,6 +1,6 @@
 ---
 name: rust-reviewer
-description: "Read-only Rust diff/PR reviewer: correctness, safety, async, invariants. Spawn one per diff. Not for implementing (`rust-pro`)."
+description: "Reviews Rust diffs read-only on source and returns a findings table: correctness, safety, async, invariants. Writes only its report, to a caller-named path outside the repo. Spawn one per diff. Not for implementing (`rust-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---

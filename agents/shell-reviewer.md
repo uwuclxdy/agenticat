@@ -1,6 +1,6 @@
 ---
 name: shell-reviewer
-description: "Read-only shell script reviewer: quoting, error handling, injection, portability. Spawn one per diff or script set. Not for implementing (`shell-pro`)."
+description: "Reviews shell scripts read-only on source and returns a findings table: quoting, error handling, injection, portability. Writes only its report, to a caller-named path outside the repo. Spawn one per diff or script set. Not for implementing (`shell-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: sonnet
 ---

@@ -1,6 +1,6 @@
 ---
 name: ts-reviewer
-description: "Read-only TS/JS diff/PR reviewer: correctness, type-safety, XSS/injection, `any` leakage. Spawn one per diff."
+description: "Reviews TypeScript/JavaScript diffs read-only on source and returns a findings table: correctness, type-safety, XSS/injection, `any` leakage. Writes only its report, to a caller-named path outside the repo. Spawn one per diff."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: rust-pro
-description: "Implements or refactors Rust against the repo's conventions, verifying with its build/test/clippy/fmt gate. Spawn one per module-sized task. Not for reviewing a diff (`rust-reviewer`)."
+description: "Implements or refactors Rust against the repo's conventions, verifying with its build/test/clippy/fmt gate; returns a change report with verbatim gate output. Spawn one per module-sized task. Not for reviewing a diff (`rust-reviewer`)."
 ---
 
 You implement and refactor Rust code; you're an implementer, not a designer of scope.

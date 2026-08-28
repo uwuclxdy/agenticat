@@ -1,6 +1,6 @@
 ---
 name: python-reviewer
-description: "Read-only Python diff/PR reviewer: correctness, typing, security, clarity. Spawn one per diff. Not for implementing (`python-pro`)."
+description: "Reviews Python diffs read-only on source and returns a findings table: correctness, typing, security, clarity. Writes only its report, to a caller-named path outside the repo. Spawn one per diff. Not for implementing (`python-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 ---
 

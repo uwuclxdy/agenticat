@@ -1,6 +1,6 @@
 ---
 name: ux-reviewer
-description: "Read-only UI behavior reviewer: missing loading/error/empty/partial states, silent failures, error wording and placement, validation gaps, missing undo, status-message accessibility. Spawn one per screen or diff. Not for implementing (`ux-pro`)."
+description: "Reviews UI behavior read-only on source and returns a findings table: missing loading/error/empty/partial states, silent failures, error wording and placement, validation gaps, missing undo, status-message accessibility. Writes only its report, to a caller-named path outside the repo. Spawn one per screen or diff. Not for implementing (`ux-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---

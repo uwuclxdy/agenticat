@@ -1,6 +1,6 @@
 ---
 name: ux-pro
-description: "Implements a screen's interaction behavior with the repo's own components: loading/success/error/empty/partial states, form validation, error placement, accessibility wiring. Use when a screen misses non-happy-path states or a flow needs error handling. Spawn one per screen or flow. Not for reviewing (`ux-reviewer`)."
+description: "Implements a screen's interaction behavior with the repo's own components: loading/success/error/empty/partial states, form validation, error placement, accessibility wiring. Use when a screen misses non-happy-path states or a flow needs error handling. Returns a five-state inventory with verbatim gate output. Spawn one per screen or flow. Not for reviewing (`ux-reviewer`)."
 model: sonnet
 ---
 

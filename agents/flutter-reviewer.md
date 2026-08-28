@@ -1,6 +1,6 @@
 ---
 name: flutter-reviewer
-description: "Read-only Flutter/Dart diff/PR reviewer: correctness, async/context safety, rebuild perf, state-management misuse. Spawn one per diff. Not for implementing (`flutter-pro`)."
+description: "Reviews Flutter/Dart diffs read-only on source and returns a findings table: correctness, async/context safety, rebuild perf, state-management misuse. Writes only its report, to a caller-named path outside the repo. Spawn one per diff. Not for implementing (`flutter-pro`)."
 disallowedTools: Edit, Write, NotebookEdit
 model: opus
 ---
