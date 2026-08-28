@@ -145,5 +145,7 @@ REMOTE
 - never echo a generated secret; write it to a file with tight perms or a secret store. it still leaks via `set -x`/`bash -x` tracing to stderr/logs and via `ps`/`/proc/*/cmdline` when passed as a bare CLI arg. scope `set -x` around secret-handling code with `set +x` first; prefer env/fd/file over argv.
 - `curl | sh` floor is `--proto '=https' --tlsv1.2`; checksum-pin the payload when you can.
 - assert the post-condition (rule present, port open) instead of documenting ordering in a comment nothing enforces. check that the assertion itself runs: under `set -e` a readback that errors for its own reasons (write-only sysfs attr, absent tool) aborts the script exactly as if the mutation had failed.
+- a post-condition can race what it checks. `Type=exec` returns once the process has exec'd, before it has bound its socket or created its file; poll with a deadline instead of sampling once.
+- `systemctl enable --now` is a no-op on an already-running unit. after changing a unit file or its `ExecStart`, use `enable` plus an explicit `restart`, or the old arguments keep serving.
 - centralize host/user/path config in one file; literals sprinkled across scripts turn a rename into a multi-file sweep.
 - `EXIT` traps are best-effort: SIGKILL, SIGSTOP, OOM-kill, and power loss skip them; a guard that claims to always clean up still isn't guaranteed to run.
