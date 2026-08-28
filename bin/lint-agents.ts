@@ -30,6 +30,11 @@ const TOOLS = new Set([
 const MENTIONABLE = ["WebFetch", "WebSearch", "NotebookEdit", "TodoWrite", "ToolSearch", "Glob", "Grep", "Bash"];
 
 const READONLY_CLAIM = /\b(read-only|never edits?|reviewer, not a fixer|investigation only)\b/i;
+// Only a qualifier ABOUT the agent's own writes clears a read-only claim: a scoped claim
+// ("read-only on source") or an explicit write scope ("writes only the threat-model doc").
+// A bare verb elsewhere in the description ("copies or builds the target") is about the
+// target rather than about what the agent writes.
+const QUALIFIED_WRITES = /\bread-only on\b|\b(writes?|edits?) only\b/i;
 const ABS_PATH = /(?:^|[\s`(])(~\/[\w./-]+|\/home\/[\w./-]+)/g;
 
 interface Finding { level: "error" | "warn"; file: string; msg: string }
@@ -86,11 +91,10 @@ function lint(path: string, portable: boolean): Finding[] {
     }
   }
 
-  // A def that calls itself read-only should not be able to mutate the tree. A description
-  // that already qualifies its writes ("writes only the threat-model doc") is self-consistent.
-  if (READONLY_CLAIM.test(fm.description ?? "") && !/\b(writes?|copies|builds|stages)\b/i.test(fm.description ?? "")) {
+  // A def that calls itself read-only should not be able to mutate the tree.
+  if (READONLY_CLAIM.test(fm.description ?? "") && !QUALIFIED_WRITES.test(fm.description ?? "")) {
     for (const t of ["Edit", "Write", "NotebookEdit"]) {
-      if (grants(t) && !/scratch|screenshot|evidence|brief|ledger|report to/i.test(body)) {
+      if (grants(t)) {
         warn(`description claims read-only but \`${t}\` is granted`);
         break;
       }
