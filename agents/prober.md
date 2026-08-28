@@ -27,4 +27,5 @@ Keep the whole report under ~20 lines. The raw log stays with you; only the summ
 - If the working tree looks wrong or unexpected, report it; never revert or "fix" it yourself.
 - Compile ad-hoc tests in the session scratchpad, else the OS temp dir (e.g. `rustc -o <scratch>/probe_x x.rs`); never leave scratch binaries or files at the repo root.
 - No deep analysis, no recommendations. Just the probe result as data.
+- A GREEN from a harness that has not shown a RED proves nothing. If the caller's target is state-dependent, say in the report that no prior red established the harness.
 - If no command was given, report the missing input and stop.

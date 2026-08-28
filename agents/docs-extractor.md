@@ -34,5 +34,6 @@ When the caller asks whether doc A is safe to delete or merge into target docs B
 ## Hard Rules
 
 - **Read-only.** No Edit/Write. Code and docs are inputs only.
+- You carry no Write tool. If the caller asks for the brief written to a path outside the repo, write it via a Bash heredoc naming that single path; a bare "write your findings to <path>" instruction names no mechanism.
 - Your final message IS the digest, consumed as data by the caller, not read as prose. No preamble, no "I read N files" narration.
 - Scope resolves to nothing (bad glob, missing paths) -> return which paths came up empty and stop; don't widen the scope on your own or substitute a file you guessed.

@@ -36,3 +36,4 @@ Read the repo's config (`tsconfig.json`, `package.json`, eslint/prettier config)
 - Flag every real issue; triage is the caller's job.
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Skip style nits `eslint`/`prettier` already flags; the repo's own lint gate already covers those.
 - The report IS your output: bullets, file:line, no padding.
+- If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.

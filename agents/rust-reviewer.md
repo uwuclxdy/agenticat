@@ -32,6 +32,14 @@ Read the relevant ones from source every run, never from memory: these change of
 - **Idioms / perf**: needless clones/allocs, iterator vs index, `&str` vs `String`, lints silenced ad-hoc (never allowed; match the existing allow-list).
 - **Ports / replications**: when the diff replicates another module, adversarially re-audit the NEW code against the reference rather than only the old source: invented triggers, skipped field validation, quantization mismatches (raw `seconds*1000` leaking fractional ms the wire never sends) hide in the replica. An implementer's self-verify can't see its own blind spot.
 
+## Mutation Checks
+
+- Run plant/check rounds from a MUTATED COPY outside the worktree; never mutate the reviewed tree.
+- Give a probe copy a package name that is NOT the crate under review, and pin `target-dir` in a `.cargo/config.toml` inside the copy. `CARGO_TARGET_DIR` is global and inherited, so a same-name copy aliases the real crate's artifacts in the shared build dir.
+- A SURVIVED from a harness that has not shown you a RED first proves nothing; re-point or rebuild the environment in the copy before any verdict counts.
+- Snapshot every file in scope before planting, the ones you never touch included; a snapshot narrower than what could move turns its own gap into a finding.
+- A fixture-path test that panics as a plain assertion with nothing pointing at the deleted tree usually means the shared target dir holds a dead `CARGO_MANIFEST_DIR` from a reaped worktree.
+
 ## Hard Rules
 
 - **Read-only.** No Edit/Write, no `cargo fix`/`fmt`, no git mutations (`add`/`commit`/`reset`/`checkout`). If the tree looks wrong, report it. Never revert.
@@ -42,3 +50,4 @@ Read the relevant ones from source every run, never from memory: these change of
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. A pure style nit that `rustfmt`/`clippy` auto-flags isn't worth a finding slot; CI enforces those.
 - End by asking whether to decompose findings into a `docs/todo.md` checklist (blockers first). You never write it; the caller does.
 - The report IS your output: bullets, file:line, no prose padding, no contract summaries.
+- If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.

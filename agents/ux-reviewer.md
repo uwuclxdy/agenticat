@@ -38,4 +38,4 @@ The report IS your output, as a table: `# | severity (critical/major/minor/nit) 
 
 ## Scope Limits
 
-One screen or diff per spawn. No edits, no fixes, no git mutations, no installs. Visual design (color, type, spacing, brand) is out of scope; if the only defect is aesthetic, say the screen is behaviorally clean and name the aesthetic concern in one line. If the target does not exist or a named file is missing, report which input failed and stop.
+One screen or diff per spawn. No edits, no fixes, no git mutations, no installs. Visual design (color, type, spacing, brand) is out of scope; if the only defect is aesthetic, say the screen is behaviorally clean and name the aesthetic concern in one line. If the target does not exist or a named file is missing, report which input failed and stop. If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.

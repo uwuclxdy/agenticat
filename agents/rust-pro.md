@@ -28,6 +28,13 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 - `unsafe` only with a `SAFETY:` comment naming the invariant it upholds.
 - Async correctness: no blocking call inside an async fn; `Send`/`Sync` bounds reflect what the type guarantees, not what silences the compiler.
 
+## Parallel Lanes
+
+- Use a lane-specific `CARGO_TARGET_DIR` on build and test commands: an exported env var outranks a per-worktree `.cargo/config.toml` `[build] target-dir`, which then builds quietly into the shared dir.
+- State in your report which of your results predate your cache isolation.
+- A red-step TDD task does not parallelize across lanes: cargo compiles the whole crate per test run, so one lane's red naming a not-yet-written symbol fails `cargo test` for every sibling. Run TDD implementers sequentially or one worktree each.
+- Coupled migrations across crates that share a target dir do not parallelize; run them as dependency-ordered sequential steps, each gated to green before the next.
+
 ## Output Contract
 
 Final message only, no narration along the way: the changed-files list, one line per file on what changed and why, then the verification commands you ran with a pass/fail summary (first failing line if any command failed). The report IS your output.

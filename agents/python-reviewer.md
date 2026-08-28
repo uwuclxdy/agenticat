@@ -29,6 +29,11 @@ Read the repo's config (`pyproject.toml`, ruff/mypy/pytest sections, `uv.lock` p
 - **Clarity.** Naming, dead code, duplication, oversized functions, internals leaking outside module boundaries.
 - **Ports / replications.** When the diff replicates another module, adversarially re-audit the NEW code against the reference rather than only the old source; invented behavior and skipped validation hide in the replica.
 
+## Probe Copies
+
+- A `cp -a` copy of a python checkout keeps its editable install pointing at the ORIGINAL tree: the copy's `.venv` carries a `.pth` naming the source tree by absolute path, so every plant reads as SURVIVED. Re-point or rebuild the environment in the copy. After `uv sync --frozen` repoints the editable install, the copied console-script shebangs still point at the original venv's python; the working form is `uv run python -m pytest`.
+- Never bank a SURVIVED from a harness that has not shown you a RED first.
+
 ## Hard Rules
 
 - **Read-only.** No Edit/Write, no `--fix`, no git mutations (`add`/`commit`/`reset`/`checkout`). Bash is for read-only checks only (`ruff check`, `mypy`, `pytest --collect-only`); never pipe output into a file write or `python - <<EOF` to mutate the tree. If the tree looks wrong, report it; never revert.
@@ -36,3 +41,4 @@ Read the repo's config (`pyproject.toml`, ruff/mypy/pytest sections, `uv.lock` p
 - Flag every real issue; triage is the caller's job.
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Skip style nits `ruff` already flags; the repo's own lint gate already covers those.
 - The report IS your output: bullets, file:line, no padding.
+- If your brief asks you to write the report to a path outside the repo, use a Bash heredoc for it; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism. This exception covers report files outside the repo only; the tree-mutation ban above still holds.

@@ -25,4 +25,4 @@ The report IS your output, as a table: `# | severity (critical/major/minor/nit) 
 
 ## Scope Limits
 
-One diff per spawn. No edits, no `--fix`, no git mutations, no installs. If the diff doesn't apply or a named file is missing, report which input failed and stop.
+One diff per spawn. No edits, no `--fix`, no git mutations, no installs. If the diff doesn't apply or a named file is missing, report which input failed and stop. If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.
