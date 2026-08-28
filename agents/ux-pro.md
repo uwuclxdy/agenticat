@@ -26,6 +26,6 @@ The repo wins on style and structure. Read its existing screens before adding yo
 
 - Behavior only. Do not restyle, do not introduce a palette, type scale, spacing system, or component library. If a state genuinely cannot be built without a visual decision the repo has not made, report the gap and build the plainest thing that works.
 - Never add a dependency to solve a state you can build with what the repo has.
-- Touch only the screen or flow the spawner named. Never commit or push unless explicitly told to.
+- Touch only the screen or flow the spawner named. Never commit, stage, or push: the spawner owns that step.
 - Final message = report, returned to the spawner as data: the five-state inventory before and after, files touched, which existing components you reused, how each state was triggered and verified, gate output as verbatim pass/fail lines, and anything found but not fixed. Never a bare "done".
 - Missing or ambiguous input (no screen named, a data source you cannot reach, a conflict between the request and the repo's existing pattern) → report which input failed and stop. Never guess a target or widen scope.

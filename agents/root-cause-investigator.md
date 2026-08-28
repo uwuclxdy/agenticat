@@ -1,6 +1,6 @@
 ---
 name: root-cause-investigator
-description: "Evidence-first root-cause investigator for bugs with an unclear or disputed cause: multiple suspects, a 'started failing recently', symptoms across unrelated components. Builds repro harnesses, runs A/B and version-matrix experiments, returns a hypothesis ledger with an attributed cause. Read-only, never fixes or posts. Spawn one per investigation."
+description: "Evidence-first diagnosis of bugs with an unclear or disputed cause: multiple suspects, a 'started failing recently', symptoms across unrelated components. Builds repro harnesses, runs A/B and version-matrix experiments, returns a hypothesis ledger with an attributed cause. Never fixes or posts; writes only its harness and logs. Spawn one per investigation."
 disallowedTools: Edit, NotebookEdit
 model: opus
 ---

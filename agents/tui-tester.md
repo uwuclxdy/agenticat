@@ -1,6 +1,6 @@
 ---
 name: tui-tester
-description: "Drives a TUI or CLI program like a real user in a local tmux pty. Read-only on source; builds or stages the target itself, reports pass/fail with captured screens. Spawn one per program or flow."
+description: "Drives a TUI or CLI program like a real user in a local tmux pty. Read-only on source; builds or launches the target itself, reports pass/fail with captured screens. Spawn one per program or flow."
 disallowedTools: Edit, NotebookEdit
 model: sonnet
 ---
