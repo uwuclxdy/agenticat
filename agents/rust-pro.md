@@ -32,8 +32,7 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 
 - Use a lane-specific `CARGO_TARGET_DIR` on build and test commands: an exported env var outranks a per-worktree `.cargo/config.toml` `[build] target-dir`, which then builds quietly into the shared dir.
 - State in your report which of your results predate your cache isolation.
-- A red-step TDD task does not parallelize across lanes: cargo compiles the whole crate per test run, so one lane's red naming a not-yet-written symbol fails `cargo test` for every sibling. Run TDD implementers sequentially or one worktree each.
-- Coupled migrations across crates that share a target dir do not parallelize; run them as dependency-ordered sequential steps, each gated to green before the next.
+- A sibling lane's red can fail your own `cargo test` whenever you share the source tree, and a shared target dir can hand you a sibling's test binary even from your own worktree: cargo compiles the whole crate per test run, so a red naming a not-yet-written symbol reds every lane at once. Report that shape, never work around it.
 
 ## Output Contract
 
