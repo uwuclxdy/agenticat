@@ -6,7 +6,7 @@ Welcome contributions: new agents, new skills, fixes to existing ones, and READM
 
 - **Claude Code format is canonical.** `agents/*.md` and `skills/<name>/SKILL.md` are the source of truth; opencode/codex output derives from them at install time via `bin/install-agents.ts`. Don't PR generated files.
 - **Don't PR a vendored third-party skill.** If a skill you didn't write is worth sharing, PR a row in the README's external skills table instead. It installs from its own repo with `npx skills add <owner>/<repo> --skill <name>`. A few are vendored here (`webapp-testing`, Apache-2.0), each with its LICENSE and a modification note; that call stays with the maintainer.
-- **Nothing personal or machine-specific**: absolute paths, IPs, hostnames, private tooling. `grep -rE '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/` must come back clean.
+- **Nothing personal or machine-specific**: absolute paths, IPs, hostnames, private tooling. `grep -rEn '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/ bin/ plugins/ .claude/ install.sh README.md` must come back clean. These are the same paths the CI gate checks.
 
 ## Agents
 
