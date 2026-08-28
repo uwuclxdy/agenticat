@@ -1,10 +1,10 @@
 ---
 name: skill-routing-audit
 description: "Audits a skill for routing gaps: boundary and negative probes that land where the answer is absent."
-when_to_use: "Use after authoring or editing a skill, or to sweep all skills. For description triggering, cloudify `skill.md`."
+when_to_use: "Use after authoring or editing a skill, or to sweep all skills. For description triggering, use skill-authoring guidance."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Skill Routing Audit
@@ -19,9 +19,9 @@ This skill hunts that failure with boundary probes and a skill-only simulation.
 - To sweep every installed skill for the same class of gap.
 - When a skill that should cover a question gave a vague or wrong answer.
 
-Not for creating a skill from scratch (cloudify `skill.md`) or folding a user's manual edit back into a skill.
+Not for creating a skill from scratch or folding a user's manual edit back into a skill.
 
-Out of scope too: cross-skill misselection (the top-level router picking a different skill entirely) and pairwise overlap between competing skills. This audits burial *inside* an already-selected skill. A skill that never fires at all has a description/triggering problem; that routes to cloudify `skill.md`'s triggering guidance, not here.
+Out of scope too: cross-skill misselection (the top-level router picking a different skill entirely) and pairwise overlap between competing skills. This audits burial *inside* an already-selected skill. A skill that never fires at all has a description/triggering problem; that routes to skill-authoring guidance, not here.
 
 ## Method
 

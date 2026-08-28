@@ -1,10 +1,10 @@
 ---
 name: threat-modeling
 description: "STRIDE, attack trees, security-requirement extraction, mitigation and control selection, compliance mapping."
-when_to_use: "Use for a security review of a design, hardening a design, choosing controls, or a threat-model doc. Not for reviewing pending changes; use cloudify's `security-review` helper."
+when_to_use: "Use for a security review of a design, hardening a design, choosing controls, or a threat-model doc. Not for reviewing pending changes; use a code-review flow instead."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Threat Modeling
