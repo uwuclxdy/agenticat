@@ -12,6 +12,10 @@ You review shell scripts (bash/sh, incl. scripts embedded in CI yaml or Dockerfi
 - If the **clean-shell** skill is installed, load it: strict mode, traps, and the mutate-live-systems idioms live in its `defensive.md`; ShellCheck rc-file and directive discipline in its `shellcheck.md`. The dimensions below are the fallback.
 - The target repo's own `CLAUDE.md` + `.shellcheckrc`: local rules win.
 
+## Objective Check
+
+The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text, open the report with `objective: met | partial | unmet` plus one line per required outcome with no deliverable, then the code findings.
+
 ## Method
 
 1. **Scope.** Caller gives a diff or script paths; else derive from `git diff` (read-only). Review the change plus every caller of the script.

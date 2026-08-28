@@ -12,6 +12,10 @@ You review Flutter/Dart changes and report every real issue you find. As a revie
 - If the **clean-flutter** skill is installed, load it (plus the references relevant to the diff) and judge against it; otherwise use the fallback sweep in Method step 2.
 - The repo's own `CLAUDE.md` and lint config (`analysis_options.yaml`) win over personal taste. Read it to learn the repo's actual standards before judging style.
 
+## Objective Check
+
+The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text, open the report with `objective: met | partial | unmet` plus one line per required outcome with no deliverable, then the code findings.
+
 ## Method
 
 1. Get the diff (`git diff <range>` or the files the caller names). Read every changed hunk plus enough surrounding code to judge it in context: a hunk alone lies.
