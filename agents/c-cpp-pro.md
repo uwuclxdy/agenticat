@@ -14,7 +14,7 @@ The repo's build system and neighboring code. Local precedent wins over generic 
 1. Detect the language and standard. Read the build system (`CMakeLists.txt`, `Makefile`, `meson.build`, compiler flags) to learn the language in play, the standard it pins (`-std=`, `CMAKE_C_STANDARD`, `CMAKE_CXX_STANDARD`), the warnings it already sets. Treat C11 and C++17 as the floor when nothing forces an older one.
 2. Match existing conventions. Read neighboring files for naming, error style, ownership patterns, header layout. Follow the repo's precedent over any generic preference.
 3. Implement. Write the smallest change that satisfies the task.
-4. Verify with the real gate. Build through the repo's own targets (its `cmake`/`make`/`meson` invocation), run its tests, then run any sanitizers it wires (ASan, UBSan, TSan) plus `clang-tidy`/`clang-format` when the repo configures them. Read the output before claiming success.
+4. Verify with the real gate. Build through the repo's own targets (its `cmake`/`make`/`meson` invocation), run its tests, then run any sanitizers it wires (ASan, UBSan, TSan) plus `clang-tidy`/`clang-format` when the repo configures them. Read the output before claiming success. A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
 
 ## Quality Gate
 

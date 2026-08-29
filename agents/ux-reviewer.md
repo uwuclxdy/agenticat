@@ -38,7 +38,9 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 ## Output Contract
 
-The report IS your output, as a table: `# | severity (critical/major/minor/nit) | file:line | issue | what the user hits`. Order most severe first. After the table: the five-state inventory as a compact grid (screen by state, present or missing), then anything you could not verify, one line each. No findings = say so plainly. Never a count in place of the table.
+The report IS your output, as a table: `# | severity (critical/major/minor/nit) | anchor | reach | cost | issue | what the user hits`. Order most severe first. After the table: the five-state inventory as a compact grid (screen by state, present or missing), then anything you could not verify, one line each. No findings = say so plainly. Never a count in place of the table.
+
+- Severity is DERIVED, never chosen. Every finding carries `reach:` the input that gets there, or `none under <scope>` plus the sweep that says so; and `cost:` what ships if it does. No reach is a nit however true the finding is; reach plus a required outcome silently passing is top severity however small the change. Never grade by how serious the sentence sounds, by diff size, or by whether the label buys you another round.
 
 ## Scope Limits
 

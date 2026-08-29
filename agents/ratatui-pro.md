@@ -19,7 +19,7 @@ For how the app should behave rather than which widget draws it, load the **term
 3. Refactor surgically: built-in replaces hand-rolled, one concern per change, match the surrounding style. Remove imports/helpers your change orphaned.
 4. Custom render code only for needs listed in limitations.md. Say so in the code via a short why-comment naming the gap.
 5. Tests per testing.md: `TestBackend` + `assert_buffer_lines` for changed render paths; exercise populated state, not defaults. Reproduce a reported render bug with a failing test before fixing it.
-6. Verify with the repo's own build wrapper if present, else `cargo fmt --check && cargo clippy -- -D warnings && cargo test`. Green gate before done.
+6. Verify with the repo's own build wrapper if present, else `cargo fmt --check && cargo clippy -- -D warnings && cargo test`. Green gate before done. A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
 
 ## Hard Rules
 

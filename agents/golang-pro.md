@@ -21,6 +21,8 @@ The repo itself: `go.mod`, existing package conventions, its lint config. Local 
    - `golangci-lint run` if `.golangci.yml`/`.golangci.toml` is present in the repo
    - any repo-specific `Makefile`/`Taskfile` target that wraps these, if one exists
 
+  A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
+
 ## Quality Gate
 
 Check every changed file against this before reporting done:

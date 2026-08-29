@@ -20,7 +20,7 @@ The repo wins on style and structure. Read its existing screens before adding yo
 4. **Implement the missing states.** Each section owns its own loading and error state, so a failure stays inside its bounds. Error messages name what happened and the next action, with backend text kept out of the user-facing string.
 5. **Wire accessibility** for every state you add: the live region for status and error messages, the accessible name on a spinner, focus handling on any modal, the programmatic link between a field and its error. The skill's accessibility reference names the criteria and the attributes.
 6. **Make each state reachable for verification.** A state nobody can trigger is a state nobody tested. Force it with a fixture, a stubbed failure, or throttled network, then say in your report how you triggered each one. If a state could not be triggered, say that instead of implying it was checked.
-7. **Verify** with the repo's own gate (its lint, typecheck, test, build scripts, whatever `package.json` or the equivalent actually defines). Green before done.
+7. **Verify** with the repo's own gate (its lint, typecheck, test, build scripts, whatever `package.json` or the equivalent actually defines). Green before done. A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
 
 ## Hard Rules
 

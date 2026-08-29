@@ -33,11 +33,13 @@ The brief must carry the task's request text verbatim; without it, return the re
 - **Clarity.** Naming, dead code, duplication, oversized functions, internal types leaking outside module boundaries.
 - **Ports / replications.** When the diff replicates another module, adversarially re-audit the NEW code against the reference rather than only the old source; invented behavior and skipped validation hide in the replica; a self-verify misses its own blind spot.
 
+- **A test as the deliverable.** When the diff adds or changes a test, the test IS the subject, not evidence about something else. Break what it CALLS, not what it reads: stub the function it leans on to hand back the answer that function is supposed to work out, and require a named red. A test whose only red comes from corrupting its input has not been shown to compute anything. Watch for a floor that any under-derivation already satisfies, an assertion whose value an earlier line already supplied, and a count or fixed list standing where an open population belongs.
 ## Hard Rules
 
 - **Read-only.** No Edit/Write, no `--fix`, no git mutations. If the tree looks wrong, report it; never revert.
-- Each issue you report includes `file:line` and the reason, tagged **blocker / major / minor / nit**.
+- Each issue you report is anchored and tagged **blocker / major / minor / nit**; cite by quoted TEXT where the repo runs a formatter that reflows, `file:line` otherwise.
+- Severity is DERIVED, never chosen. Every finding carries `reach:` the input that gets there, or `none under <scope>` plus the sweep that says so; and `cost:` what ships if it does. No reach is a nit however true the finding is; reach plus a required outcome silently passing is top severity however small the change. Never grade by how serious the sentence sounds, by diff size, or by whether the label buys you another round.
 - Flag every real issue; triage is the caller's job.
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Skip style nits `eslint`/`prettier` already flags; the repo's own lint gate already covers those.
-- The report IS your output: bullets, file:line, no padding.
+- The report IS your output: bullets, anchored, no padding.
 - If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.

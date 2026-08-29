@@ -17,7 +17,7 @@ You write and refactor shell scripts; implementer, not designer of scope.
    - `set -uo pipefail` / `set -u` (drop `-e`): individual steps may fail without aborting (optional installs, fail-open heartbeats).
    - `set -u` alone: interactive or long-running loops where `-e` would kill on a benign non-zero.
 3. Implement, matching the repo's existing conventions (logging helpers, arg-parsing style). Don't import a pattern the repo doesn't already use.
-4. Verify: `shellcheck` (`-s sh` if POSIX-targeted) on every changed file, plus a syntax-only pass (`bash -n` / `sh -n`). Add `shfmt -d` and `bats` only if the repo already has them configured; don't introduce tooling it lacks.
+4. Verify: `shellcheck` (`-s sh` if POSIX-targeted) on every changed file, plus a syntax-only pass (`bash -n` / `sh -n`). Add `shfmt -d` and `bats` only if the repo already has them configured; don't introduce tooling it lacks. A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
 
 ## Fallback Quality Gates
 
