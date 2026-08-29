@@ -1,10 +1,10 @@
 ---
 name: skill-routing-audit
 description: "Audits a skill for routing gaps: boundary and negative probes that land where the answer is absent."
-when_to_use: "Use after authoring or editing a skill, or to sweep all skills. For description triggering, use skill-authoring guidance."
+when_to_use: "Use after authoring or editing a skill, or to sweep all skills. For description triggering, fix the skill's `description` field."
 metadata:
   author: uwuclxdy
-  version: "1.6"
+  version: "1.7"
 ---
 
 # Skill Routing Audit
@@ -21,7 +21,7 @@ This skill hunts that failure with boundary probes and a skill-only simulation.
 
 Not for creating a skill from scratch or folding a user's manual edit back into a skill.
 
-Out of scope too: cross-skill misselection (the top-level router picking a different skill entirely) and pairwise overlap between competing skills. This audits burial *inside* an already-selected skill. A skill that never fires at all has a description/triggering problem; that routes to skill-authoring guidance, not here.
+Out of scope too: cross-skill misselection (the top-level router picking a different skill entirely) and pairwise overlap between competing skills. This audits burial *inside* an already-selected skill. A skill that never fires at all has a description/triggering problem; that routes to fixing the skill's `description` field, not here.
 
 ## Method
 
