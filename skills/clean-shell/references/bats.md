@@ -83,6 +83,8 @@ setup() {
 
 PATH stubs only intercept bare-name lookups. A call to an absolute path (`/usr/bin/curl` instead of `curl`) bypasses `PATH` entirely. Mock those with a function override or wrapper script instead.
 
+A stub for a multi-subcommand CLI (`docker`, `git`) must branch on the argv shape the script under test actually passes. Verify positions at the call site: `docker network ls` puts the subcommand in `$2`, and `docker network inspect -f TMPL name` puts the object name in `$5`. A branch key that never matches falls through to the fallback, which then answers every call. The test then reads green and exercises none of the intended paths, so have the stub log its invocations and assert the intended branch ran.
+
 ## Shared Helpers
 
 Put fixtures and assertion helpers used by multiple test files in `test/test_helper.bash`, loaded per file with `load test_helper`. Reach for `bats-support` + `bats-assert` (`assert_success`/`assert_output`/`assert_line`) and `bats-file` (`assert_file_exist`, `assert_file_empty`, permission checks) once assertions get repetitive, rather than writing another home-grown `assert_*` helper. `load` is for files local to the test dir; libraries installed system-wide load with `bats_load_library` off `BATS_LIB_PATH` instead. Pin the floor with `bats_require_minimum_version` when a test relies on a newer feature like `--separate-stderr` or `run -N`.
