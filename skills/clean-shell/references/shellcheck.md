@@ -57,6 +57,8 @@ source "$dynamic_path"
 ```
 `source=/dev/null` tells ShellCheck to stop guessing a path it can never resolve at analysis time.
 
+In 0.11.0 the `source=` target must match a file on the command line verbatim. A directive saying `lib.sh` against an invocation spelling `scripts/lib.sh` reads as SC1091 on an existing file. Run the gate from the directory whose spelling the directives use.
+
 `shell=` works inline too, for files with no shebang (sourced libraries, `.bashrc` fragments):
 ```sh
 # shellcheck shell=bash
@@ -78,6 +80,8 @@ Disabling any of these without one of those reasons is hiding a real bug, not do
 
 Exit codes: `0` clean, `1` issues found, `2` a file could not be processed, `3` bad invocation syntax, `4` bad option value. CI should fail on any non-zero exit, not just `1`. The `-S` floor decides what "issues found" means for that exit code too: an issue filtered out by `-S` neither prints nor triggers `1`. Verify with a throwaway low-severity-only script before trusting `-S warning` alone to gate CI.
 
+In 0.11.0 a code's severity is fixed in ShellCheck's own database: SC2086 (unquoted expansion) and SC2029 (ssh remote command interpolation) sit at `info`. A `-S warning` gate neither prints them nor fails on them. Name the codes a floor ungates before trusting it.
+
 Output formats: `-f gcc` for editors that parse compiler output, `-f json1` for tooling, `-f diff` for a unified diff of the auto-fixable issues. Pipe `-f diff` straight into an apply step to auto-fix:
 ```sh
 shellcheck -f diff script.sh | git apply
@@ -91,3 +95,5 @@ shellcheck -S warning **/*.sh
 shfmt -d .
 ```
 `shellcheck` catches correctness, `shfmt -d` catches formatting drift. Run both; fail on either.
+
+`shfmt` reads `.editorconfig` upward from each target file, then `$HOME/.editorconfig`. A gate green only via a HOME-level editorconfig reds every file on a runner or a fresh clone with none. Pin the indent (`shfmt -d -i 2 .`) or commit an `.editorconfig` beside the scripts.
