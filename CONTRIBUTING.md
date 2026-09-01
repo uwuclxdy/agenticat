@@ -14,7 +14,7 @@ An agent def is a thin implementer: a method, quality gates, and an output contr
 
 - Frontmatter: `name`, `description`, `model` (`haiku`/`sonnet`/`opus` alias), and optionally `disallowedTools` or `tools` (comma-separated strings). Omit both to inherit every tool; that's the implementer default. Frontmatter values stay lowercase; body headings use Title Case (`## Method`).
 - **Prefer `disallowedTools`.** `tools` is an exact allowlist: it drops every MCP tool and `ToolSearch` along with everything else unnamed, so an agent that carries one can't reach any MCP server no matter what the user has installed. A denylist keeps the read-only contract without that blast radius. Setting both is a silent bug, Claude Code ignores `disallowedTools` whenever `tools` is present. Use `tools` only when the tight sandbox is the point, and mark it `# lint: sandboxed`.
-- Write the `description` in third person for triggering: what it does, what it returns, how to spawn it ("Spawn one per …").
+- Write the `description` in third person for triggering: what it does, what it returns, how to spawn it ("Spawn one per …"), and a " - Use when" clause listing the concrete trigger situations.
 - Domain knowledge belongs in a paired skill, referenced conditionally ("load `<skill>` if installed") with an inline fallback checklist. Installs are cherry-picked, so an agent can't assume a sibling skill ships.
 
 ## Skills
