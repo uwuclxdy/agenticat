@@ -21,9 +21,12 @@ with sync_playwright() as p:
     page.fill('#name', 'John Doe')
     page.fill('#email', 'john@example.com')
 
-    # Submit form
+    # Submit the form and wait for what the submit produces, not for a duration.
+    # Replace the selector with whatever your page renders on success; a wait keyed
+    # on that element fails loudly when the submit does nothing, where a sleep just
+    # screenshots the unchanged page.
     page.click('button[type="submit"]')
-    page.wait_for_timeout(500)
+    page.wait_for_selector('#result', state='visible')
 
     # Take final screenshot
     page.screenshot(path='/tmp/after_submit.png', full_page=True)

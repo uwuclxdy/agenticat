@@ -5,10 +5,10 @@ when_to_use: "Use to verify or debug frontend behavior against a dev server or s
 license: Complete terms in LICENSE.txt
 metadata:
   author: "Anthropic, PBC, vendored from anthropics/skills (Apache-2.0)"
-  version: "1.4"
+  version: "1.5"
 ---
 
-> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, and a tone pass (emoji and all-caps emphasis removed).
+> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, a tone pass (emoji and all-caps emphasis removed), and a wait-discipline pass replacing the fixed-duration `wait_for_timeout` advice and its two example uses with condition waits.
 
 # Web Application Testing
 
@@ -94,7 +94,8 @@ Inspecting the DOM before `networkidle` on a dynamic app reads a half-rendered p
 - Use `sync_playwright()` for synchronous scripts
 - Always close the browser when done
 - Use descriptive selectors: `text=`, `role=`, CSS selectors, or IDs
-- Add appropriate waits: `page.wait_for_selector()` or `page.wait_for_timeout()`
+- Wait on the observable the next assertion reads, never on a duration. `expect(locator).to_have_text(...)` and its siblings retry until the value arrives; `page.wait_for_selector()`, `page.wait_for_function()` and `page.expect_console_message(predicate)` cover what `expect` does not. Make the condition the one your code is actually about: a bare `expect_console_message()` returns on the first message and misses everything logged after it, so pass the predicate that matches the message meaning the work finished. A `page.wait_for_timeout()` is a bet that the page settles inside a number someone picked, and it goes wrong exactly when the machine is loaded, which is when CI runs. Where an action genuinely produces nothing observable, keep the duration and write one line beside it saying which condition could not be expressed.
+- Two timeout budgets exist and they are set separately. Measured against Chromium: `expect()` defaults to 5000 ms, `page.wait_for_*` defaults to 30000 ms, and `expect.set_options()` moves only the first. A per-call `timeout=` beats both. Do not pass `timeout=0` to `set_options` expecting no wait: `0` is falsy, so the default comes back and every check passes for the wrong reason.
 
 ## Limits
 
