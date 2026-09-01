@@ -8,7 +8,7 @@ metadata:
   version: "1.5"
 ---
 
-> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, a tone pass (emoji and all-caps emphasis removed), and a wait-discipline pass replacing the fixed-duration `wait_for_timeout` advice and its two example uses with condition waits.
+> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, a tone pass (emoji and all-caps emphasis removed), a wait-discipline pass replacing the fixed-duration `wait_for_timeout` advice and its two example uses with condition waits, and a Limits note that a screenshot gets read and judged, with a pixel diff as the secondary check.
 
 # Web Application Testing
 
@@ -99,7 +99,7 @@ Inspecting the DOM before `networkidle` on a dynamic app reads a half-rendered p
 
 ## Limits
 
-- `screenshot()` only saves an image. There is no built-in pixel or regression diff against a baseline, wire in your own comparison (e.g. Pillow, pixelmatch) if that's needed.
+- `screenshot()` only saves an image. `Read` it and judge it as a viewer would; that is the check for "looks right". A pixel diff (Pillow, pixelmatch) answers only "did anything move", and needs a baseline someone judged.
 - UI/frontend only. For pure backend/API assertions without a browser, use Playwright's request context (`playwright.request`) or a plain HTTP client instead.
 
 ## Reference Files
