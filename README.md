@@ -193,7 +193,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
-| `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright, reports pass/fail with screenshots |
+| `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright and judges each screenshot by eye; pass/fail with evidence, design-contract checks on request |
 | `shell-pro` + | inherit | `clean-shell` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
 | `rust-pro` + | inherit | `clean-rust`, `cargo-toml-optimization`, `askama`, `maud` | one Rust task against the repo's cargo and clippy gate |
