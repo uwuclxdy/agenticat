@@ -6,7 +6,7 @@ For a server or client written against `2025-11-25` or earlier. The spec calls t
 
 | Posture | When it fits | Cost |
 |---|---|---|
-| Dual-era, one endpoint | Public server with users you cannot upgrade | Two code paths, two test matrices. A dual-era server **MAY** serve both eras on one endpoint or process |
+| Dual-era, one endpoint | Public server with end users you cannot upgrade | Two code paths, two test matrices. A dual-era server **MAY** serve both eras on one endpoint or process |
 | Modern endpoint + a separate legacy endpoint | You need a genuinely sessionful legacy deployment kept intact | Two deployments |
 | Hard cutover | Private server, you control every client | Cheapest. Legacy clients get a hard failure with no fall-forward path |
 
@@ -41,7 +41,7 @@ The fallback **MUST NOT** key on one specific error code. Legacy servers answer 
 
 Era is a property of the server, not of one request. Cache it for the lifetime of the process (stdio) or origin (HTTP), optionally persist it across restarts of the same configuration, and re-probe if the cached assumption later fails.
 
-A modern-only server **SHOULD** name its supported versions in whatever error it returns to an `initialize` request. That error message is often the only diagnostic a legacy client's user will ever see.
+A modern-only server **SHOULD** name its supported versions in whatever error it returns to an `initialize` request. That error message is often the only diagnostic a legacy client's end user will ever see.
 
 ## Server Checklist
 

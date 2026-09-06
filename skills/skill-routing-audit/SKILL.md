@@ -19,7 +19,7 @@ This skill hunts that failure with boundary probes and a skill-only simulation.
 - To sweep every installed skill for the same class of gap.
 - When a skill that should cover a question gave a vague or wrong answer.
 
-Not for creating a skill from scratch or folding a user's manual edit back into a skill.
+Not for creating a skill from scratch or folding the user's manual edit back into a skill.
 
 Out of scope too: cross-skill misselection (the top-level router picking a different skill entirely) and pairwise overlap between competing skills. This audits burial *inside* an already-selected skill. A skill that never fires at all has a description/triggering problem; that routes to fixing the skill's `description` field, not here.
 
@@ -29,7 +29,7 @@ Point it at a skill's directory. Audit one named skill, or every subdirectory th
 
 Fan out one read-only subagent per skill (parallel for an all-skills sweep). Each agent:
 
-1. Read the skill's `SKILL.md`, then its reference and bundled files, to learn what it covers and what it says a user can and cannot do.
+1. Read the skill's `SKILL.md`, then its reference and bundled files, to learn what it covers and what it says the user can and cannot do.
 2. Derive 4 to 6 boundary/negative probes a real user would ask at the edge of the skill's scope: plausibly-impossible actions, off-limits operations, common misconceptions. Not happy-path "how do I X". Ground each in the skill's own subject.
 3. Answer each probe using only this skill: start from `SKILL.md`, follow the skill's own routing table and pointers to whichever reference an agent would naturally open. Read nothing outside the skill dir; use no prior knowledge of the underlying tool.
 4. Classify each probe:

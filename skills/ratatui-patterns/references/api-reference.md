@@ -160,7 +160,7 @@ let mut terminal = ratatui::init();
 ratatui::restore();
 ```
 
-`init()` installs a panic hook that calls `restore()` before the default hook, so a panic mid-draw won't leave the user's terminal corrupted.
+`init()` installs a panic hook that calls `restore()` before the default hook, so a panic mid-draw won't leave the end user's terminal corrupted.
 
 ---
 

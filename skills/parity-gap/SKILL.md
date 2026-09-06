@@ -22,7 +22,7 @@ Bring `this program` (default: cwd) up to (and past) a `reference`. Map both sid
 
 ## 2. Map Each Side (Inline, Single-Pass)
 
-Map what each side exposes to a user; skip internals and file structure. The user-reachable surface:
+Map what each side exposes to an end user; skip internals and file structure. The user-reachable surface:
 
 - commands / subcommands / flags
 - exported APIs, routes, endpoints

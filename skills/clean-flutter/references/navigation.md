@@ -23,7 +23,7 @@ UserRoute(id: id).go(context);
 ## Guards and Redirects
 
 - Gate auth with `redirect` at the router or route level: read auth state, return the login path when unauthenticated. Keep the redirect pure and synchronous where possible.
-- Re-run the redirect on auth change with `refreshListenable` tied to your auth provider, so a sign-out bounces the user out.
+- Re-run the redirect on auth change with `refreshListenable` tied to your auth provider, so a sign-out bounces the end user out.
 
 ## Nested and Tabbed Flows
 

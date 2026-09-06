@@ -33,7 +33,7 @@ Terminal accessibility gets its own file, `references/accessibility.md`. There i
 **Do:**
 - Put primary output, the thing another program would consume, on stdout.
 - Put logs, warnings, errors, and human-watched progress on stderr, so a pipe does not swallow them and they do not corrupt the data stream.
-- Surface a subprocess's stderr to the user rather than eating it.
+- Surface a subprocess's stderr to the end user rather than eating it.
 
 `curl`'s progress meter goes to stderr despite not being an error, because it is messaging about the run rather than the payload.
 
@@ -93,7 +93,7 @@ Turn color off when any of these hold:
 `NO_COLOR` governs color only. Bold and underline are not covered by it.
 
 **Do:**
-- Use the terminal's indexed ANSI-16 palette rather than hardcoded truecolor, so the user's own theme, contrast settings, and colorblind-safe scheme win. GitHub CLI aligned its whole palette to 4-bit colors for exactly this reason.
+- Use the terminal's indexed ANSI-16 palette rather than hardcoded truecolor, so the end user's own theme, contrast settings, and colorblind-safe scheme win. GitHub CLI aligned its whole palette to 4-bit colors for exactly this reason.
 - Detect a light or dark background at runtime and pick to match, rather than assuming one.
 - Use color to signal. Coloring everything highlights nothing.
 - Encode state in a glyph, a label, or a position as well as in color.
@@ -123,7 +123,7 @@ Turn color off when any of these hold:
 - Print concise help when a command that needs arguments gets none: a description, one or two real invocations, and a flag summary. Save the full listing for `--help`.
 - Send `--help` and `--version` to stdout and exit successfully, ignoring other arguments once either is seen (GNU standard).
 - End `--help` with where to report bugs and where the project lives (GNU standard).
-- Ship shell completion. It is a discovery mechanism, not just a convenience. One subcommand generates the script off the parser and prints it to stdout. The user wires it up, so nothing writes to a shell rc on their behalf:
+- Ship shell completion. It is a discovery mechanism, not just a convenience. One subcommand generates the script off the parser and prints it to stdout. The end user wires it up, so nothing writes to a shell rc on their behalf:
 
   ```sh
   # .bashrc
@@ -165,7 +165,7 @@ Turn color off when any of these hold:
 
 **CLI, gotcha.** A reader that walks away mid-pipe is not a failure of the run. Rust ignores `SIGPIPE`, so a write to a pipe whose reader left comes back `EPIPE`, and the std print macros panic on it: `prog | head -3` exits 101 with a panic message instead of just stopping. The signal disposition fix is wrong for a binary that doubles as a server, so handle it at the emitter. The payload stream exits 0, since the reader chose to leave and `head` already printed what it wanted. The diagnostic stream swallows the `EPIPE` and keeps the run's own exit code. Splitting by stream is not enough: a background log sink must swallow every write error, or one full disk ends a worker thread.
 
-**TUI, convention.** A panic that unwinds without restoring the terminal leaves the user with a broken shell: raw mode still on, still in the alternate screen. Install a panic hook that disables raw mode and leaves the alternate screen before anything else runs. ratatui documents this per backend and treats it as mandatory rather than optional.
+**TUI, convention.** A panic that unwinds without restoring the terminal leaves the end user with a broken shell: raw mode still on, still in the alternate screen. Install a panic hook that disables raw mode and leaves the alternate screen before anything else runs. ratatui documents this per backend and treats it as mandatory rather than optional.
 
 ---
 
@@ -215,5 +215,5 @@ For what a pane should show and why, the **ux-patterns** skill covers states, er
 | **Help** | `-h`/`--help` reserved, concise by default, bug URL at the end | Requiring a man page to learn the tool |
 | **Destruction** | Friction scaled to damage; typed confirmation for severe; always overridable | An interactive-only confirmation that breaks scripts |
 | **Signals** | Exit fast on Ctrl-C, timeout the cleanup, skip it on the second press | Trapping Ctrl-C into a hang |
-| **Crash** | Panic hook restores the terminal before anything else | Leaving raw mode on and the user's shell broken |
+| **Crash** | Panic hook restores the terminal before anything else | Leaving raw mode on and the end user's shell broken |
 | **Keys** | `q`/`Ctrl+C` quit, `Escape` dismiss, footer shows live bindings | Assuming every combination reaches your app |

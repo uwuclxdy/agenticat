@@ -30,16 +30,16 @@ Reconcile prose with code. Every claim in the docs must match what the code does
    - Stale → correct it to current behavior.
    - Missing feature → add the minimum line that covers it.
    - Overpromising (doc describes what code doesn't do) → delete or rewrite. Never leave aspirational claims; if it reads like a roadmap item, flag it to the user instead of silently keeping it.
-4. **Verify the executable bits.** Every command, flag, env var, config key, and file path quoted in docs must exist. Run `--help` or grep the source rather than trusting the old text.
-5. **Check paraphrases, not just quotes.** A README that paraphrases (rather than quotes) a changed description defeats text-grep. Diff the frontmatter/source text itself and check the paraphrase still covers what the new wording foregrounds.
+4. **Verify the executable bits.** Every command, flag, env var, config key, and file path quoted in docs must exist. Run `--help` or search the source (`rg`) rather than trusting the old text.
+5. **Check paraphrases, not just quotes.** A README that paraphrases (rather than quotes) a changed description defeats a text search. Diff the frontmatter/source text itself and check the paraphrase still covers what the new wording foregrounds.
 6. **Pin dropped names so the sweep can't be forgotten.** Agent-visible strings compiled into source count too: retiring a tool or flag leaves them green and wrong. Pin the dropped names in a retired-names const with a test that scans every rendered string for them, so the check runs on its own instead of relying on memory.
 7. **Reconcile before the change counts as done, not after.** Never leave the reconciliation diff uncommitted, and never ship a code commit without a matching docs commit. `wiki/`/`README` updates land as a follow-up `docs:` commit.
 
 ## Style Rules
 
 - **Edit and shorten over adding.** Collapse feature lists, merge near-duplicate sections, cut filler. Net diff should trend negative unless real features were missing.
-- **A deletion sweep needs a repo-wide reference grep first.** Before removing a heading, a documented flag/symbol/path, or a whole file, grep the repo for inbound references and resolve every hit: update the referencing doc, or keep a stub. Never leave a dangling pointer.
-- **Merging near-duplicates: diff each copy against the source, never against each other.** The authoritative-looking copy (a design doc, anything marked *locked*) drifts hardest, since nothing re-reads a settled doc against code, so deleting the scruffy duplicate promotes its wrong claims to sole truth. A doc's self-asserted verification (`e2e-verified`, `tested`, `both states compile`) is unfalsifiable prose: grep for the test before you trust it or delete it.
+- **A deletion sweep needs a repo-wide reference search first.** Before removing a heading, a documented flag/symbol/path, or a whole file, search the repo (`rg`) for inbound references and resolve every hit: update the referencing doc, or keep a stub. Never leave a dangling pointer.
+- **Merging near-duplicates: diff each copy against the source, never against each other.** The authoritative-looking copy (a design doc, anything marked *locked*) drifts hardest, since nothing re-reads a settled doc against code, so deleting the scruffy duplicate promotes its wrong claims to sole truth. A doc's self-asserted verification (`e2e-verified`, `tested`, `both states compile`) is unfalsifiable prose: search for the test before you trust it or delete it.
 - Match the doc's existing voice and formatting; this is a sync, not a rewrite.
 - Leave media placeholders alone (ASCII art, screenshots, gif slots); the user replaces those manually.
 - Version numbers: only touch ones the code/Cargo.toml/pyproject contradicts.

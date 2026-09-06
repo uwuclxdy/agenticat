@@ -47,13 +47,13 @@ Success is the one you were already building. The other four are the work.
 **Do:**
 - Enumerate all five before writing the screen.
 - Treat "this can't be empty" and "this can't fail" as claims to check, not assumptions. A list seeded with defaults is empty on the day the seed fails.
-- Handle partial explicitly. It is the state that looks like success and behaves like empty, so it ships broken: the layout was built for twenty rows, it gets three, and the screen reads as finished while telling the user nothing. Say what is missing and offer the step that fills it.
+- Handle partial explicitly. It is the state that looks like success and behaves like empty, so it ships broken: the layout was built for twenty rows, it gets three, and the screen reads as finished while telling the end user nothing. Say what is missing and offer the step that fills it.
 
 **Don't:**
 - Ship the happy path and handle the rest with whatever the framework does by default. That is usually a blank screen, a raw stack trace, or nothing at all.
 - Let partial ride the success path because the code path is the same. A profile 20% filled in and a complete one need different screens.
 
-Why: the four states you skipped are the ones a user hits on their worst day, when a network is flaky or an account is new. That is the wrong moment for undefined behavior.
+Why: the four states you skipped are the ones an end user hits on their worst day, when a network is flaky or an account is new. That is the wrong moment for undefined behavior.
 
 Attribution: Scott Hurff's UI Stack (ideal, empty, error, partial, loading), which credits 37signals' three-state solution of 2004 as its ancestor. Hurff states partial's job directly: "prevent people from getting discouraged and giving up on your product". The four-state version in wide circulation has no source. It is the UI Stack with partial dropped, and partial is the one that gets shipped broken.
 
@@ -91,7 +91,7 @@ The indicator type follows from what is loading and whether the duration is know
 - Use optimistic UI only where a rollback is cheap and visible. A like button qualifies. A payment does not.
 
 **Don't:**
-- Use a spinner for a file upload. Progress is knowable there, so withholding it is a choice to tell the user less.
+- Use a spinner for a file upload. Progress is knowable there, so withholding it is a choice to tell the end user less.
 - Animate a skeleton so heavily it reads as content.
 
 Why: a skeleton lets someone parse the layout while data is in flight, so the wait does double duty. A progress bar answers "how much longer", which a spinner never can.
@@ -117,14 +117,14 @@ How long the wait is decides what to show. The 1 second and 10 second limits are
 - Delay the indicator briefly before showing it, then hold it a short minimum. This reconciles a spinner on a button with the sub-1s rule: fast responses never flash one. No source gives a number for that delay, so pick one and keep it consistent rather than citing it as a threshold.
 - Drop repeat activations for a short window after the first one. People double-click out of desktop habit, on a slow connection, or with a hand tremor, and the duplicate sends the invitation twice. The control stays enabled and focusable; only the extra event dies.
 - Advance the text for long waits ("Connecting", "Fetching your data") so the screen proves something is still happening.
-- Give anything past 10 seconds an interrupt. A user who cannot cancel a long operation is stuck watching it.
+- Give anything past 10 seconds an interrupt. An end user who cannot cancel a long operation is stuck watching it.
 
 **Don't:**
 - Flash a spinner for a 200ms response. The flicker reads as a glitch and makes the app feel slower than showing nothing would.
 - Leave a bare looping animation running past 10s with no text, no progress, and no way out.
 - Run a long wait and then resolve it into an error. Validate what you can before the wait starts.
 
-Why: a spinner communicates "working" and nothing else. Past a few seconds that stops being enough, and the user has no way to tell working from hung.
+Why: a spinner communicates "working" and nothing else. Past a few seconds that stops being enough, and the end user has no way to tell working from hung.
 
 ---
 
@@ -134,20 +134,20 @@ Why: a spinner communicates "working" and nothing else. Past a few seconds that 
 
 An error message has two jobs: name what failed, then give the next action. GOV.UK's rule is exactly that pair, "describe what has happened and tell them how to fix it".
 
-A third part, the reason, earns its place only where it changes what the user does next. "Your card was declined" does. "The value you entered is invalid" does not; it is the message restating that there is a message.
+A third part, the reason, earns its place only where it changes what the end user does next. "Your card was declined" does. "The value you entered is invalid" does not; it is the message restating that there is a message.
 
 **Do:**
 - Write both parts. "Enter your full name." "Your payment didn't go through. Check your card details or try a different payment method."
-- Add the reason where the user can act on it: a declined card, an expired session, a file over a stated size limit.
-- Keep the technical detail where engineers can reach it (logs, a correlation ID shown to the user) and out of the message itself.
+- Add the reason where the end user can act on it: a declined card, an expired session, a file over a stated size limit.
+- Keep the technical detail where engineers can reach it (logs, a correlation ID shown to the end user) and out of the message itself.
 
 **Don't:**
-- Render backend text at the user. A raw exception is unreadable to most people and leaks internals worth keeping private.
+- Render backend text at the end user. A raw exception is unreadable to most people and leaks internals worth keeping private.
 - Ship "Something went wrong". It names nothing and suggests nothing.
 - Ship a message that would fit any field. "Answer the question", "Select an option", "This field is required" identify nothing.
-- Fail silently. A submit button that does nothing on click is the worst version, because the user cannot tell a broken app from a slow one.
+- Fail silently. A submit button that does nothing on click is the worst version, because the end user cannot tell a broken app from a slow one.
 
-**Words to cut**, from GOV.UK's error-message component: "valid" and "invalid" (they add nothing to the message), "please" (implies a choice the user does not have), "sorry" (does not help fix it), "oops" and other jokes (they go stale on an error people hit often), plus "forbidden", "illegal", "prohibited", "you forgot". NN/g bans the same blame family: "Don't use phrasing that blames users or implies they are doing something wrong, such as *invalid*, *illegal*, or *incorrect*."
+**Words to cut**, from GOV.UK's error-message component: "valid" and "invalid" (they add nothing to the message), "please" (implies a choice the end user does not have), "sorry" (does not help fix it), "oops" and other jokes (they go stale on an error people hit often), plus "forbidden", "illegal", "prohibited", "you forgot". NN/g bans the same blame family: "Don't use phrasing that blames users or implies they are doing something wrong, such as *invalid*, *illegal*, or *incorrect*."
 
 **WCAG 3.3.1 (A) and 3.3.3 (AA):** the failing item has to be identified and the problem described in text, and where the fix is knowable you have to offer it. Both are what the message above already does; the conformance part is that the text exists and is tied to the right control.
 
@@ -159,7 +159,7 @@ Placement follows severity and location. The closer the message sits to the thin
 |---|---|---|
 | Inline | A specific field or control that failed | Sits next to it, persists until fixed |
 | Toast | Non-blocking, informational, recoverable | Appears at a screen edge, stays until dismissed |
-| Modal | The user genuinely cannot continue | Blocks interaction, carries the action button |
+| Modal | The end user genuinely cannot continue | Blocks interaction, carries the action button |
 
 **Do:**
 - Default to inline. Most errors belong to one field or one control.
@@ -178,7 +178,7 @@ Placement follows severity and location. The closer the message sits to the thin
 The five states are per screen. A service that is down, a URL that does not resolve, and a planned outage are their own pages, and they are the ones nobody writes until the morning they are needed.
 
 **Do:**
-- Give a service-unavailable page the outage's shape: whether it was planned, when it ends, what the user can do meanwhile.
+- Give a service-unavailable page the outage's shape: whether it was planned, when it ends, what the end user can do meanwhile.
 - Give a not-found page a way onward. Search, the section index, the home page.
 - Keep these pages independent of the runtime that just failed. A failure page rendered by the broken app is a failure page nobody sees.
 
@@ -190,20 +190,20 @@ Source: GOV.UK's service-unavailable, page-not-found, and problem-with-the-servi
 
 An empty screen explains why it is empty and offers the action that fills it.
 
-**Empty is only reachable from a settled request.** This is a state-machine rule, not a copy rule, and it is the most common way the class of bug ships. NN/g: "the system defaults to a misleading system-status message: declaring that there are no items to display, only to replace it with content after the process is completed." Its best case is that people wait it out and come away distrusting the app. Its worst case, which NN/g attributes to most users, is that they act on the first message and never see the content at all.
+**Empty is only reachable from a settled request.** This is a state-machine rule, not a copy rule, and it is the most common way the class of bug ships. NN/g: "the system defaults to a misleading system-status message: declaring that there are no items to display, only to replace it with content after the process is completed." Its best case is that people wait it out and come away distrusting the app. Its worst case, which NN/g attributes to most end users, is that they act on the first message and never see the content at all.
 
 **Do:**
 - Name the reason ("No projects yet"), then give the control that resolves it ("Create project").
-- Treat a first-run empty state as onboarding. It is the one screen every new user sees, and it is where an unused feature has its best chance of being discovered.
+- Treat a first-run empty state as onboarding. It is the one screen every new end user sees, and it is where an unused feature has its best chance of being discovered.
 - Offer a recovery path for empty search results: a correction, a broader query, a way back.
 - Let a deliberately-cleared list read as an achievement rather than a void.
 
 **Don't:**
 - Render the empty state from an unsettled request. Loading and empty are different states with different copy, and conflating them makes the screen contradict itself.
 - Render nothing at all. A blank region is indistinguishable from a failed one.
-- Ship bare text with no action. "No results found" tells the user what they already knew.
+- Ship bare text with no action. "No results found" tells the end user what they already knew.
 
-Why: empty is the state where the user has the least to go on and the most need for direction.
+Why: empty is the state where the end user has the least to go on and the most need for direction.
 
 **WCAG 1.1.1 (A):** an empty state carried by an illustration alone says nothing to a screen reader. The message goes in text.
 
@@ -211,7 +211,7 @@ Why: empty is the state where the user has the least to go on and the most need 
 
 ## 5. Success Feedback
 
-Scale the response to the size of what the user did.
+Scale the response to the size of what the end user did.
 
 | Action | Response |
 |---|---|
@@ -220,12 +220,12 @@ Scale the response to the size of what the user did.
 | Milestone (finished onboarding, cleared a queue) | A celebration, used sparingly |
 
 **Do:**
-- Confirm anything irreversible or anything involving money in a way the user cannot miss.
+- Confirm anything irreversible or anything involving money in a way the end user cannot miss.
 - State what actually happened, not that a request succeeded. "You're booked on the 4:15" beats "Success".
-- Build a consequential confirmation as a record, since that is how people use it. GOV.UK's must-include list: a reference number where there is one, what happens next and when, how to reach the service, links to whatever the user is likely to need next, a route to leave feedback, and a way to save a copy. Add a URL that still works when someone bookmarks it and comes back.
+- Build a consequential confirmation as a record, since that is how people use it. GOV.UK's must-include list: a reference number where there is one, what happens next and when, how to reach the service, links to whatever the end user is likely to need next, a route to leave feedback, and a way to save a copy. Add a URL that still works when someone bookmarks it and comes back.
 
 **Don't:**
-- Let a consequential action resolve into a reset button and no other change. The user is left guessing whether they were charged.
+- Let a consequential action resolve into a reset button and no other change. The end user is left guessing whether they were charged.
 - Put the reference number only in an email. The email is the thing that fails to arrive.
 - Fire a full-screen celebration for a routine save. Overused, it becomes something to dismiss.
 
@@ -281,14 +281,14 @@ A field-level problem belongs at the field. *When* to check it is contested, and
 - Show a character count against its limit while typing.
 - Confirm a field that passed, not only one that failed. It stops someone re-reading an answer they already got right. Widely recommended; no study of the positive signal on its own was reachable, so treat it as a default.
 - Mark the *optional* fields. GOV.UK inverts the usual convention: "in most contexts, add '(optional)' to the labels of optional fields", and "never mark mandatory fields with asterisks". It gives no reason; the working one is that an asterisk is an unexplained glyph.
-- On a failed submit: render an error summary at the top under the heading "There is a problem", move keyboard focus to it, prefix the page title with "Error:", and link each entry to its field. Word each summary entry identically to the message beside its input, since a reader who follows the link and meets different wording has to work out whether it is the same problem. Keep every answer the user already gave, passing and failing both.
+- On a failed submit: render an error summary at the top under the heading "There is a problem", move keyboard focus to it, prefix the page title with "Error:", and link each entry to its field. Word each summary entry identically to the message beside its input, since a reader who follows the link and meets different wording has to work out whether it is the same problem. Keep every answer the end user already gave, passing and failing both.
 
 **Don't:**
-- Disable the submit button. A disabled button is not focusable, so someone tabbing through cannot reach it to find out why it is dead; it has poor contrast; and a user who fixes the last field may never notice it came alive. GOV.UK: "Disabled buttons have poor contrast and can confuse some users, so avoid them if possible." Let the submit happen and answer with an error summary. If you must disable, `aria-disabled="true"` keeps the button focusable where the native `disabled` attribute does not, but it only labels the state: drop the native attribute and block the submit in your own handler, or you have shipped a button that still fires.
+- Disable the submit button. A disabled button is not focusable, so someone tabbing through cannot reach it to find out why it is dead; it has poor contrast; and an end user who fixes the last field may never notice it came alive. GOV.UK: "Disabled buttons have poor contrast and can confuse some users, so avoid them if possible." Let the submit happen and answer with an error summary. If you must disable, `aria-disabled="true"` keeps the button focusable where the native `disabled` attribute does not, but it only labels the state: drop the native attribute and block the submit in your own handler, or you have shipped a button that still fires.
 - Clear fields on a validation failure. Making someone retype a correct answer because a different one was wrong is the fastest way to lose them.
 - Let someone exceed a limit freely and discover it only at submit.
 
-**When to validate is genuinely contested.** GOV.UK says wait for submit: "Do not validate when the user moves away from a field. Wait until they try to move to the next part of the service." Baymard's testing supports on-blur: "the validity of each field input should be checked when the user leaves the field." Both camps agree on the negative, so treat that as the rule: never raise an error against a field the user has not finished with.
+**When to validate is genuinely contested.** GOV.UK says wait for submit: "Do not validate when the user moves away from a field. Wait until they try to move to the next part of the service." Baymard's testing supports on-blur: "the validity of each field input should be checked when the user leaves the field." Both camps agree on the negative, so treat that as the rule: never raise an error against a field the end user has not finished with.
 
 A constraint display is not validation. The live password checklist and the character counter above show progress toward a valid answer; neither raises an error, so neither is inside this argument.
 
@@ -300,8 +300,8 @@ Two on-blur bugs to handle if you go that way: a password manager filling a fiel
 
 **Do:**
 - Start at one question per page. GOV.UK: "Asking just one question per question page helps users understand what you're asking them to do, and focus on the specific question and its answer." Splitting a long form has an institutional source of its own; it does not need Hick's Law (§8.2). Treat any conversion percentage quoted alongside it as unsourced until you see the study.
-- Pre-fill anything the user already gave you in this flow. **WCAG 3.3.7 (A)** makes that a conformance requirement rather than a courtesy, and browser autofill does not discharge it: the content has to supply the value.
-- Keep the browser back button working, and put a back link on the page too. Back returns to the previous page in the state the user left it, with the documented exception of a step whose action has already been performed.
+- Pre-fill anything the end user already gave you in this flow. **WCAG 3.3.7 (A)** makes that a conformance requirement rather than a courtesy, and browser autofill does not discharge it: the content has to supply the value.
+- Keep the browser back button working, and put a back link on the page too. Back returns to the previous page in the state the end user left it, with the documented exception of a step whose action has already been performed.
 - Warn before a session expires, and let the work survive it. **WCAG 2.2.1 (A)** requires a way to turn off, adjust, or extend any time limit the content sets.
 
 **Don't:**
@@ -327,7 +327,7 @@ Normalize input instead of rejecting it.
 - Trim whitespace, accept both letter cases, tolerate a pasted value carrying formatting.
 
 **Don't:**
-- Reject a semantically valid value over its punctuation. The user has given you the right answer and you have said no.
+- Reject a semantically valid value over its punctuation. The end user has given you the right answer and you have said no.
 
 Why: format rejection is the cheapest failure to eliminate. The parsing is a few lines and it removes an entire class of user error.
 
@@ -337,7 +337,7 @@ Why: format rejection is the cheapest failure to eliminate. The parsing is a few
 - Let people paste into a password or one-time-code field. **WCAG 3.3.8 (AA)** names password managers and copy-paste as the mechanisms that keep authentication off memory, so blocking paste is a conformance problem before it is a usability one.
 - Set a minimum length of at least 8 characters, per GOV.UK. Set no maximum: a cap breaks generated passwords, and a cap that exists at all suggests the password is being stored rather than hashed.
 - Say the sign-in failed without saying which half was wrong.
-- Clear the password field after a failed sign-in. This is the documented exception to keeping the user's answers; every other field stays filled.
+- Clear the password field after a failed sign-in. This is the documented exception to keeping the end user's answers; every other field stays filled.
 
 **Don't:**
 - Force periodic password changes. It buys nothing and it produces the same password with a rising digit.
@@ -348,14 +348,14 @@ Why: format rejection is the cheapest failure to eliminate. The parsing is a few
 
 ### 8.1 Jakob's Law: Meet the Existing Expectation
 
-Users spend most of their time on other products, so they expect yours to work like those.
+End users spend most of their time on other products, so they expect yours to work like those.
 
 **Do:**
-- Establish what the convention is by looking at the products your users already use. A convention is observable; a remembered one is a guess.
+- Establish what the convention is by looking at the products your end users already use. A convention is observable; a remembered one is a guess.
 - Put a standard control where that convention puts it, and spend novelty budget on what makes the product different.
 
 **Don't:**
-- Move a standard control to be distinctive. The cost lands on every user, every session.
+- Move a standard control to be distinctive. The cost lands on every end user, every session.
 - Repeat a convention you have not checked. "The cart goes top right" is probably true and presently uncited: no reachable published source states a conventional cart position. That is what most placement folklore looks like from the inside.
 
 Attribution: the phrase is Jakob Nielsen's own coinage, restating his fourth heuristic, Consistency and Standards: "Users should not have to wonder whether different words, situations, or actions mean the same thing. Follow platform and industry conventions." The research sits under the heuristic set, refined from a factor analysis of 249 usability problems, not under the aphorism. Which placement counts as conventional differs between desktop and phone, and between left-to-right and right-to-left locales; see `references/mobile.md`.
@@ -374,19 +374,19 @@ Decision time grows with the number and complexity of options.
 - Render a 200-item menu and call it complete.
 - Put every category into one dropdown because the data model has them.
 
-Attribution, and it does not hold up as usually applied: Hick and Hyman timed decisions in response to clear visual stimuli with a known, pre-learned option set. Using the law to model menu search is a documented misuse, and the real cost is worse than the law implies. A novice's search time is linear in menu length rather than logarithmic, and the logarithmic regime arrives only once the user is expert and the items have stayed where they were. Cut the list because searching it is slow, not because a law says so.
+Attribution, and it does not hold up as usually applied: Hick and Hyman timed decisions in response to clear visual stimuli with a known, pre-learned option set. Using the law to model menu search is a documented misuse, and the real cost is worse than the law implies. A novice's search time is linear in menu length rather than logarithmic, and the logarithmic regime arrives only once the end user is expert and the items have stayed where they were. Cut the list because searching it is slow, not because a law says so.
 
 ### 8.3 Progressive Disclosure: Show What Is Needed Now
 
 Surface what the current step requires. Keep the rest one interaction away.
 
-**Hide by frequency of need, never by importance.** That is this skill's tie-break between disclosure and Nielsen's sixth heuristic, recognition over recall ("Minimize the user's memory load by making elements, actions, and options visible"). The heuristic is Nielsen's; the tie-break is not, and no source states one. The two pull in opposite directions and frequency is what settles them in practice: a rarely-used option behind a disclosure is fine, an option the user has to remember exists is not. So the control that opens the disclosure stays visible even when its contents do not.
+**Hide by frequency of need, never by importance.** That is this skill's tie-break between disclosure and Nielsen's sixth heuristic, recognition over recall ("Minimize the user's memory load by making elements, actions, and options visible"). The heuristic is Nielsen's; the tie-break is not, and no source states one. The two pull in opposite directions and frequency is what settles them in practice: a rarely-used option behind a disclosure is fine, an option the end user has to remember exists is not. So the control that opens the disclosure stays visible even when its contents do not.
 
 **Do:**
 - Reveal advanced options on request rather than by default.
 - Let typing filter a large option set, so the full list never needs rendering at once. A slash-command menu is this pattern.
 - Ask of every element on a screen whether it is needed at this moment.
-- Carry context forward instead of making the user hold it. A confirmation naming what it is about to delete is recognition; "are you sure?" is recall.
+- Carry context forward instead of making the end user hold it. A confirmation naming what it is about to delete is recognition; "are you sure?" is recall.
 - Put help where the task is. Nielsen's tenth heuristic accepts that documentation is sometimes necessary, and a field hint or an empty state is where it belongs before a help section is.
 
 **Don't:**
@@ -399,12 +399,12 @@ Inherent complexity cannot be removed, only moved. Decide who carries it.
 
 **Do:**
 - Take the burden into the system. Detect the intro's timestamps and offer one skip control. Remember the card. Infer the timezone.
-- Weigh it honestly: an engineer's week against a minute of every user's time, repeated.
+- Weigh it honestly: an engineer's week against a minute of every end user's time, repeated.
 
 **Don't:**
-- Export a modeling problem to the user as a form field. A required field that exists because the backend needs disambiguation is complexity you declined to absorb.
+- Export a modeling problem to the end user as a form field. A required field that exists because the backend needs disambiguation is complexity you declined to absorb.
 
-Attribution: Larry Tesler, through an interview in Dan Saffer's *Designing for Interaction*. His framing, that a million users each wasting a minute on something an engineer could have solved in a week is a penalty charged to the wrong party, is an argument rather than a measurement, and it carries a published counter. Bruce Tognazzini holds that people resist reductions in the complexity of their lives, so a simplified application just gets used for harder tasks and the saved minute is never banked. Absorbing complexity is still the right default. Expecting the arithmetic to land is not.
+Attribution: Larry Tesler, through an interview in Dan Saffer's *Designing for Interaction*. His framing, that a million end users each wasting a minute on something an engineer could have solved in a week is a penalty charged to the wrong party, is an argument rather than a measurement, and it carries a published counter. Bruce Tognazzini holds that people resist reductions in the complexity of their lives, so a simplified application just gets used for harder tasks and the saved minute is never banked. Absorbing complexity is still the right default. Expecting the arithmetic to land is not.
 
 ---
 
@@ -446,7 +446,7 @@ Nielsen's ten, unchanged since 1994 and derived from a factor analysis of 249 us
 | **Submission** | Validate server-side always; review step before anything consequential | Trusting client-side validation; HTML5 messages mixed with your own |
 | **Credentials** | Allow paste, no max length, clear only the password after a failed sign-in | Blocking paste; forced rotation; naming which half was wrong |
 | **Input** | Normalize formatting server-side | Rejecting a valid value over its punctuation |
-| **Convention** | Standard controls where the products your users know put them | Novelty spent on relocating basics; citing folklore as convention |
+| **Convention** | Standard controls where the products your end users know put them | Novelty spent on relocating basics; citing folklore as convention |
 | **Choice** | Cut, filter, curate, keep positions stable, give experts a shortcut | 200-item menus; a nav that reorders itself |
 | **Disclosure** | Hide by frequency of need; advanced options on request | Hiding by importance; the primary action behind a reveal |
 | **Complexity** | Absorb it into the system | A form field that exists for the backend's benefit |

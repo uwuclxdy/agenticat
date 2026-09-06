@@ -44,7 +44,7 @@ metadata:
 
 ## Rules
 
-- Never reserve, publish, or rename anything. This flow is report only; renames require user's call.
+- Never reserve, publish, or rename anything. This flow is report only; renames require the user's call.
 - "Free" claims must come from an actual lookup this session, not memory.
 - If every candidate is taken, say so and generate a second batch instead of stretching a bad fit. Taken by an abandoned or dead project still counts as taken. Do not attempt reclaim, transfer, or dispute (each registry has its own policy for that). Report it as taken and let the user decide.
 - Registry and WebSearch checks are not a legal trademark search. Flag trademark-adjacent hits. Tell the user to run a formal search (USPTO, EUIPO, local registry) before any commercial release.

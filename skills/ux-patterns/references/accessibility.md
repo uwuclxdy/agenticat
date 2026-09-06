@@ -18,7 +18,7 @@ A criterion here is a published conformance requirement. A repo convention does 
 | Empty state | Carries text, not only an illustration | 1.1.1 (A) |
 | Success message | Announced without stealing focus | 4.1.3 (AA) |
 | Form | Every input labeled or carrying instructions; required and invalid states exposed programmatically, not by color or an asterisk alone | 3.3.2 (A), 4.1.2 (A) |
-| A multi-step process | Anything the user already entered in the same process is auto-populated or available to select. Browser autofill does not discharge this: "it is the content (the website) that needs to provide the stored information" | 3.3.7 (A) |
+| A multi-step process | Anything the end user already entered in the same process is auto-populated or available to select. Browser autofill does not discharge this: "it is the content (the website) that needs to provide the stored information" | 3.3.7 (A) |
 | Password or verification-code field | Paste works, and a password manager or the user agent can fill it. Manual transcription of a one-time code is a failure | 3.3.8 (AA) |
 | Session expiry, or any time limit the content sets | One of turn off, adjust, or extend. Only the Extend option carries a warning-before-expiry requirement | 2.2.1 (A) |
 | Payment, booking, deletion | Reversible, checked, or confirmed before it finalizes | 3.3.4 (AA) |
@@ -31,7 +31,7 @@ A modal is **exempt** from the status-message criterion, and a toast is not. WCA
 
 > An author displays an error message in a dialog. Since the dialog takes focus, it is defined as > a change of context and does not meet the definition of a status message. As a result of taking > focus, the new change of context is already announced by the screen reader, and thus does not > need to be included in the scope of this success criterion.
 
-So "toast or modal" is not a free choice at the accessibility layer. A modal announces itself by taking focus, which is the same reason it interrupts whatever the user was doing. A toast announces nothing on its own and needs the right role to exist for a screen reader at all.
+So "toast or modal" is not a free choice at the accessibility layer. A modal announces itself by taking focus, which is the same reason it interrupts whatever the end user was doing. A toast announces nothing on its own and needs the right role to exist for a screen reader at all.
 
 ## Criteria Reference
 
@@ -73,10 +73,10 @@ The Authoring Practices Guide answers it directly, though, and points at the cri
 
 > It is also important to avoid designing alerts that disappear automatically. An alert that > disappears too quickly can lead to failure to meet WCAG 2.0 success criterion 2.2.3.
 
-Treat that as the working answer: do not auto-dismiss anything carrying information the user needs. The safe build:
+Treat that as the working answer: do not auto-dismiss anything carrying information the end user needs. The safe build:
 
 - Give the toast a role, so its content reaches AT regardless of how long it stays up.
-- Keep anything a user must act on out of a timed dismissal entirely. Put it inline or in a dialog.
+- Keep anything an end user must act on out of a timed dismissal entirely. Put it inline or in a dialog.
 - Leave a persistent record of dismissed messages where the information still matters.
 
 **Optimistic UI needs a real failure path.** Announcing success before the server confirms is not addressed by name anywhere in the spec, and 3.3.4 is the wrong criterion to reach for: its options all govern review and correction *before* a submission finalizes, not when a success message may render. Its Reversible option points the other way: optimistic rendering backed by a real undo satisfies it.

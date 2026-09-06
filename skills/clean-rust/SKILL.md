@@ -121,7 +121,7 @@ Default posture: `unsafe_code = "forbid"` until a concrete need exists. When it 
 ## Process
 
 - One PR = one focused change; formatting fixes, new workflows, and features travel separately.
-- A technically-correct change that breaks a user contract (CLI flags, config keys, env semantics) keeps the legacy path, ships the new one alongside, and milestones the removal for the next major. Warn only on genuine old-vs-new conflicts: users on only-old or only-new see nothing.
+- A technically-correct change that breaks a user contract (CLI flags, config keys, env semantics) keeps the legacy path, ships the new one alongside, and milestones the removal for the next major. Warn only on genuine old-vs-new conflicts: end users on only-old or only-new see nothing.
 - Feature-detect external tools by parsing `--version` output; where that's unreliable, sniff for specific stderr messages. Either way, probe with plain `.output()` so a failed probe stays non-fatal.
 
 ## Pre-Submit Checklist

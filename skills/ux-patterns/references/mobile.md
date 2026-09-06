@@ -56,10 +56,10 @@ The web-to-mobile component mapping is not one to one, and the vocabulary is not
 - Show one snackbar at a time, carrying no icon. Material states both. A message that needs an icon needs a different component.
 
 **Don't:**
-- Replace a centered modal with a bottom sheet because it is easier to reach. Material ships a standard bottom sheet that does not block and a modal one that does, under the same name, so the swap silently changes whether the user has to answer.
+- Replace a centered modal with a bottom sheet because it is easier to reach. Material ships a standard bottom sheet that does not block and a modal one that does, under the same name, so the swap silently changes whether the end user has to answer.
 - Assume Apple has a toast. The closest HIG advice is to put the information in context instead: for an unavailable server connection, "Mail displays an indicator that people can choose to learn more".
 
-**Conflict worth knowing:** Material specifies snackbar auto-dismiss in the 4 to 10 second range. The ARIA Authoring Practices Guide says to avoid alerts that disappear on a timer at all, citing WCAG 2.2.3. Both are real positions. Resolve it by never putting information the user needs into an auto-dismissing component, whatever Android permits.
+**Conflict worth knowing:** Material specifies snackbar auto-dismiss in the 4 to 10 second range. The ARIA Authoring Practices Guide says to avoid alerts that disappear on a timer at all, citing WCAG 2.2.3. Both are real positions. Resolve it by never putting information the end user needs into an auto-dismissing component, whatever Android permits.
 
 ## Loading Bands Are Tighter Than the Web Ones
 
@@ -87,14 +87,14 @@ In Arabic, Hebrew, Farsi, and Urdu locales the layout mirrors.
 
 **Do:**
 - Set the input type so the right keyboard opens (`type="email"`, `inputmode="numeric"`).
-- Wire autofill hints (`autocomplete="one-time-code"`, `"tel"`, `"postal-code"`). This is Tesler's Law at its cheapest: a few attributes move real work off the user.
+- Wire autofill hints (`autocomplete="one-time-code"`, `"tel"`, `"postal-code"`). This is Tesler's Law at its cheapest: a few attributes move real work off the end user.
 - Keep the focused field and its error message clear of the keyboard, which takes a large share of a phone screen the moment it opens.
-- Validate credential fields as the user types. Apple prescribes it for username and password, Material for password. Both single out credentials by name.
+- Validate credential fields as the end user types. Apple prescribes it for username and password, Material for password. Both single out credentials by name.
 
 **Don't:**
 - Rely on a hover state to explain a control. There is no hover.
-- Carry the web canon's "never validate before the user has finished" rule onto a phone unchecked. Neither vendor endorses it as a universal. Apple's general form guidance leans the other way entirely: "When you verify values as soon as people enter them ... you give them the opportunity to correct errors right away." Its field-level page is the precise version, and it is per-field-type: validate an email on blur, credentials before blur. Choose by field, not by platform.
+- Carry the web canon's "never validate before the end user has finished" rule onto a phone unchecked. Neither vendor endorses it as a universal. Apple's general form guidance leans the other way entirely: "When you verify values as soon as people enter them ... you give them the opportunity to correct errors right away." Its field-level page is the precise version, and it is per-field-type: validate an email on blur, credentials before blur. Choose by field, not by platform.
 
 ## Motion
 
-Both platforms expose a system-level reduced-motion setting, and honoring it is the mobile form of the `prefers-reduced-motion` rule in `references/accessibility.md`. Apple's own list of what to do when Reduce Motion is on: tighten animation springs, track animations directly with the user's gesture, avoid animating depth changes in z-axis layers, replace axis transitions with fades, and avoid animating into and out of blurs.
+Both platforms expose a system-level reduced-motion setting, and honoring it is the mobile form of the `prefers-reduced-motion` rule in `references/accessibility.md`. Apple's own list of what to do when Reduce Motion is on: tighten animation springs, track animations directly with the end user's gesture, avoid animating depth changes in z-axis layers, replace axis transitions with fades, and avoid animating into and out of blurs.

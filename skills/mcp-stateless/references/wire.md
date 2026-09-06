@@ -79,7 +79,7 @@ No handshake. Each request declares its version and the server accepts or reject
     "data": { "supported": ["2026-07-28", "2025-11-25"], "requested": "1900-01-01" } } }
 ```
 
-The client **SHOULD** pick a mutually supported version from `supported` and retry, or surface an error. A modern-only server **SHOULD** name its supported versions in whatever error it returns to an `initialize` request on any transport: a legacy client has no fall-forward path, so that message may be the only diagnostic a user ever sees.
+The client **SHOULD** pick a mutually supported version from `supported` and retry, or surface an error. A modern-only server **SHOULD** name its supported versions in whatever error it returns to an `initialize` request on any transport: a legacy client has no fall-forward path, so that message may be the only diagnostic an end user ever sees.
 
 ## Error Codes
 
@@ -151,7 +151,7 @@ The wire format also works unchanged over Unix domain sockets or TCP. Custom tra
 Servers **MUST** put `ttlMs` and `cacheScope` on `"complete"` results of six operations: `server/discover`, `tools/list`, `prompts/list`, `resources/list`, `resources/templates/list`, `resources/read`.
 
 - `ttlMs`: integer milliseconds, **MUST** be `>= 0`. `0` means immediately stale. Absent means clients assume `0`, which should only happen against an older server. Negative is ignored and treated as `0`.
-- `cacheScope`: `"public"` or `"private"`. `"public"` means the response holds no user-specific data, so any client, shared gateway, or proxy **MAY** store it and serve it to any user. `"private"` means a cached copy **MAY** be reused within the same authorization context and **MUST NOT** be shared across authorization contexts. A different access token requires a different cache. That binds client-side caches too, not only intermediaries.
+- `cacheScope`: `"public"` or `"private"`. `"public"` means the response holds no user-specific data, so any client, shared gateway, or proxy **MAY** store it and serve it to any requester. `"private"` means a cached copy **MAY** be reused within the same authorization context and **MUST NOT** be shared across authorization contexts. A different access token requires a different cache. That binds client-side caches too, not only intermediaries.
 
 The cache key is the method plus the parameters that affect the result (`uri` for `resources/read`, `cursor` for a paginated list). Results produced by an MRTR retry, meaning anything carrying `inputResponses` or `requestState`, **MUST NOT** be cached.
 

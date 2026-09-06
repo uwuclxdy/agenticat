@@ -23,7 +23,7 @@ The working examples are `nano`, `vim`, and `menuconfig`, and what they share is
 > The answer is that they allow you to hide the cursor entirely... [In menuconfig] the cursor stays > pinned to that list. It doesn't jump to the bottom right to update a clock, then to the top left > to update a title. The spatial complexity is kept low enough that the screen reader never gets > "lost."
 
 **Do:**
-- Let the cursor be hidden, or pin it to the one list or field the user is working in.
+- Let the cursor be hidden, or pin it to the one list or field the end user is working in.
 - Keep it there. A cursor that leaves to repaint a timer and comes back has already cost the read.
 
 ## Animated Indicators Are the Common Failure
@@ -39,7 +39,7 @@ The mechanism, independently described:
 
 **Do:**
 - Use a static text line naming the action, updated rarely, instead of a per-tick redraw.
-- If you want the animation for sighted users, gate it behind the accessible-mode check below.
+- If you want the animation for sighted end users, gate it behind the accessible-mode check below.
 
 **Don't:**
 - Ship a cursor-redraw spinner or a live elapsed-time counter as the only progress affordance.
@@ -54,7 +54,7 @@ A full-screen app with no linear fallback has no accessibility story at all.
 
 ## Color
 
-Use the terminal's indexed ANSI-16 palette rather than hardcoded truecolor, so a user's own high-contrast or colorblind-safe theme applies. GitHub aligned its whole palette for this:
+Use the terminal's indexed ANSI-16 palette rather than hardcoded truecolor, so an end user's own high-contrast or colorblind-safe theme applies. GitHub aligned its whole palette for this:
 
 > most terminals only support changing a limited subset of colors: namely, the sixteen colors in > the ANSI 4-bit color table. The GitHub CLI has made extensive efforts to align our color palettes > to 4-bit colors so our users can completely customize their experience using their terminal > preferences.
 
@@ -66,7 +66,7 @@ The host terminal decides a lot of this, and a practitioner report found large d
 
 > terminator is fully accessible, including split windows... because terminator uses separate GUI > widgets for each split pane, unlike terminal agnostic split solutions like tmux and screen, > creating vertical panes does not result in the screen reader reading both the line on the left > and the line on the right where the cursor is at... QT based terminals are to my knowledge not > accessible at all.
 
-So a user inside `tmux` splits may get jumbled output no matter what your app does. Worth knowing before attributing a report to your own code. This is one first-person account, not corroborated.
+So an end user inside `tmux` splits may get jumbled output no matter what your app does. Worth knowing before attributing a report to your own code. This is one first-person account, not corroborated.
 
 ## Open
 
