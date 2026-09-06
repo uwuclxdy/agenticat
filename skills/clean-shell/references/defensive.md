@@ -41,6 +41,22 @@ case "$MIN" in *[!0-9]*|'') echo "MIN must be integer" >&2; exit 2;; esac
 safe="${HOST//[^0-9A-Za-z]/_}"       # sanitize untrusted string used as a filename
 ```
 
+`$(( ))` is a code-execution sink, not a number parser. It re-expands its operand as an expression, so a value of `99+PATH[$(cmd)]` runs `cmd`, and `set -u` does not stop it. `printf '%d'` is a different hazard, not the fix: it never executes, it takes the leading digits and warns to stderr, so `99+PATH[x]` prints `99` and the run continues on a wrong number. Guard before either:
+
+```bash
+[[ $kb =~ ^[0-9]+$ ]] || continue     # or the `case` guard above
+printf '%d\n' "$(( kb / 1024 ))"
+```
+
+Text another process controls is untrusted input even when a local file carries it. `/proc/*/comm` and `/proc/*/cmdline` are set by that process and hold arbitrary bytes, newlines and tabs included, so a root script that formats them into a delimited record is a root shell. Strip every delimiter you later split on, not only NUL:
+
+```bash
+argv=(); mapfile -d '' -t argv < "/proc/$pid/cmdline"   # NUL-separated, forkless
+cmd="${argv[*]}"; cmd="${cmd//$'\n'/ }"; cmd="${cmd//$'\t'/ }"
+```
+
+`tr '\0' ' '` alone is the trap: it converts NULs and leaves the newlines, so one record silently becomes two and every later field shifts a column. Test such a guard with a plant big enough to reach the code path that formats it, or a clean result only proves the payload never got there.
+
 ## Cleanup with Trap
 
 Every `mktemp` gets an EXIT trap. Manual per-path `rm` leaks the moment someone adds a new early exit.
