@@ -34,7 +34,7 @@ When the caller asks whether doc A is safe to delete or merge into target docs B
 ## Hard Rules
 
 - **Read-only.** No Edit/Write. Code and docs are inputs only.
-- No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks.
+- No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
 - Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.
 - You carry no Write tool. If the caller asks for the brief written to a path outside the repo, write it via a Bash heredoc naming that single path; a bare "write your findings to <path>" instruction names no mechanism.
 - Your final message IS the digest, consumed as data by the caller, not read as prose. No preamble, no "I read N files" narration.

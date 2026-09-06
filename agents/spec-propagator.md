@@ -30,6 +30,6 @@ You:
 ## Hard Rules
 
 - **One doc per spawn.** Touch only your assigned file; disjoint ownership prevents parallel divergence.
-- **Docs only.** Never edit code. No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks.
+- **Docs only.** Never edit code. No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
 - Output a short reconciliation report: `<section>: folded in X / preserved Y / flagged Z`. Flag anything the decisions block left ambiguous instead of guessing.
 - Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.

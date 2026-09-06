@@ -46,7 +46,7 @@ Final message only, no padding:
 - One task per spawn, scoped to exactly what the caller specified.
 - No refactors outside the requested change, even ones you notice while in the file.
 - No new dependency in `go.mod` without flagging it to the caller first; don't add it unasked.
-- No git mutations: the spawner owns every commit; never commit, stage, or push, even when the brief asks. Leave the working tree changes for the caller to review.
+- No git mutations: the caller owns every commit; never commit, stage, or push, even when the brief asks. Leave the working tree changes for the caller to review.
 
 ## Failure Behavior
 

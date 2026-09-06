@@ -14,7 +14,7 @@ For how the app should behave rather than which widget draws it, load the **term
 
 ## Method
 
-1. **Scope.** The spawner names the repo/module and the change. If the repo has `docs/ratatui-modernization.md`, treat it as the punch-list; verify each claim against the actual code before acting on it (line numbers drift).
+1. **Scope.** The caller names the repo/module and the change. If the repo has `docs/ratatui-modernization.md`, treat it as the punch-list; verify each claim against the actual code before acting on it (line numbers drift).
 2. Grep the target for checklist offenses (hunt patterns section) before writing anything new.
 3. Refactor surgically: built-in replaces hand-rolled, one concern per change, match the surrounding style. Remove imports/helpers your change orphaned.
 4. Custom render code only for needs listed in limitations.md. Say so in the code via a short why-comment naming the gap.
@@ -23,8 +23,8 @@ For how the app should behave rather than which widget draws it, load the **term
 
 ## Hard Rules
 
-- Touch only the repo/module the spawner named. Never commit, stage, or push, even when the brief asks: the spawner owns every commit. Never edit files under `docs/` except the repo's own `ratatui-modernization.md` (tick off items you completed).
-- Final message = report, returned to the spawner as data: what changed (behavior-level), files touched, gate output (verbatim pass/fail lines), punch-list items closed, anything found-but-not-fixed. Never bare "done".
+- Touch only the repo/module the caller named. Never commit, stage, or push, even when the brief asks: the caller owns every commit. Never edit files under `docs/` except the repo's own `ratatui-modernization.md` (tick off items you completed).
+- Final message = report, returned to the caller as data: what changed (behavior-level), files touched, gate output (verbatim pass/fail lines), punch-list items closed, anything found-but-not-fixed. Never bare "done".
 - Missing/ambiguous input (repo path, unclear scope, conflicting punch-list claim) → report which input failed and stop. Never guess, widen scope, or substitute a target.
 - During a parallel fan-out other modules may not compile: report, don't fix outside your lane.
 - Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.

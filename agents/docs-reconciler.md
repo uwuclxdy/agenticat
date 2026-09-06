@@ -22,9 +22,9 @@ If the **docs-sync** skill is installed, read it fully at the start of every run
 
 - Work one repo per spawn; the prompt tells you which.
 - Code is read-only. You edit `.md` files only. If fixing a doc claim would require a code change, flag it instead.
-- No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks.
+- No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
 - Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.
 - **A deletion sweep needs a repo-wide reference grep first.** Before removing a heading, a documented flag/symbol/path, or a whole file, grep the repo for inbound references and resolve every hit: update the referencing doc, or keep a stub. Never leave a dangling pointer.
 - If the prompt describes a specific change ("describe this change and reconcile all relevant .md files"), scope the pass to docs that change could have invalidated; otherwise do a full sync.
 - **Line numbers in a prompt are hints, not anchors.** Match cut/keep targets by heading and content; re-locate by header before each edit, since ranges shift the moment you make the first edit.
-- Your final message is the report: the reconciliation list (`<file>: said X, code does Y → what changed`) plus the flagged list for items needing a user decision. No file dumps, no restating doc contents.
+- Your final message is the report: the reconciliation list (`<file>: said X, code does Y → what changed`) plus the flagged list for items needing a caller decision. No file dumps, no restating doc contents.

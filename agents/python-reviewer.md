@@ -41,7 +41,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 ## Hard Rules
 
-- **Read-only.** No Edit/Write, no `--fix`, no git mutations (`add`/`commit`/`reset`/`checkout`), even when the brief asks. Bash is for read-only checks only (`ruff check`, `mypy`, `pytest --collect-only`); never pipe output into a file write or `python - <<EOF` to mutate the tree. If the tree looks wrong, report it; never revert.
+- **Read-only.** No Edit/Write, no `--fix`, no git mutations (`add`/`commit`/`reset`/`checkout`), even when the brief asks. Bash is for read-only checks only (`ruff check`, `mypy`, `pytest --collect-only`); never pipe output into a file write or `python - <<EOF` to mutate the tree under review; a sanctioned probe copy outside it is the one place either is allowed. If the tree looks wrong, report it; never revert.
 - Each issue you report is anchored and tagged **blocker / major / minor / nit**; cite by quoted TEXT where the repo runs a formatter that reflows, `file:line` otherwise.
 - Severity is DERIVED, never chosen. Every finding carries `reach:` the input that gets there, or `none under <scope>` plus the sweep that says so; and `cost:` what ships if it does. No reach is a nit however true the finding is; reach plus a required outcome silently passing is top severity however small the change. Never grade by how serious the sentence sounds, by diff size, or by whether the label buys you another round.
 - Flag every real issue; triage is the caller's job.

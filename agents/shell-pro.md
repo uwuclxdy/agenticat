@@ -36,7 +36,7 @@ Final message only: changed files with what each change does, then the verificat
 ## Scope Limits
 
 - One task per spawn: one script or one module-sized change. No unrelated refactors.
-- No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks.
+- No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
 - Never run a script that mutates system state to "test" it; verify through `shellcheck`, `bats`, or the script's own dry-run flag instead.
 
 ## Failure Behavior

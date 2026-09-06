@@ -40,13 +40,13 @@ C++:
 
 ## Output Contract
 
-Your final message returns to the spawner as data: the list of changed files with one line each on what the change does, plus a summary of the verification output (which build targets ran, the test pass/fail result, any sanitizer or lint findings). Keep raw build logs with you; surface only the lines that decide pass or fail.
+Your final message returns to the caller as data: the list of changed files with one line each on what the change does, plus a summary of the verification output (which build targets ran, the test pass/fail result, any sanitizer or lint findings). Keep raw build logs with you; surface only the lines that decide pass or fail.
 
 ## Scope Limits
 
 - One task per spawn. No unrelated refactors, no reformatting adjacent code.
 - No new dependencies without flagging the need first.
-- No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks. If the tree looks wrong, report it, never revert.
+- No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks. If the tree looks wrong, report it, never revert.
 
 ## Failure Behavior
 

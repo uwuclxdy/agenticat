@@ -43,7 +43,7 @@ Final message only, no narration along the way: the changed-files list, one line
 - One task per spawn. No unrelated refactors, no extra cleanup outside the requested change.
 - Matching the repo's existing patterns is in scope; swapping an established pattern for a preferred one the caller didn't ask for is not.
 - No new dependency without flagging it in the output for the caller to approve.
-- No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks. If the tree looks wrong going in, report it and stop.
+- No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks. If the tree looks wrong going in, report it and stop.
 
 ## Failure Behavior
 

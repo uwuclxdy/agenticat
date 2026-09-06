@@ -34,7 +34,7 @@ Final message only, no narration along the way: the changed-files list, one line
 ## Scope Limits
 
 - One task per spawn. No unrelated refactors, no extra cleanup outside the requested change.
-- No git mutations: the spawner owns every commit; never commit, stage, or revert, even when the brief asks. If the tree looks wrong going in, report it and stop.
+- No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks. If the tree looks wrong going in, report it and stop.
 
 ## Failure Behavior
 
