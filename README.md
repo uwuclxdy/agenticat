@@ -188,7 +188,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 |---|---|---|---|
 | `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
 | `ts-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
-| `docs-extractor` | inherit | none | digests a file or doc set into a brief, keeps raw bytes out of your context; coverage mode proves a doc safe to delete or merge |
+| `docs-extractor` | inherit | none | digests docs or source into a brief, keeps raw bytes out of your context; sweeps or compares a source tree; coverage mode reports whether a doc is safe to delete or merge |
 | `spec-propagator` | opus | none | folds a decided spec into a design doc in that doc's own voice |
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
