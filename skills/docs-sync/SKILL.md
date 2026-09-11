@@ -4,14 +4,14 @@ description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what th
 when_to_use: "Use when a change alters documented behavior or a tool's output shape, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.10"
+  version: "1.11"
 ---
 
 # Docs Sync
 
 Reconcile prose with code. Every claim in the docs must match what the code does today. Accuracy pass only; no restructuring.
 
-**Delegate by default:** spawn the `docs-reconciler` agent (one per repo) and pass it the change description if the pass is scoped. Run inline only for a single small doc. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
+**Delegate by default:** spawn the `docs-reconciler` agent (one per repo) and pass it the change description if the pass is scoped; a `docs-reconciler` lane runs the pass inline. Run inline only for a single small doc. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
 
 ## Scope
 
@@ -40,7 +40,7 @@ Reconcile prose with code. Every claim in the docs must match what the code does
 - **Edit and shorten over adding.** Collapse feature lists, merge near-duplicate sections, cut filler. Net diff should trend negative unless real features were missing.
 - **A deletion sweep needs a repo-wide reference search first.** Before removing a heading, a documented flag/symbol/path, or a whole file, search the repo (`rg`) for inbound references and resolve every hit: update the referencing doc, or keep a stub. Never leave a dangling pointer.
 - **Merging near-duplicates: diff each copy against the source, never against each other.** The authoritative-looking copy (a design doc, anything marked *locked*) drifts hardest, since nothing re-reads a settled doc against code, so deleting the scruffy duplicate promotes its wrong claims to sole truth. A doc's self-asserted verification (`e2e-verified`, `tested`, `both states compile`) is unfalsifiable prose: search for the test before you trust it or delete it.
-- Match the doc's existing voice and formatting; this is a sync, not a rewrite.
+- Match the doc's existing voice and formatting, except wrapping: a paragraph you rewrite goes on one line; this is a sync, not a rewrite.
 - Leave media placeholders alone (ASCII art, screenshots, gif slots); the user replaces those manually.
 - Version numbers: only touch ones the code/Cargo.toml/pyproject contradicts.
 - **A minimum-version claim belongs to the API surface it was measured on.** Upstream states a floor per surface. A program calling a second, newer surface inherits the newer floor, and the old number keeps reading as verified in every doc that copied it. Check which surface upstream attaches the number to, then check every surface the code calls. Where upstream states no floor for one of them, name the source of whatever number you ship.
