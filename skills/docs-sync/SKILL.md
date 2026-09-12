@@ -4,14 +4,14 @@ description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what th
 when_to_use: "Use when a change alters documented behavior or a tool's output shape, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.11"
+  version: "1.12"
 ---
 
 # Docs Sync
 
 Reconcile prose with code. Every claim in the docs must match what the code does today. Accuracy pass only; no restructuring.
 
-**Delegate by default:** spawn the `docs-reconciler` agent (one per repo) and pass it the change description if the pass is scoped; a `docs-reconciler` lane runs the pass inline. Run inline only for a single small doc. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
+**Delegate by default:** spawn the `docs-reconciler` agent (one per repo) and pass it the change description if the pass is scoped. Outside a `docs-reconciler` lane, run inline only for a single small doc; a `docs-reconciler` lane never hands the pass to another `docs-reconciler`. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
 
 ## Scope
 
