@@ -30,8 +30,8 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 
 ## Parallel Lanes
 
-- Use a lane-specific `CARGO_TARGET_DIR` on build and test commands: an exported env var outranks a per-worktree `.cargo/config.toml` `[build] target-dir`, which then builds quietly into the shared dir.
-- State in your report which of your results predate your cache isolation.
+- Build and test in the worktree's own target dir. Where the environment exports a shared `CARGO_TARGET_DIR`, run each cargo command as `env -u CARGO_TARGET_DIR <cmd>` (on a shell with no `env -u`, unset the variable for that one command): an exported variable outranks a per-worktree `.cargo/config.toml` `[build] target-dir`, which then builds quietly into the shared dir; where a cargo config or `CARGO_BUILD_TARGET_DIR` points `target-dir` at a shared dir, pass `--config 'build.target-dir="<worktree>/target"'` instead, which `cargo metadata` honours too.
+- State in your report which of your results predate building in the worktree's own target dir.
 - A sibling lane's red can fail your own `cargo test` whenever you share the source tree, and a shared target dir can hand you a sibling's test binary even from your own worktree: cargo compiles the whole crate per test run, so a red naming a not-yet-written symbol reds every lane at once. Report that shape, never work around it.
 
 ## Output Contract
