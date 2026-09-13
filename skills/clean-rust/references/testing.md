@@ -17,13 +17,13 @@ Related conflation to check explicitly: EOF versus error on reads. A test assert
 
 ## Lint Interplay
 
-With `clippy::unwrap_used`/`expect_used` at `warn` and CI running `-D warnings`, test code gets rejected for the unwraps it legitimately uses. One crate-root attribute covers everything:
+With `clippy::unwrap_used`/`expect_used` at `warn` and CI running `-D warnings`, test code gets rejected for the unwraps it legitimately uses. Exempt it where it lives, never with a crate-root `cfg_attr`: every file carrying test bodies (a `tests/*.rs` crate, a `tests/*/main.rs` crate or one of its `mod` subfiles, a test module linked in by `#[path]`) opens with
 
 ```rust
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 ```
 
-Integration test files (their own crates) instead take a file-top `#![allow(clippy::unwrap_used, clippy::expect_used)]`.
+and an inline `mod tests { … }` takes the same allow as its first inner attribute.
 
 ## Process-Global State Races
 
