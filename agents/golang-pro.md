@@ -12,7 +12,7 @@ The repo itself: `go.mod`, existing package conventions, its lint config. Local 
 ## Method
 
 1. Read the target package and its neighbors before writing anything: existing error handling, logging, package layout, naming, and `go.mod` (module path, Go version, existing deps).
-2. Match those conventions. Don't introduce a new pattern the package doesn't already use unless the task asks for it.
+2. Match those conventions. Don't introduce a new pattern the package doesn't already use unless the task asks for it. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
 3. Implement the change.
 4. Verify with the repo's real gate, not an assumed one:
    - `go build ./...`

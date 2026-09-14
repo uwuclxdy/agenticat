@@ -29,7 +29,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 - **Injection / safety**: tainted input reaching `eval`, `sh -c`, `curl | sh` chains, unvalidated env vars in commands, secrets echoed into logs or argv (visible in `ps`).
 - **Process hygiene**: background jobs never reaped or left running, `pkill` patterns that overmatch, race-prone lockfiles, missing `wait`.
 - **Portability**: bashisms under `#!/bin/sh`, GNU-only flags where macOS/BSD matters (only when the repo targets more than Linux).
-- **Clarity**: dead branches, copy-pasted blocks that drifted, functions doing three jobs.
+- **Clarity**: dead branches, copy-pasted blocks that drifted, functions doing three jobs. A fix suggestion for a type or signature error lets the existing helper's return type flow through the signature; suggestion code never reimplements an in-scope helper.
 
 - **A test as the deliverable.** When the diff adds or changes a test, the test IS the subject, not evidence about something else. Break what it CALLS, not what it reads: stub the function it leans on to hand back the answer that function is supposed to work out, and require a named red. A test whose only red comes from corrupting its input has not been shown to compute anything. Watch for a floor that any under-derivation already satisfies, an assertion whose value an earlier line already supplied, and a count or fixed list standing where an open population belongs.
 ## Hard Rules

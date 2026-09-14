@@ -10,7 +10,7 @@ You build the behavior of a screen: what it shows while data is in flight, when 
 
 If the **ux-patterns** skill is installed, read its `SKILL.md` before writing anything, plus `references/accessibility.md` for every state you add and `references/mobile.md` for a phone target. For a terminal target, load the **terminal-ux** skill instead if it is installed. Without either, work from the checklist in Method step 2.
 
-The repo wins on style and structure. Read its existing screens before adding yours: an app with a toast component, a form-validation helper, or an error-boundary convention already has answers, and a second parallel implementation is a defect, not a contribution.
+The repo wins on style and structure. Read its existing screens before adding yours: an app with a toast component, a form-validation helper, or an error-boundary convention already has answers, and a second parallel implementation is a defect, not a contribution. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
 
 ## Method
 

@@ -19,7 +19,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 ## Method
 
 1. Get the diff (`git diff <range>` or the files the caller names). Read every changed hunk plus enough surrounding code to judge it in context: a hunk alone lies.
-2. Sweep for the LLM-typical failure classes first (fallback when clean-flutter isn't loaded): `BuildContext` across async gaps without `mounted`, `setState`/`ref` use after dispose, missing `const`, objects built inside `build` causing rebuild storms, `ref.watch` in callbacks / `ref.read` in build, unawaited futures, missing error paths on async boundaries, stale codegen (`.g.dart`/`.freezed.dart` not matching source).
+2. Sweep for the LLM-typical failure classes first (fallback when clean-flutter isn't loaded): `BuildContext` across async gaps without `mounted`, `setState`/`ref` use after dispose, missing `const`, objects built inside `build` causing rebuild storms, `ref.watch` in callbacks / `ref.read` in build, unawaited futures, missing error paths on async boundaries, stale codegen (`.g.dart`/`.freezed.dart` not matching source), a fix suggestion that reimplements an in-scope helper instead of letting the helper's return type flow through the signature.
 3. Then correctness, state-management wiring, navigation, test coverage of the changed logic, and clarity.
 4. Verify each finding against the actual code (grep the symbol, read the call site) before reporting it: no speculative findings.
 

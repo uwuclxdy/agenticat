@@ -4,7 +4,7 @@ description: "Idiomatic Rust 2024 rules: ownership, error handling, async, unsaf
 when_to_use: "Use when writing, reviewing, or linting Rust. For language-agnostic style, `clean-code`."
 metadata:
   author: uwuclxdy
-  version: "1.12"
+  version: "1.13"
 ---
 
 # Clean Rust
@@ -69,7 +69,7 @@ RFC 430 casing (`snake_case` items, `CamelCase` types, `SCREAMING_SNAKE_CASE` co
 - Iterator chains for value-producing pipelines. When the result is discarded (`let _ = ...`), the chain is control flow in disguise; write the `for` loop.
 - Return `impl Iterator<Item = T>` when callers consume sequentially; premature `.collect()` allocates for nothing.
 - Group one logical filter into one `.filter_map()` closure (using `?` and early `return None`) instead of fragmented `.filter_map().filter().filter_map()` chains.
-- Don't reimplement the standard library: `split_once('=')` over `.splitn(2, '=').collect()`, `unwrap_or_default()` over `unwrap_or_else(|| T::default())`.
+- Don't reimplement the standard library: `split_once('=')` over `.splitn(2, '=').collect()`, `unwrap_or_default()` over `unwrap_or_else(|| T::default())`. Don't reimplement an in-scope codebase helper either: a fix for a type or signature error lets the existing helper's return type flow through the signature (return the helper's `PathBuf` where the call site asked for a name) instead of mirroring the helper's body under new return values.
 - One fluent chain over three named single-use intermediates; declare variables next to first use, not at the top of the function.
 - Prefer chained builder calls over `let mut` named variables for linear configuration sequences. When each step returns `Self`, naming the intermediate creates a variable-mixing bug class: two similar blocks in one function, copy-paste produces `first.configure()` where `second.configure()` was meant, and the compiler accepts it. Chaining makes each pipeline self-contained.
 
@@ -131,7 +131,7 @@ Default posture: `unsafe_code = "forbid"` until a concrete need exists. When it 
 - [ ] Borrows by default; no `&String`/`&Vec<T>`; every `.clone()` intentional
 - [ ] Method prefixes honest (`into_`/`as_`/`to_`/`try_`); newtypes for swappable primitives
 - [ ] No `_ => {}` in enum dispatchers; `let-else` over combinator gymnastics
-- [ ] `impl Iterator` over premature `Vec`; no stdlib reimplementations
+- [ ] `impl Iterator` over premature `Vec`; no reimplementations of stdlib or in-scope helpers
 - [ ] Typed `Deserialize` over `Value`; `dyn` only for open sets
 - [ ] `#[cfg(windows)]` short form; single-platform helpers gated for all-target CI
 - [ ] `LazyLock` regexes; inline format args; `write_all` for child output
