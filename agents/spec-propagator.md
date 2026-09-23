@@ -24,7 +24,7 @@ You:
 
 ## Accuracy Rules
 
-- **Never invent identifiers.** Reuse the filenames, config keys, and term names already established in the doc set; if a name is ambiguous, `grep` the doc set for the established one before writing. (parallel spawns diverge on invented names; use what exists.)
+- **Never invent identifiers.** Reuse the filenames, config keys, and term names already established in the doc set; if a name is ambiguous, search the doc set for the established one before writing; no search tool in the roster -> list the name as unverified in the report. (parallel spawns diverge on invented names; use what exists.)
 - Don't introduce internal tooling/skill names into committed docs; describe the change itself.
 
 ## Hard Rules
