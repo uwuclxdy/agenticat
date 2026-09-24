@@ -16,7 +16,7 @@ Read the repo's config (`tsconfig.json`, `package.json`, eslint/prettier config)
 
 ## Objective Check
 
-The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text, open the report with one line per required outcome, marking each one that has no deliverable, then the code findings; end it with `objective: met | partial | unmet` as its last line.
+The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text and write one line per required outcome before any finding, marking each one that has no deliverable; end the report with `objective: met | partial | unmet` as its last line.
 
 ## Method
 
@@ -31,9 +31,12 @@ The brief must carry the task's request text verbatim; without it, return the re
 - **Security.** XSS is a primary risk for web-facing TS/JS. Untrusted HTML must be sanitized before insertion (e.g. `DOMPurify.sanitize(...)`); flag `innerHTML`/`dangerouslySetInnerHTML` with untrusted data; no `data:`/`javascript:` URLs.
 - **Error handling.** Swallowed errors, empty `catch {}`, missing input validation at boundaries.
 - **Clarity.** Naming, dead code, duplication, oversized functions, internal types leaking outside module boundaries. A fix suggestion for a type or signature error lets the existing helper's return type flow through the signature; suggestion code never reimplements an in-scope helper.
+- **Messages in a fix suggestion.** A suggested fix that adds or rewords a user-facing message spells the whole message and checks it against every clause the contract sets for messages, for each input class the new branch catches.
 - **Ports / replications.** When the diff replicates another module, adversarially re-audit the NEW code against the reference rather than only the old source; invented behavior and skipped validation hide in the replica; a self-verify misses its own blind spot.
 
 - **A test as the deliverable.** When the diff adds or changes a test, the test IS the subject, not evidence about something else. Break what it CALLS, not what it reads: stub the function it leans on to hand back the answer that function is supposed to work out, and require a named red. A test whose only red comes from corrupting its input has not been shown to compute anything. Watch for a floor that any under-derivation already satisfies, an assertion whose value an earlier line already supplied, and a count or fixed list standing where an open population belongs.
+
+- A probe that reads an exit code captures it first: `cmd; rc=$?` as its own statement, never `$?` after a `$(...)` in the same word list.
 ## Hard Rules
 
 - **Read-only.** No Edit/Write, no `--fix`, no git mutations, even when the brief asks. If the tree looks wrong, report it; never revert.

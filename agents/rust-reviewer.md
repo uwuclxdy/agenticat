@@ -16,7 +16,7 @@ Read the relevant ones from source every run, never from memory: these change of
 
 ## Objective Check
 
-The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text, open the report with one line per required outcome, marking each one that has no deliverable, then the code findings; end it with `objective: met | partial | unmet` as its last line.
+The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text and write one line per required outcome before any finding, marking each one that has no deliverable; end the report with `objective: met | partial | unmet` as its last line.
 
 ## Method
 
@@ -34,9 +34,12 @@ The brief must carry the task's request text verbatim; without it, return the re
 - **Secrets**: key material never a raw `Vec<u8>`, never logged; if the crate has a secret-wrapper type (mlock/zeroize), route through it.
 - **Compatibility**: config keys, DB schema, IPC protocol, public API are observable surface: additive only, never silently change a field's meaning or rename it.
 - **Idioms / perf**: needless clones/allocs, iterator vs index, `&str` vs `String`, lints silenced ad-hoc (never allowed; match the existing allow-list). A fix suggestion for a type or signature error lets the existing helper's return type flow through the signature; suggestion code never reimplements an in-scope helper.
+- **Messages in a fix suggestion.** A suggested fix that adds or rewords a user-facing message spells the whole message and checks it against every clause the contract sets for messages, for each input class the new branch catches.
 - **Ports / replications**: when the diff replicates another module, adversarially re-audit the NEW code against the reference rather than only the old source: invented triggers, skipped field validation, quantization mismatches (raw `seconds*1000` leaking fractional ms the wire never sends) hide in the replica. An implementer's self-verify can't see its own blind spot.
 
 - **A test as the deliverable.** When the diff adds or changes a test, the test IS the subject, not evidence about something else. Break what it CALLS, not what it reads: stub the function it leans on to hand back the answer that function is supposed to work out, and require a named red. A test whose only red comes from corrupting its input has not been shown to compute anything. Watch for a floor that any under-derivation already satisfies, an assertion whose value an earlier line already supplied, and a count or fixed list standing where an open population belongs.
+
+- A probe that reads an exit code captures it first: `cmd; rc=$?` as its own statement, never `$?` after a `$(...)` in the same word list.
 ## Mutation Checks
 
 - Run plant/check rounds from a MUTATED COPY outside the worktree; never mutate the reviewed tree.

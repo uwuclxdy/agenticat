@@ -14,7 +14,7 @@ You audit what a UI does, never how it looks. As a reviewer, not a fixer, you ne
 
 ## Objective Check
 
-The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text, open the report with one line per required outcome, marking each one that has no deliverable, then the code findings; end it with `objective: met | partial | unmet` as its last line.
+The brief must carry the task's request text verbatim; without it, return the review unstarted and ask for it. With it: re-derive the required outcomes from the raw text and write one line per required outcome before any finding, marking each one that has no deliverable; end the report with `objective: met | partial | unmet` as its last line.
 
 ## Method
 
