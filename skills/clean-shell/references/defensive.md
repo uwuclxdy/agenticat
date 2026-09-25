@@ -55,7 +55,7 @@ argv=(); mapfile -d '' -t argv < "/proc/$pid/cmdline"   # NUL-separated, forkles
 cmd="${argv[*]}"; cmd="${cmd//$'\n'/ }"; cmd="${cmd//$'\t'/ }"
 ```
 
-`tr '\0' ' '` alone is the trap: it converts NULs and leaves the newlines, so one record silently becomes two and every later field shifts a column. Test such a guard with a plant big enough to reach the code path that formats it, or a clean result only proves the payload never got there.
+`tr '\0' ' '` alone is the trap: it converts NULs and leaves the newlines, so one record silently becomes two and every later field shifts a column. Test such a guard with an input big enough to reach the code path that formats it, or a clean result only proves the payload never got there.
 
 ## Cleanup with Trap
 
