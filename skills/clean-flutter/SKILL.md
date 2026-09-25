@@ -4,7 +4,7 @@ description: "Idiomatic Flutter and Dart rules: feature-first layout, Riverpod, 
 when_to_use: "Use when writing or reviewing Dart, widgets, `BuildContext`, `build_runner`, or state management."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Clean Flutter

@@ -26,6 +26,6 @@ Use the bundled `integration_test` package driving real flows, not the legacy `f
 
 ## Discipline
 
-- A test that can't fail is a bug in the test. Assert exact expected values and the error and loading branches (`AsyncValue` carries all three), then watch it fail once (break the code or the assertion) before trusting green.
+- A test that can't fail is a bug in the test. Assert exact expected values and the error and loading branches (`AsyncValue` carries all three), then watch it fail once against the code before the change (never by breaking the assertion) before trusting green.
 - Reproduce a reported bug with a failing widget or unit test *before* fixing it.
 - `pump` advances a single frame; `pumpAndSettle` runs frames until animations finish. Use `pump(duration)` for timers you control; `pumpAndSettle` hangs on an indefinite animation (a spinner), so pump explicit durations there instead.

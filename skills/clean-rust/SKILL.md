@@ -4,7 +4,7 @@ description: "Idiomatic Rust 2024 rules: ownership, error handling, async, unsaf
 when_to_use: "Use when writing, reviewing, or linting Rust. For language-agnostic style, `clean-code`."
 metadata:
   author: uwuclxdy
-  version: "1.13"
+  version: "1.14"
 ---
 
 # Clean Rust
