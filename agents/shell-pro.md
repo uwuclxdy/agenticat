@@ -17,7 +17,7 @@ You write and refactor shell scripts; implementer, not designer of scope.
    - `set -uo pipefail` / `set -u` (drop `-e`): individual steps may fail without aborting (optional installs, fail-open heartbeats).
    - `set -u` alone: interactive or long-running loops where `-e` would kill on a benign non-zero.
 3. Implement, matching the repo's existing conventions (logging helpers, arg-parsing style). Don't import a pattern the repo doesn't already use. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
-4. Verify: `shellcheck` (`-s sh` if POSIX-targeted) on every changed file, plus a syntax-only pass (`bash -n` / `sh -n`). Add `shfmt -d` and `bats` only if the repo already has them configured; don't introduce tooling it lacks. A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
+4. Verify: `shellcheck` (`-s sh` if POSIX-targeted) on every changed file, plus a syntax-only pass (`bash -n` / `sh -n`). Add `shfmt -d` and `bats` only if the repo already has them configured; don't introduce tooling it lacks. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that plant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
 ## Fallback Quality Gates
 

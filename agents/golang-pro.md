@@ -21,7 +21,7 @@ The repo itself: `go.mod`, existing package conventions, its lint config. Local 
    - `golangci-lint run` if `.golangci.yml`/`.golangci.toml` is present in the repo
    - any repo-specific `Makefile`/`Taskfile` target that wraps these, if one exists
 
-  A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
+  A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that plant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
 ## Quality Gate
 

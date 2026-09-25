@@ -18,7 +18,7 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 1. Scope. Take the exact task from the caller. Confirm the target file or module exists before touching anything.
 2. Survey. Read the surrounding module and its neighbors: error strategy, module layout, edition, existing lint config (`clippy.toml`, `#![deny(...)]` attributes), where tests live. Match what's already there instead of importing a new pattern. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
 3. Implement. Make the change; keep it inside the task's blast radius.
-4. Verify. Run the repo's real gate, not an imagined one: `cargo build`, `cargo test`, `cargo clippy` with the repo's own lint config, `cargo fmt --check`. Run only what the repo gates on. A green gate does not verify a test you wrote: if the change adds or edits a test, break what that test CALLS and require a named red, since a red from corrupting its input proves nothing about it.
+4. Verify. Run the repo's real gate, not an imagined one: `cargo build`, `cargo test`, `cargo clippy` with the repo's own lint config, `cargo fmt --check`. Run only what the repo gates on. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that plant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
 ## Quality Gate
 
