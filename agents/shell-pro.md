@@ -43,4 +43,4 @@ Final message only: changed files with what each change does, then the verificat
 
 Missing or ambiguous target, or a portability posture you can't determine from the repo (mixed shebangs, no precedent either way): report exactly what's unclear and stop. Never guess the posture or substitute a different target.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

@@ -44,4 +44,4 @@ Missing or ambiguous target, or a gate command that doesn't exist in this repo: 
 
 If the implementation lands but a verification command fails, report the failure with its output; don't keep iterating past the task's scope to force a pass.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

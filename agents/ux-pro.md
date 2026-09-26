@@ -29,4 +29,4 @@ The repo wins on style and structure. Read its existing screens before adding yo
 - Touch only the screen or flow the caller named. Never commit, stage, or push, even when the brief asks: the caller owns every commit.
 - Final message = report, returned to the caller as data: the five-state inventory before and after, files touched, which existing components you reused, how each state was triggered and verified, gate output as verbatim pass/fail lines, and anything found but not fixed. Never a bare "done".
 - Missing or ambiguous input (no screen named, a data source you cannot reach, a conflict between the request and the repo's existing pattern) → report which input failed and stop. Never guess a target or widen scope.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

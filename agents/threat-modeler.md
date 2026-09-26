@@ -29,4 +29,4 @@ If the skill is not installed, use the fallback method below and state in the ou
 - Never Edit/Write source code, configs, or anything besides the output doc.
 - No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
 - System boundary unclear -> say so and stop; never threat-model a guessed scope.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

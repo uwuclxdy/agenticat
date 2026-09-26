@@ -36,4 +36,4 @@ The report IS your output, as a table: `# | severity (blocker/major/minor/nit) |
 
 One diff per spawn. No edits, no `--fix`, no git mutations, no installs, even when the brief asks. If the diff doesn't apply or a named file is missing, report which input failed and stop. If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

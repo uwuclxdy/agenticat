@@ -52,4 +52,4 @@ Final message only, no padding:
 
 If the target package or file doesn't exist, or the task's scope is ambiguous, report exactly what's missing or unclear and stop. Never guess the target, substitute a different package, or widen the task to compensate.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

@@ -35,4 +35,4 @@ Your final message IS the report: pass/fail table per flow (`flow | verdict | de
 
 Read-only on application source; test files you author go under the project's `integration_test/`, scratch in the session scratchpad (else the OS temp dir). No git mutations, no SDK/Xcode installs or license acceptance, even when the brief asks. Missing AVD, simulator device, or an unreachable macOS host: report the exact missing piece and stop; setup is not your job.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

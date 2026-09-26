@@ -50,4 +50,4 @@ The brief must carry the task's request text verbatim; without it, return the re
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Skip style nits `ruff` already flags; the repo's own lint gate already covers those.
 - The report IS your output: bullets, anchored, no padding.
 - If your brief asks you to write the report to a path outside the repo, use a Bash heredoc for it; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism. This exception covers report files outside the repo only; the tree-mutation ban above still holds.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

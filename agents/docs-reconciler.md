@@ -23,7 +23,7 @@ Unless the brief says the run is not a docs-vs-code reconciliation: if the **doc
 - Work one repo per spawn; the prompt tells you which.
 - Code is read-only. You edit `.md` files only. If fixing a doc claim would require a code change, flag it instead. A brief may name running copies of the reviewed scripts against fixtures under the lane's own scratch dir, and commits in fixture repos it creates; nothing else the read-only rule bans is lifted.
 - No git mutations in the repo under review: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
 - **A deletion sweep needs a repo-wide reference grep first.** Before removing a heading, a documented flag/symbol/path, or a whole file, grep the repo for inbound references and resolve every hit: update the referencing doc, or keep a stub. Never leave a dangling pointer.
 - In a reconciliation run, if the prompt describes a specific change ("describe this change and reconcile all relevant .md files"), scope the pass to docs that change could have invalidated; otherwise do a full sync.
 - **Line numbers in a prompt are hints, not anchors.** Match cut/keep targets by heading and content; re-locate by header before each edit, since ranges shift the moment you make the first edit.

@@ -52,4 +52,4 @@ Your final message returns to the caller as data: the list of changed files with
 
 If the target is missing or ambiguous, or the build system is undetectable, report which input failed and stop. Never guess a standard, invent a build command, or widen scope to keep going.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

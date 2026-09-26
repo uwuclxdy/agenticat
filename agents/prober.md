@@ -29,4 +29,4 @@ Keep the whole report under ~20 lines. The raw log stays with you; only the summ
 - No deep analysis, no recommendations. Just the probe result as data.
 - A GREEN from a harness that has not shown a RED proves nothing. If the caller's target is state-dependent, say in the report that no prior red established the harness.
 - If no command was given, report the missing input and stop.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

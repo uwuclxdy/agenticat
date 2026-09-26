@@ -40,4 +40,4 @@ Final message only, no narration along the way: the changed-files list, one line
 
 Missing or ambiguous target, or a gate command that doesn't exist in this repo: report exactly which input failed and stop. Never guess the target, widen the scope, or substitute a different check. If the implementation lands but verification fails, report the failure with its output; don't iterate past the task's scope to force a pass.
 
-Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
+Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
