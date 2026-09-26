@@ -1,6 +1,6 @@
 # Testing
 
-Test placement, lint interplay, and the infra gotchas that pass locally then fail in CI.
+Test placement, what a test must assert, test doubles, determinism, lint interplay, and the infra gotchas that pass locally then fail in CI.
 
 ## Placement
 
@@ -8,12 +8,34 @@ Test placement, lint interplay, and the infra gotchas that pass locally then fai
 - Benchmarks (criterion, `#[bench]`) aren't tests: they live in `benches/`, not `tests/`. See `performance.md`'s Benchmarks section.
 - Non-trivial logic ships with tests that fail if the logic breaks. Assert exact expected values and the edge/error paths; then watch the test fail once against the code before the change (never by breaking the assertion) before trusting green. A test that can't fail is a bug in the test.
 - Reproduce a reported bug with a failing test *before* fixing it.
+- One behavior per test, named `behavior_condition_outcome` (`rejects_empty_email`, `reports_error_when_invalid_syntax_encountered`): a multi-path test hides which path failed, and `functionality_works` names nothing.
+- Never test what the type system or an upstream dependency already guarantees: an unrepresentable invalid state has no test that can reach it, and a dependency's behavior is its maintainers' test to write; spot-check only the behavior you rely on.
+- A smoke test proving only "doesn't panic" is a floor, never coverage.
+- Cover boundary values deliberately: `None`/empty, `-1`/`0`/`1`, `min`/`max`, one case per error class. Bugs live on the edges; a random or property sweep misses them.
+- Read what the existing suite pins before adding a test: a new test re-pinning a covered path is redundancy, not signal.
+- Many input/output pairs under one behavior: a table-driven test, one case per row, each row carrying a failure message naming the case. Keep tables short: cargo runs one test function on one thread.
 
 ## Assert the Contract, Not the Plumbing
 
 Pinning an error string that leaks from a lower layer cements bugs as "expected": a feature path that silently no-ops can pass green because the test asserts the underlying library's message instead of the feature's intended end state. Assert what the feature promises (final state, emitted output, the domain error variant), not incidental strings from a dependency.
 
 Related conflation to check explicitly: EOF versus error on reads. A test asserting "returns error" that's actually seeing clean EOF hides the real failure path.
+
+- The expected value comes from an independent source: a hand-computed literal, a spec-pinned fixture, golden data. An expectation computed by the code under test (or its helpers) passes no matter what that code does.
+- Mirror image: don't assert incidental implementation detail. A test that pins internals reds every benign refactor; keep only tests that still validate the behavior after the implementation is swapped for an opaque model.
+- No logic in test bodies: no loops, conditionals, or arithmetic deriving the expected value; keep expectations explicit and literal.
+
+## Assertions
+
+- `assert_eq!`/`assert_ne!` print both values on failure: prefer them over `assert!` on a comparison; attach a custom message naming what the assertion means. Pin panic tests with `#[should_panic(expected = "...")]`, never bare: a bare `should_panic` passes on any unrelated panic, and an overflow panic only fires with debug checks on. Error-path tests return `Result` and use `?`: never combined with `should_panic`; assert `value.is_err()` instead.
+- Property tests complement, never replace, hand-picked cases: `proptest` for invariants over large input spaces; keep the edge cases as unit tests.
+
+## Test Doubles
+
+- Preference order: real implementation > in-memory fake > stub > interaction mock. Reach for a mock only when the real thing is slow, non-deterministic, or an external system outside your control.
+- Mock your own code and the test proves less: hand-rolled trait doubles in unit tests, real dependencies in integration tests.
+- A mock earns no assertions: asserting on the double passes when the double is present and fails when it is absent; it says nothing about the component. Assert the behavior the double feeds.
+- A partial mock fails silently: mirror the complete real structure (all documented fields), not just the fields the test reads.
 
 ## Lint Interplay
 
@@ -32,6 +54,11 @@ All tests in one binary share one process, and cargo runs them on parallel threa
 - **Env vars**: a test's `remove_var` lands mid another test's env-dependent path: intermittent failures that a single-threaded run hides. Serialize every env-mutating test (e.g. `#[serial_test::serial(key)]` on a shared key); reproduce suspected races with `--test-threads=8` in a loop. Edition 2024 makes `set_var`/`remove_var` `unsafe` for exactly this reason.
 - **Global overrides** (color/terminal detection, loggers): don't toggle them per-test; make assertions insensitive instead (strip ANSI codes rather than forcing color off).
 - **Real `$HOME`**: tests that resolve paths through home-dir helpers write to the real home unless sandboxed. Redirect `$HOME` (tempdir + shared lock) before touching path helpers.
+
+## Determinism
+
+- No sleeps or wall-clock waits to synchronize a test: if the code spawns work without handing back a way to await it, change the API to return the join handle or future. For time-owned logic, inject the clock or tick and drive it explicitly (`tokio::time::pause`/`advance` for tokio timers).
+- RAII guard fixtures restore global state (env vars, cwd) even when the test panics.
 
 ## Paths to Built Binaries
 

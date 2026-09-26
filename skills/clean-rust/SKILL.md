@@ -4,7 +4,7 @@ description: "Idiomatic Rust 2024 rules: ownership, error handling, async, unsaf
 when_to_use: "Use when writing, reviewing, or linting Rust. For language-agnostic style, `clean-code`."
 metadata:
   author: uwuclxdy
-  version: "1.14"
+  version: "1.15"
 ---
 
 # Clean Rust
@@ -127,6 +127,7 @@ Default posture: `unsafe_code = "forbid"` until a concrete need exists. When it 
 ## Pre-Submit Checklist
 
 - [ ] No `.unwrap()` outside tests/compile-time constants; no `.is_ok()` + separate access
+- [ ] Test expectations hand-computed, never recomputed by the code under test; no re-pinned paths
 - [ ] Failure semantics consistent: best-effort or fail-fast, not mixed; cleanup always runs
 - [ ] Borrows by default; no `&String`/`&Vec<T>`; every `.clone()` intentional
 - [ ] Method prefixes honest (`into_`/`as_`/`to_`/`try_`); newtypes for swappable primitives
