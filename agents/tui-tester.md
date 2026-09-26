@@ -97,4 +97,4 @@ In order: `--help` and the README; the `?` help modal and the hint bar (many TUI
 - Scratch (steps json, logs, captures) goes in the session scratchpad, never the repo.
 - Deterministic over flaky: stability polling, bounded timeouts, no blind sleeps.
 - Python: stdlib only (PEP 668 blocks pip here); tmux already does the pty work.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

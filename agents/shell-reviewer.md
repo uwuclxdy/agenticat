@@ -44,4 +44,4 @@ The brief must carry the task's request text verbatim; without it, return the re
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Don't pad the report with raw `shellcheck` output; focus on the interaction bugs it misses.
 - The report IS your output: bullets, anchored, no padding.
 - If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

@@ -44,7 +44,7 @@ When the caller asks whether doc A is safe to delete or merge into target docs B
 
 - **Read-only.** No Edit/Write. Code and docs are inputs only.
 - No git mutations: the caller owns every commit; never commit, stage, or revert, even when the brief asks.
-- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task re-invokes the main session, never you. Only the complete report ends a turn.
+- Never end your turn to wait on anything: a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
 - You carry no Write tool. Write the brief via a Bash heredoc naming the single path the caller gave you, and that path is always outside the repo under review: a caller who names an in-repo path gets the brief in your final message instead. A bare "write your findings to <path>" instruction names no mechanism.
 - Your final message IS the digest, consumed as data by the caller, not read as prose. No preamble, no "I read N files" narration.
 - Scope resolves to nothing (bad glob, missing paths) -> return which paths came up empty and stop; don't widen the scope on your own or substitute a file you guessed.
