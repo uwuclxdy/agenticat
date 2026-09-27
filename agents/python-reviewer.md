@@ -39,6 +39,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 - A `cp -a` copy of a python checkout keeps its editable install pointing at the ORIGINAL tree: the copy's `.venv` carries a `.pth` naming the source tree by absolute path, so every plant reads as SURVIVED. Re-point or rebuild the environment in the copy. After `uv sync --frozen` repoints the editable install, the copied console-script shebangs still point at the original venv's python; the working form is `uv run python -m pytest`.
 - Never bank a SURVIVED from a harness that has not shown you a RED first.
+- A probe or test run importing the reviewed module sets `PYTHONDONTWRITEBYTECODE=1`; a syntax check is `compile(open(p, "rb").read(), p, "exec")`, never `py_compile` (it writes `__pycache__/` regardless).
 - A probe that reads an exit code captures it first: `cmd; rc=$?` as its own statement, never `$?` after a `$(...)` in the same word list.
 
 ## Hard Rules
