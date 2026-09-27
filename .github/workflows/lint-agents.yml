@@ -63,3 +63,10 @@ jobs:
           done
           jq -e 'has("name") and has("version") and has("description")' gemini-extension.json >/dev/null \
             || { echo "gemini-extension.json: invalid JSON or missing name/version/description"; exit 1; }
+
+      # The reminder's wording churns by design; the shape must hold: a SessionStart payload carrying a non-empty string.
+      - name: session-start hook emits valid JSON
+        run: |
+          bash plugins/agents/scripts/session-start.sh \
+            | jq -e '.hookSpecificOutput | (.hookEventName == "SessionStart") and (.additionalContext | type == "string" and length > 0)' >/dev/null \
+            || { echo "session-start hook: no non-empty SessionStart additionalContext string"; exit 1; }
