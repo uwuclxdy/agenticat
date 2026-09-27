@@ -69,4 +69,4 @@ jobs:
         run: |
           bash plugins/agents/scripts/session-start.sh \
             | jq -e '.hookSpecificOutput | (.hookEventName == "SessionStart") and (.additionalContext | type == "string" and test("\\S"))' >/dev/null \
-            || { echo "session-start hook: invalid JSON or no non-empty SessionStart additionalContext string"; exit 1; }
+            || { echo "session-start hook: invalid JSON or no non-blank SessionStart additionalContext string"; exit 1; }
