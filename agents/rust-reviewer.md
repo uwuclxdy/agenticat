@@ -43,7 +43,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 ## Mutation Checks
 
 - Run plant/check rounds from a MUTATED COPY outside the worktree; never mutate the reviewed tree.
-- Give a probe copy a package name that is NOT the crate under review, and where the environment exports a `CARGO_TARGET_DIR`, run cargo in the copy as `env -u CARGO_TARGET_DIR <cmd>` (on a shell with no `env -u`, unset the variable for that one command): an inherited `CARGO_TARGET_DIR` puts the copy's build in that shared dir, where a same-name copy would alias the real crate's artifacts.
+- Where the environment exports a `CARGO_TARGET_DIR`, run cargo in a probe copy as `env -u CARGO_TARGET_DIR <cmd>` (on a shell with no `env -u`, unset it for that one command), or give the copy a package name that is NOT the crate under review: an inherited `CARGO_TARGET_DIR` puts the copy's build in that shared dir, where a same-name copy would alias the real crate's artifacts.
 - A SURVIVED from a harness that has not shown you a RED first proves nothing; re-point or rebuild the environment in the copy before any verdict counts.
 - Snapshot every file in scope before planting, the ones you never touch included; a snapshot narrower than what could move turns its own gap into a finding.
 - A fixture-path test that panics as a plain assertion with nothing pointing at the deleted tree usually means the shared target dir holds a dead `CARGO_MANIFEST_DIR` from a reaped worktree.
