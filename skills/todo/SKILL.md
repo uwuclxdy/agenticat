@@ -4,7 +4,7 @@ description: "Authors and normalizes tasks into `docs/todo.md`."
 when_to_use: "Use when writing a todo list, capturing audit findings, or turning loose notes into pickup-cold-ready tasks."
 metadata:
   author: uwuclxdy
-  version: "1.8"
+  version: "1.9"
 ---
 
 # Todo
@@ -13,7 +13,7 @@ metadata:
 
 ## Core Rule
 
-**Every task must be executable by a fresh agent with no session context.** Self-contained: current behavior, expected behavior, and a verify step. If a task needs a decision the user hasn't made, AskUserQuestion before writing it down (`AskUserQuestion` is Claude Code's question tool; other harnesses ship their own native tool: opencode's `question`, gemini-cli's `ask_user`, Codex CLI's `request_user_input`. Use it if present, else fall back to a plain numbered message). Never park open questions inside a task.
+**Every task must be executable by a fresh agent with no session context.** Self-contained: current behavior, expected behavior, and a verify step you watched fail once on an input where it must fail. If a task needs a decision the user hasn't made, AskUserQuestion before writing it down (`AskUserQuestion` is Claude Code's question tool; other harnesses ship their own native tool: opencode's `question`, gemini-cli's `ask_user`, Codex CLI's `request_user_input`. Use it if present, else fall back to a plain numbered message). Never park open questions inside a task.
 
 Tasks say what needs to change and, sometimes, how. Never where in the code: no `file:line` into source, no path that only locates code. A path stays where the file is the task's subject (an instruction file, a hook, a config the task edits), since there the path is the identity.
 
