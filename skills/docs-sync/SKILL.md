@@ -4,7 +4,7 @@ description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what th
 when_to_use: "Use when a change alters documented behavior or a tool's output shape, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.12"
+  version: "1.13"
 ---
 
 # Docs Sync
@@ -22,7 +22,7 @@ Reconcile prose with code. Every claim in the docs must match what the code does
 
 ## Procedure
 
-**Never run this from a worktree.** `git worktree add` checks out tracked files only; gitignored `docs/`, `CLAUDE.md`, `.claude/` exist in the main checkout alone, so a pass spawned into a worktree finds nothing to reconcile and reports a false clean. Run from the main checkout.
+**Never run this from a worktree.** `git worktree add` checks out tracked files only; gitignored `docs/`, `CLAUDE.md`, `.claude/` exist in the main checkout alone, so a pass spawned into a worktree finds nothing to reconcile and reports a false clean. Run from the main checkout. a lane that must not write the main checkout (lane-write bans, unrelated main-owned edits) works read-only against it: it reads the main-checkout docs, produces the corrected text as a patch (`diff -u`) or wrong->right pairs, and the main session applies them; a lane never edits a main-checkout path.
 
 1. **Explore code first, docs second.** Build the real feature/flag/command surface from source. For large repos, fan out subagents per subsystem and collect claims.
 2. **Diff claims against reality.** For each doc statement, classify: accurate / stale / missing / overpromising.
