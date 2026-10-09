@@ -4,7 +4,7 @@ description: "Behavior rules for CLIs and TUIs: exit codes, stdout vs stderr, TT
 when_to_use: "Use when writing or reviewing a CLI, TUI, argument parsing, prompts, or terminal color handling."
 metadata:
   author: uwuclxdy
-  version: "1.4"
+  version: "1.5"
 ---
 
 # Terminal UX
@@ -155,7 +155,7 @@ Turn color off when any of these hold:
 **Don't:**
 - Require an interactive prompt. That breaks every script that calls you.
 
-**TUI, convention.** The equivalent primitive is a modal screen: it dims but keeps the background visible, captures all key input, and needs an explicit action to leave. Textual's `ModalScreen` is this pattern. Never draw one without a visible way out.
+**TUI, convention.** The equivalent primitive is a modal screen: a TUI modal owns input and provides a visible exit; backdrop treatment follows the app's design contract. Textual's `ModalScreen` is this pattern. Never draw one without a visible way out.
 
 ---
 
