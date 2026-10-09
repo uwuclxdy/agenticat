@@ -4,7 +4,7 @@ description: "Boots and drives Android AVDs and iOS simulators from the CLI."
 when_to_use: "Use for headless app tests, screenshot verification, or emulator boot and GPU issues."
 metadata:
   author: uwuclxdy
-  version: "1.7"
+  version: "1.8"
 ---
 
 # Emulator Testing
@@ -91,8 +91,9 @@ Works against any installed app, Flutter or not.
 | View hierarchy | `adb shell uiautomator dump /sdcard/window_dump.xml && adb pull /sdcard/window_dump.xml` |
 | Filtered logs | `adb logcat --pid=$(adb shell pidof -s com.example.app)` or `adb logcat -s <tag>` |
 | Install / uninstall | `adb install -r app.apk` / `adb uninstall com.example.app` |
+| Open a deep link | `adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "<url>" <package>` |
 
-No simulator equivalent: iOS's `simctl` (§4) has no touch/text input-injection primitive. Use `integration_test`/XCUITest-level tooling for iOS UI instead (see §4).
+No simulator equivalent: iOS's `simctl` (§4) has no touch/text input-injection primitive. Use `integration_test`/XCUITest-level tooling for iOS UI instead (see §4 and Gotchas row 16).
 
 ### Verify Screenshots with a Real Parser, Not Prose
 
@@ -144,6 +145,8 @@ dart mcp-server                                          # runs stdio, start it 
 claude mcp add --transport stdio dart -- dart mcp-server # register it for Claude Code
 ```
 
+With an app running, prefer to connect proactively (`dtd`, or `list_running_apps`) and apply each `lib/` edit yourself: `hot_reload` for `build` methods, widget trees and method bodies; `hot_restart` when the edit touches `initState`, field or static initializers, global state or `main()`, since hot reload keeps live state and never re-runs them. A fix that seems to do nothing after a reload is a restart candidate before it is a code bug. Skip both for edits outside `lib/` and for comment-only edits.
+
 ---
 
 ## 4. iOS Simulator Lane (Your macOS Host over ssh)
@@ -157,13 +160,14 @@ xcrun simctl create MyTestPhone "iPhone 15" "iOS-17-5"
 xcrun simctl boot MyTestPhone                        # or boot by UDID
 xcrun simctl install booted /path/to/App.app
 xcrun simctl launch booted com.example.app
+xcrun simctl openurl booted <url>                     # deep link / universal link
 xcrun simctl io booted screenshot --type=jpeg out.jpg
 xcrun simctl io booted recordVideo out.mp4            # Ctrl-C to stop
 xcrun simctl terminate booted com.example.app
 xcrun simctl shutdown MyTestPhone
 ```
 
-`simctl` has no touch/text input-injection primitive (no `adb input tap`/`swipe`/`text` equivalent, see §2). Use `integration_test`/XCUITest-level tooling (or `idb`) for iOS UI input, not raw `simctl` calls.
+`simctl` has no touch/text input-injection primitive (no `adb input tap`/`swipe`/`text` equivalent, see §2). Use `integration_test`/XCUITest-level tooling (or `idb`), never raw `simctl` calls; the in-app driver route (Gotchas row 16) is unverified on this lane.
 
 Flutter on the same host: `flutter build ios --simulator --debug` needs no code signing; `flutter test integration_test/ -d <simulator_udid>` runs directly against a booted sim. Physical-device builds need a Team ID + provisioning profile. Always target the simulator for agent-driven testing to sidestep signing entirely.
 
@@ -198,4 +202,4 @@ First-run gotcha: `sudo xcodebuild -license accept` is an interactive prompt the
 | 13 | First android build | AGP auto-downloads NDK/build-tools/CMake on the first `flutter build`/`test` (~3+ min); a short command timeout kills the download mid-flight and leaves a corrupt `$ANDROID_HOME/ndk/<ver>` stub | run first builds backgrounded or with a generous timeout; on `source.properties` errors delete the stub dir and rebuild |
 | 14 | Xcode first run | `xcodebuild -license accept` is interactive, blocks headless automation | accept it once by hand before automating |
 | 15 | Physical device | §2's `adb` primitives assume an emulator serial (`emulator-5554`) | works unmodified on a real USB device too, target it with `adb -s <device_serial>`; §1/§4 boot-lifecycle content stays emulator/simulator-only |
-| 16 | iOS input injection | `simctl` (§4) has no touch/text input-injection primitive, unlike `adb input tap`/`swipe`/`text` (§2) | use `integration_test`/XCUITest-level tooling (or `idb`) for iOS UI input |
+| 16 | iOS input injection | `simctl` (§4) has no touch/text input-injection primitive, unlike `adb input tap`/`swipe`/`text` (§2) | drive the UI in-app: launch through the MCP server's `launch_app` on a test entrypoint (e.g. `lib/main_test.dart`) that calls `enableFlutterDriverExtension()` before `runApp` (`flutter_driver: {sdk: flutter}` under `dependencies`: a `lib/` import of a dev dependency trips `depend_on_referenced_packages`), then `flutter_driver_command` for tap / enter text / scroll / wait-for and `widget_inspector` to read the tree; `integration_test` for repeatable suites. Keep the driver extension out of the shipping `main.dart`. A widget missing from the tree inside a lazy list is unmounted: scroll it into view first. Unverified on the ssh iOS lane: confirm with a tester run before relying on it there |
