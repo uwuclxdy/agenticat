@@ -14,6 +14,7 @@ The failure modes that pass `flutter run` once and bite later. These are the one
 | 8 | `ref.watch`/`read` misuse | `watch` in a callback re-subscribes on every invocation; `read` in `build` reads once and misses updates | `watch` in `build`, `read` in callbacks, `listen` for side effects |
 | 9 | Abandoned package | pub.dev is full of dead packages; a model tends to pick by name recognition, not liveness | check maintenance signals before adding (below and `packages.md`) |
 | 10 | Overflow from fixed sizes | hardcoded widths/heights overflow on small screens or a large text scale | prefer `Flexible`/`Expanded`/`FittedBox`/`LayoutBuilder`; respect `MediaQuery` text scaling |
+| 11 | A custom route following the predictive back gesture (measured 2026-10-12, a sheet following the Android back gesture) | page routes get the gesture free; a `PopupRoute`-based surface that adds its own `handleStartBackGesture` and then pops on commit overrides `PopScope(canPop: false)`, a local history entry, or a page pushed over it mid-gesture | claim the gesture only when the route is current, `popDisposition == RoutePopDisposition.pop` and nothing handles the pop internally, re-check all three at the commit, and leave a refused or covered route to `maybePop` |
 
 ## Async-Gap Detail
 
