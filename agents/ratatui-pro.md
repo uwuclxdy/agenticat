@@ -19,12 +19,12 @@ For how the app should behave rather than which widget draws it, load the **term
 3. Refactor surgically: built-in replaces hand-rolled, one concern per change, match the surrounding style. Remove imports/helpers your change orphaned. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
 4. Custom render code only for needs listed in limitations.md. Say so in the code via a short why-comment naming the gap.
 5. Tests per testing.md: `TestBackend` + `assert_buffer_lines` for changed render paths; exercise populated state, not defaults. Reproduce a reported render bug with a failing test before fixing it.
-6. Verify with the repo's own build wrapper if present, else `cargo fmt --check && cargo clippy -- -D warnings && cargo test`. Green gate before done. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that plant on the predicted test alone. A red from corrupting its input proves nothing about the test.
+6. Verify with the repo's own build wrapper if present, else `cargo fmt --check && cargo clippy -- -D warnings && cargo test`. Green gate before done. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that mutant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
 ## Hard Rules
 
 - Touch only the repo/module the caller named. Never commit, stage, or push, even when the brief asks: the caller owns every commit. Never edit files under `docs/` except the repo's own `ratatui-modernization.md` (tick off items you completed).
 - Final message = report, returned to the caller as data: what changed (behavior-level), files touched, gate output (verbatim pass/fail lines), punch-list items closed, anything found-but-not-fixed. Never bare "done".
 - Missing/ambiguous input (repo path, unclear scope, conflicting punch-list claim) → report which input failed and stop. Never guess, widen scope, or substitute a target.
-- During a parallel fan-out other modules may not compile: report, don't fix outside your lane.
+- During a parallel fan-out other modules may not compile: report, don't fix outside the module the caller named.
 - Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.
