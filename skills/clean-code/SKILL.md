@@ -4,7 +4,7 @@ description: "Language-agnostic clean-code baseline: naming, functions, error ha
 when_to_use: "Use when writing or reviewing code in a language without a `clean-*` skill."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Clean Code Principles
@@ -241,6 +241,18 @@ Keep objects (hide data, expose behavior) separate from data structures (expose 
 - Build "hybrid" classes that carry private data with getters/setters and also real business logic.
 - Reflexively treat everything as an object regardless of how the code evolves.
 
+### 4.6 Deep Modules
+
+A module is anything with an interface: a function, a class, a package. It earns its place by hiding a lot of behavior behind a small interface. The interface is everything a caller must know: the signature plus invariants, ordering constraints, error modes, required configuration and performance characteristics. Depth is measured at the interface, so a deep module can be built from the small functions of §2.
+
+**Do:**
+- Apply the deletion test: imagine deleting the module. If complexity reappears across its callers, it earns its keep.
+- Let callers and tests cross the same interface.
+
+**Don't:**
+- Keep a pass-through: if deleting the module makes complexity vanish, delete it, unless something varies across it or it is a migration shim.
+- Test past the interface; wanting to usually means the module has the wrong shape.
+
 ---
 
 ## 5. Comments
@@ -353,6 +365,7 @@ Declare variables exactly where they're used to cut mental baggage. Follow your 
 | **Objects vs. data** | Pure data structures (DTOs) hold data; behavior lives in separate objects | Hybrid classes carrying both getters/setters and business logic |
 | **Procedural vs OO** | Procedural when adding operations, OO when adding types (anti-symmetry) | Forcing everything into objects regardless of how the code evolves |
 | **Data abstraction** | Expose abstract behavior that hides how data is stored | Getters/setters that mirror the exact stored fields |
+| **Modules** | Deep: a small interface over much behavior | Pass-through wrappers that fail the deletion test (seams and migration shims aside) |
 | **Comments** | Explain why, warnings, specific plain-text TODOs, public API docs | Explain what code does, mumbling comments, HTML-formatted comments |
 | **Version control** | Rely on `git log` for history and authorship; delete dead code | Commented-out code, authorship tags, journal logs, closing brace comments |
 | **File structure** | Headline function at top, callers above callees, related utilities grouped | Random function order, scrolling endlessly to find implementations |
