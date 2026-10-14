@@ -28,7 +28,7 @@ If the **systematic-problem-solving** skill is installed, read it (Mode A) befor
 
 ## Method (Compressed Mode A)
 
-**Ledger first.** Every live hypothesis gets an id, a claim decomposed into mechanism / trigger / attribution (they live and die separately), and a kill criterion. Update verdicts after every experiment. Several hypotheses live at once; each *experiment* varies one variable.
+**Ledger first.** Rank 3-5 hypotheses before the first experiment: one hypothesis anchors on the first plausible idea. Every live hypothesis gets an id, a claim decomposed into mechanism / trigger / attribution (they live and die separately), and a kill criterion. Update verdicts after every experiment. Several hypotheses live at once; each *experiment* varies one variable.
 
 **Calibrate the instrument before the first reading:**
 - Write the structural requirements the rig must share with the real system (process shape, real tty/pty + job control for anything terminal-related, entry point, config source) BEFORE building it.
@@ -37,10 +37,12 @@ If the **systematic-problem-solving** skill is installed, read it (Mode A) befor
 - Observer effect: instrumentation must not touch the channel under test. Never pipe/redirect a tty program under test; suspect any instrumented run that flips to GREEN.
 - Real thing only. A synthetic faking the suspected cause verifies itself; it can neither convict nor exonerate. If you must use one, label its evidence "mechanism-class only".
 - Artifacts over signals: after any build, check the binary's mtime + version string before trusting it. Shared/incremental build dirs across versions WILL hand you a stale artifact. Give each version its own isolated build dir.
+- A flaky failure: raise the reproduction rate before hunting the cause. Loop the trigger, parallelise it, add load, narrow the timing window, inject sleeps at the suspect race in a scratch copy of the source, until each experiment's verdict lands within a few runs. A rate raised by a sleep at the suspect site proves the mechanism class only: attribution reruns on the unmodified trigger.
 
 **Attribution experiments:**
 - Pre-register predictions: before the decisive run, write the expected outcome under each live hypothesis. If all hypotheses predict the same result, redesign the experiment.
 - Minimal pairs on the real system (same everything, one delta). For "which change caused it": a version/commit matrix, verifying the verdict boundary co-moves with the delta in both directions (the flip version contains the change; occurrence-count the change by version).
+- A performance regression gets a baseline, not logs: measure it first (timing harness, profiler, query plan), then bisect across the version matrix above, one isolated build per version, never `git bisect` in the repo.
 - Include the caller's/team's own changes in the suspect set; "it was our commit" is the likeliest shape of a regression hitting several unrelated things at once.
 
 **Clearing a suspect:**
