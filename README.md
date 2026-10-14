@@ -182,7 +182,7 @@ The one exception worth a look on its own: the [obra/superpowers](https://github
 
 ## Agents
 
-Install with the Claude Code plugin (see [Install](#install)) or cherry-pick onto another harness with `./install.sh --to <harness> <name>`. Every definition is canonical Claude Code frontmatter; the converter keeps a read-only agent read-only (no Write or Edit) wherever it lands.
+Install with the Claude Code plugin (see [Install](#install)) or cherry-pick onto another harness with `./install.sh --to <harness> <name>`. Every definition is canonical Claude Code frontmatter; the converter keeps Write and Edit off a read-only agent wherever it lands.
 
 | agent | model | loads if installed | what it does |
 |---|---|---|---|
@@ -193,7 +193,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
-| `code-explorer` | inherit | none | read-only repo research: symbol lookups, cross-file traces, literal searches; findings with file:line anchors, never edits |
+| `code-explorer` | inherit | none | read-only repo research through `rg` on a shell: symbol lookups, cross-file traces, literal searches; findings with file:line anchors, never edits (needs `rg`) |
 | `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright and judges each screenshot by eye; pass/fail with evidence, design-contract checks on request |
 | `shell-pro` + | inherit | `clean-shell` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
