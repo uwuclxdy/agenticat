@@ -29,3 +29,4 @@ Use the bundled `integration_test` package driving real flows, not the legacy `f
 - A test that can't fail is a bug in the test. Assert exact expected values and the error and loading branches (`AsyncValue` carries all three), then watch it fail once against the code before the change (never by breaking the assertion) before trusting green.
 - Reproduce a reported bug with a failing widget or unit test *before* fixing it.
 - `pump` advances a single frame; `pumpAndSettle` runs frames until animations finish. Use `pump(duration)` for timers you control; `pumpAndSettle` hangs on an indefinite animation (a spinner), so pump explicit durations there instead.
+- a test that an API throws synchronously: `expect(() { unawaited(f()); }, throwsX)`. `expectLater(() => f(), throwsX)` waits on the returned `Future`, so an `f` that opens a route instead of throwing hangs the test rather than failing it.
