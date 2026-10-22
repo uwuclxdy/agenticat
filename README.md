@@ -145,25 +145,25 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 
 | skill | origin | used by | what it does |
 |---|---|---|---|
-| `clean-code` | `s4.codes` | `python-reviewer`, `ts-reviewer` | language-agnostic readability and naming conventions |
+| `clean-code` | `s4.codes` | `python-pro`, `python-reviewer`, `ts-reviewer` | language-agnostic readability and naming conventions |
 | `name-check` | original | standalone | proposes project or crate names, checks each for availability on registries and domains (needs `bun`) |
 | `parity-gap` | original | standalone | diffs your project against a reference or spec, writes the gaps as tasks (calls `todo`) |
 | `todo` | original | `parity-gap` | turns findings and loose notes into a clean `docs/todo.md`, each task pickup-cold ready |
 | `askama` | original | `rust-pro` | conventions and reference for the askama Rust templating crate |
 | `maud` | original | `rust-pro` | conventions and reference for the maud Rust `html!` macro |
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
-| `clean-rust` | original | `rust-pro` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, observability, testing, perf |
+| `clean-rust` | original | `rust-pro`, `rust-reviewer` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, observability, testing, perf |
 | `threat-modeling` | original | `threat-modeler` | STRIDE and attack trees, each requirement mapped to a mitigation |
 | `clean-shell` | `wshobson` | `shell-pro`, `shell-reviewer` | defensive live-system idioms, `.shellcheckrc` discipline, bats-core testing; core rules plus a reference for each |
 | `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
-| `skill-routing-audit` | original | standalone | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
+| `skill-routing-audit` | original | `tech-writer` | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
 | `mcp-stateless` | original | standalone | the MCP `2026-07-28` stateless revision: what the handshake removal changed, the wire contract, multi round-trip requests, and how to migrate a server or client off session-era code |
-| `docs-sync` | original | `docs-reconciler` | reconciles README, wiki, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
+| `docs-sync` | original | `tech-writer` | reconciles README, wiki, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
 | `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro` | how a UI behaves: the five screen states, loading and error patterns, form validation and submission, undo versus confirmation, cognitive-load laws, with WCAG wiring and a mobile reference |
-| `terminal-ux` | original | `ratatui-pro` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
+| `terminal-ux` | original | `ratatui-pro`, `ux-pro`, `ux-reviewer` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
 
 ### origin
 
@@ -176,7 +176,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 
 ## External skills
 
-Every third-party-origin item in the tables above is a copy this repo owns: the `wshobson` skills and `-pro` agents are rewrites, `webapp-testing` is vendored with its license, `clean-code` is distilled from transcripts. Installing them never pulls from the original source.
+Every third-party-origin item in the tables above is a copy this repo owns: the `wshobson` skills and the `+`-marked `-pro` agents are rewrites, `webapp-testing` is vendored with its license, `clean-code` is distilled from transcripts. Installing them never pulls from the original source.
 
 The one exception worth a look on its own: the [obra/superpowers](https://github.com/obra/superpowers) skills `systematic-debugging`, `test-driven-development`, and `verification-before-completion` (MIT) are not bundled here and install pristine from source with `npx skills add obra/superpowers --skill <name>`.
 
@@ -186,10 +186,10 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 
 | agent | model | loads if installed | what it does |
 |---|---|---|---|
+| `python-pro` | inherit | `clean-code` | one Python task against the repo's test, lint and type-check gate |
 | `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
 | `ts-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
-| `docs-extractor` | inherit | none | digests docs or source into a brief, keeps raw bytes out of your context; sweeps or compares a source tree; coverage mode reports whether a doc is safe to delete or merge |
-| `spec-propagator` | opus | none | folds a decided spec into a design doc in that doc's own voice |
+| `tech-writer` | opus | `docs-sync`, `skill-routing-audit` | one agent for every docs job, mode set by the caller: review a docs or instruction-file diff (read-only by instruction, not by tool grants), reconcile docs with the code, draft instruction-file text as a diff, fold a decided spec into a design doc, or digest docs or source into a brief (sweeps, tree comparisons, delete-or-merge coverage) |
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
@@ -207,10 +207,9 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
 | `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
-| `docs-reconciler` | sonnet | `docs-sync` | reconciles README, docs, CLAUDE.md, and agent/skill prompt files with the code, edits docs only |
 | `ratatui-pro` | sonnet | `ratatui-patterns`, `terminal-ux` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
-| `ux-pro` | sonnet | `ux-patterns` | builds a screen's loading, success, error, empty and partial states with the repo's own components |
-| `ux-reviewer` | opus | `ux-patterns` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |
+| `ux-pro` | sonnet | `ux-patterns`, `terminal-ux` | builds a screen's loading, success, error, empty and partial states with the repo's own components |
+| `ux-reviewer` | opus | `ux-patterns`, `terminal-ux` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |
 
 - `loads if installed` is soft, has the same fallback rule as the skills table. 
 - `+` began as [wshobson/agents](https://github.com/wshobson/agents) personas (MIT), rewritten and debloated.

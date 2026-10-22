@@ -4,14 +4,14 @@ description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what th
 when_to_use: "Use when a change alters documented behavior or a tool's output shape, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.13"
+  version: "1.14"
 ---
 
 # Docs Sync
 
 Reconcile prose with code. Every claim in the docs must match what the code does today. Accuracy pass only; no restructuring.
 
-**Delegate by default:** spawn the `docs-reconciler` agent (one per repo) and pass it the change description if the pass is scoped. Outside a `docs-reconciler` lane, run inline only for a single small doc; a `docs-reconciler` lane never hands the pass to another `docs-reconciler`. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
+**Delegate by default:** spawn the `tech-writer` agent with `mode: reconcile` (one per repo) and pass it the change description if the pass is scoped. Outside a `tech-writer` agent, run inline only for a single small doc; a `tech-writer` agent never hands the pass to another `tech-writer`. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
 
 ## Scope
 
@@ -22,7 +22,7 @@ Reconcile prose with code. Every claim in the docs must match what the code does
 
 ## Procedure
 
-**Never run this from a worktree.** `git worktree add` checks out tracked files only; gitignored `docs/`, `CLAUDE.md`, `.claude/` exist in the main checkout alone, so a pass spawned into a worktree finds nothing to reconcile and reports a false clean. Run from the main checkout. a lane that must not write the main checkout (lane-write bans, unrelated main-owned edits) works read-only against it: it reads the main-checkout docs, produces the corrected text as a patch (`diff -u`) or wrong->right pairs, and the main session applies them; a lane never edits a main-checkout path.
+**Never run this from a worktree.** `git worktree add` checks out tracked files only; gitignored `docs/`, `CLAUDE.md`, `.claude/` exist in the main checkout alone, so a pass spawned into a worktree finds nothing to reconcile and reports a false clean. Run from the main checkout. A spawned agent that must not write the main checkout (spawned-agent write bans, unrelated edits the main session owns) works read-only against it: it reads the main-checkout docs, produces the corrected text as a patch (`diff -u`) or wrong->right pairs, and the main session applies them; a spawned agent never edits a main-checkout path.
 
 1. **Explore code first, docs second.** Build the real feature/flag/command surface from source. For large repos, fan out subagents per subsystem and collect claims.
 2. **Diff claims against reality.** For each doc statement, classify: accurate / stale / missing / overpromising.
