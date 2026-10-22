@@ -130,7 +130,7 @@ Or just download into `~/.claude/skills/`, but then you won't get updates.
 
 - Claude Code: `/plugin update agents@agenticat` and/or `/plugin update skills@agenticat` (every commit is a new version)
 - Gemini CLI: automatic with `--auto-update`
-- opencode / Codex: `./install.sh --update` pulls and reconverts what you installed
+- opencode / Codex: `./install.sh --update` pulls and reconverts what you installed; a renamed agent moves to its new name and a removed one is cleaned up. An install made without agent names also picks up new agents once its `.agenticat.json` holds `"all": true`; rerun `./install.sh --to <harness>` once, with the same `--dest`/`--project` it was made with, to write it on an older install. `./install.sh --update --dest <dir>` skips the pull and updates an install made with `--dest`, so run `git pull` first
 - Skills: `npx skills update`
 
 ## Skills
@@ -145,7 +145,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 
 | skill | origin | used by | what it does |
 |---|---|---|---|
-| `clean-code` | `s4.codes` | `python-pro`, `python-reviewer`, `ts-reviewer` | language-agnostic readability and naming conventions |
+| `clean-code` | `s4.codes` | `python-pro`, `python-reviewer`, `web-pro`, `web-reviewer` | language-agnostic readability and naming conventions |
 | `name-check` | original | standalone | proposes project or crate names, checks each for availability on registries and domains (needs `bun`) |
 | `parity-gap` | original | standalone | diffs your project against a reference or spec, writes the gaps as tasks (calls `todo`) |
 | `todo` | original | `parity-gap` | turns findings and loose notes into a clean `docs/todo.md`, each task pickup-cold ready |
@@ -161,9 +161,9 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `mcp-stateless` | original | standalone | the MCP `2026-07-28` stateless revision: what the handshake removal changed, the wire contract, multi round-trip requests, and how to migrate a server or client off session-era code |
 | `docs-sync` | original | `tech-writer` | reconciles README, wiki, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
-| `webapp-testing` | `anthropics` | `webapp-tester` | Playwright toolkit for testing local web apps, screenshots and console logs |
+| `webapp-testing` | `anthropics` | `webapp-tester`, `web-pro` | Playwright toolkit for testing local web apps, screenshots and console logs |
 | `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro` | how a UI behaves: the five screen states, loading and error patterns, form validation and submission, undo versus confirmation, cognitive-load laws, with WCAG wiring and a mobile reference |
-| `terminal-ux` | original | `ratatui-pro`, `ux-pro`, `ux-reviewer` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
+| `terminal-ux` | original | `ratatui-pro`, `ux-pro`, `ux-reviewer`, `web-pro` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
 
 ### origin
 
@@ -188,7 +188,8 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 |---|---|---|---|
 | `python-pro` | inherit | `clean-code` | one Python task against the repo's test, lint and type-check gate |
 | `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
-| `ts-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
+| `web-pro` | inherit | `clean-code`, `terminal-ux`, `webapp-testing` | one TypeScript, JavaScript, Node, HTML or CSS task against the repo's gate, or a standalone single-file page, demo, icon or favicon with pinned vendored libraries |
+| `web-reviewer` | inherit | `clean-code` | read-only TS/JS, Node and HTML/CSS/template diff review: XSS, template escaping, injection, markup accessibility |
 | `tech-writer` | opus | `docs-sync`, `skill-routing-audit` | one agent for every docs job, mode set by the caller: review a docs or instruction-file diff (read-only by instruction, not by tool grants), reconcile docs with the code, draft instruction-file text as a diff, fold a decided spec into a design doc, or digest docs or source into a brief (doc-set sweeps and comparisons, delete-or-merge coverage) |
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
@@ -206,7 +207,6 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `shell-reviewer` | sonnet | `clean-shell` | read-only shell/bash review: quoting, error handling, injection, portability |
 | `root-cause-investigator` | opus | none | evidence-first root-cause hunt for disputed regressions, returns a hypothesis ledger |
 | `tui-tester` | sonnet | none | drives a TUI/CLI in a real tmux pty like a user, reports pass/fail with captured screens |
-| `frontend-builder` | sonnet | none | builds self-contained single-file frontends: canvas/WebAudio demos, SVG and favicon glyphs |
 | `ratatui-pro` | sonnet | `ratatui-patterns`, `terminal-ux` | one Rust TUI task with current ratatui built-ins plus TestBackend tests |
 | `ux-pro` | sonnet | `ux-patterns`, `terminal-ux` | builds a screen's loading, success, error, empty and partial states with the repo's own components |
 | `ux-reviewer` | opus | `ux-patterns`, `terminal-ux` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |

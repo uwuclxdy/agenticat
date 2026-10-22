@@ -12,7 +12,7 @@ Welcome contributions: new agents, new skills, fixes to existing ones, and READM
 
 An agent def is a thin implementer: a method, quality gates, and an output contract. Persona intros, invented delivery metrics, and "integrates with" lists don't land.
 
-- Frontmatter: `name`, `description`, `model` (`haiku`/`sonnet`/`opus` alias), and optionally `disallowedTools` or `tools` (comma-separated strings). Omit both to inherit every tool; that's the implementer default. Frontmatter values stay lowercase; body headings use Title Case (`## Method`).
+- Frontmatter: `name`, `description`, optionally `model` (`haiku`/`sonnet`/`opus` alias; omit it to inherit the caller's model, the default for language implementers), and optionally `disallowedTools` or `tools` (comma-separated strings). Omit both to inherit every tool; that's the implementer default. Frontmatter values stay lowercase; body headings use Title Case (`## Method`).
 - **Prefer `disallowedTools`.** `tools` is an exact allowlist: it drops every MCP tool and `ToolSearch` along with everything else unnamed, so an agent that carries one can't reach any MCP server no matter what the user has installed. A denylist keeps the read-only contract without that blast radius. Setting both is a silent bug, Claude Code ignores `disallowedTools` whenever `tools` is present. Use `tools` only when the tight sandbox is the point, and mark it `# lint: sandboxed`.
 - Write the `description` in third person for triggering: what it does, what it returns, how to spawn it ("Spawn one per …"), and a " - Use when" clause listing the concrete trigger situations.
 - Domain knowledge belongs in a paired skill, referenced conditionally ("load `<skill>` if installed") with an inline fallback checklist. Installs are cherry-picked, so an agent can't assume a sibling skill ships.
@@ -27,7 +27,9 @@ An agent def is a thin implementer: a method, quality gates, and an output contr
 
 ## Before you PR
 
-- [ ] `bun bin/lint-agents.ts agents --portable` passes (CI runs it too)
+- [ ] `bun bin/lint-agents.ts agents --portable` passes (CI runs it too; an agent `name` is lowercase letters, digits and hyphens, starts with a letter or digit, and matches its file name)
+- [ ] `bun test bin/` passes when you touch `bin/`
+- [ ] a renamed agent, or one folded into another, gets a row in `RENAMES` in `bin/install-agents.ts` pointing at its successor, and any older row pointing at the old name is re-pointed to the new one, so `./install.sh --update` carries existing installs over
 - [ ] scrub grep (above) comes back clean
 - [ ] README catalog tables and badge counts match the contents of `agents/` and `skills/`
 - [ ] a new agent shows up in `./install.sh --list` and its converted opencode/codex output looks sane

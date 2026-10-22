@@ -37,7 +37,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
    - **Drop rot magnets**: scaffolding commands with pinned dep versions, install matrices, benchmarks, marketing.
    - **Scrub.** Prune upstream repo scaffolding (`.github/`, `CHANGELOG`, `CONTRIBUTING`); check `metadata.author` + license headers (a missing, all-rights-reserved, or restrictive license forces README-link-only, see Hard Rules); nothing personal or machine-specific lands in `agents/` or `skills/`.
    - **Pairing check**, both directions: an agent touching a shipped skill's domain gets a conditional "load `<skill>` if installed" line with an inline fallback, never a hard dependency. A new skill sweeps existing agents for the reverse reference.
-   - **Conventions**: lowercase frontmatter `name`/`description` (third-person, trigger-rich), Title Case headings, comma-string `tools`, `model` picked per task weight (sonnet default for implementers).
+   - **Conventions**: lowercase frontmatter `name`/`description` (third-person, trigger-rich), Title Case headings, comma-string `tools`, `model` omitted for language implementers (inherit), set only where task weight differs.
 
 5. **Propose, then apply on approval**: a picks table (`# | artifact | home | work needed`), a drop list (one line each), caveats. Apply only after the user confirms.
 
