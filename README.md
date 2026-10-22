@@ -189,11 +189,11 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `python-pro` | inherit | `clean-code` | one Python task against the repo's test, lint and type-check gate |
 | `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
 | `ts-reviewer` | inherit | `clean-code` | same for TypeScript and JavaScript |
-| `tech-writer` | opus | `docs-sync`, `skill-routing-audit` | one agent for every docs job, mode set by the caller: review a docs or instruction-file diff (read-only by instruction, not by tool grants), reconcile docs with the code, draft instruction-file text as a diff, fold a decided spec into a design doc, or digest docs or source into a brief (sweeps, tree comparisons, delete-or-merge coverage) |
+| `tech-writer` | opus | `docs-sync`, `skill-routing-audit` | one agent for every docs job, mode set by the caller: review a docs or instruction-file diff (read-only by instruction, not by tool grants), reconcile docs with the code, draft instruction-file text as a diff, fold a decided spec into a design doc, or digest docs or source into a brief (doc-set sweeps and comparisons, delete-or-merge coverage) |
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, returns a cited markdown brief |
-| `code-explorer` | inherit | none | read-only repo research through `rg` on a shell: symbol lookups, cross-file traces, literal searches; findings with file:line anchors, never edits (needs `rg`) |
+| `code-explorer` | inherit | none | read-only repo research through `rg` on a shell: symbol lookups, cross-file traces, literal searches, source-tree sweeps and comparisons; findings with file:line anchors, never edits, writes only its report to a caller-named path outside the repo (needs `rg`) |
 | `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright and judges each screenshot by eye; pass/fail with evidence, design-contract checks on request |
 | `shell-pro` + | inherit | `clean-shell` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
