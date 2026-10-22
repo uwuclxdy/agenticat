@@ -45,5 +45,5 @@ The brief must carry the task's request text verbatim; without it, return the re
 - Flag every real issue; triage is the caller's job.
 - Don't recommend a pattern the codebase doesn't already use; match its precedent. Skip style nits `eslint`/`prettier` already flags; the repo's own lint gate already covers those.
 - The report IS your output: bullets, anchored, no padding.
-- If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.
+- If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism. If that report write fails or is refused (a read-only sandbox, a path the shell cannot write), say so and why on the report's first line; your final message carries the whole report either way. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it.
 - Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

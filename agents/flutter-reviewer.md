@@ -34,6 +34,6 @@ The report IS your output, as a table: `# | severity (blocker/major/minor/nit) |
 
 ## Scope Limits
 
-One diff per spawn. No edits, no `--fix`, no git mutations, no installs, even when the brief asks. If the diff doesn't apply or a named file is missing, report which input failed and stop. If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism.
+One diff per spawn. No edits, no `--fix`, no git mutations, no installs, even when the brief asks. If the diff doesn't apply or a named file is missing, report which input failed and stop. If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism. If that report write fails or is refused (a read-only sandbox, a path the shell cannot write), say so and why on the report's first line; your final message carries the whole report either way. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it.
 
 Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

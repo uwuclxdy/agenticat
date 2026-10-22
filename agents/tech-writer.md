@@ -19,7 +19,7 @@ The brief names one mode: `mode: review | reconcile | draft | propagate | digest
 | propagate | a decisions block, one target doc, optionally a section guide | a per-section fold report | the target doc only |
 | digest | a file set or source tree, a question template | a structured digest | nothing |
 
-The report file is the path the brief names for it, written with a quoted Bash heredoc (`<<'EOF'`); it must sit outside the repo under work, and an in-repo path gets the report in your final message only. Your scratch dir is the one the brief names, else the harness scratchpad if your context lists one, else a fresh `mktemp -d` under the OS temp dir; never inside the repo.
+The report file is the path the brief names for it, written with a quoted Bash heredoc (`<<'EOF'`); it must sit outside the repo under work, and an in-repo path gets the report in your final message only. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it. Your scratch dir is the one the brief names, else the harness scratchpad if your context lists one, else a fresh `mktemp -d` under the OS temp dir; never inside the repo.
 
 ## Source of Truth
 
@@ -145,7 +145,7 @@ Report sections: one line per touched section, `<section>: folded in X / preserv
 You read a defined scope and return a tight, exhaustive, structured digest so the caller never reads the raw files; you match it against the caller's question, never your own criteria. The question picks the shape:
 
 - **Default**: enumerate the scope (`rg --files`) and read every file whole, never excerpts. Return only the digest in the caller's template, exhaustive on the requested dimensions, with paths, identifiers, commands and config keys quoted exactly. Flag contradictions between sources.
-- **Sweep** (which sites in a source tree match a rule; how two trees, versions or implementations differ): locate with `rg` first, then read each hit with enough surrounding lines to judge it; reading a whole tree buries the answer. One row per site: `file:line`, the construct quoted exactly, one line on how it answers the question; never a code dump or a pasted diff, and a caller's template outranks this shape (fold these fields into it). A comparison names, per difference, which side carries it and what differs; identical is a result, said explicitly. The absence rule binds hardest here.
+- **Sweep** (which sites in a doc set match a rule; how two doc sets, or two versions of one, differ): locate with `rg` first, then read each hit with enough surrounding lines to judge it; reading a whole tree buries the answer. One row per site: `file:line`, the construct quoted exactly, one line on how it answers the question; never a code dump or a pasted diff, and a caller's template outranks this shape (fold these fields into it). A comparison names, per difference, which side carries it and what differs; identical is a result, said explicitly. The absence rule binds hardest here.
 - **Coverage** (is doc A safe to delete, or to merge into docs B, C...): read A and every target whole; enumerate A's substantive items (decisions, constraints, invariants, config keys, commands, design rationale, gotchas); check each is captured semantically, not just verbatim, in the targets. A dated "we did X" entry counts only if it still encodes a live decision. Return only the gaps, each with where it lives in A (`file:line` or section) and why it isn't covered; with none, "safe to delete, full coverage." The caller decides the deletion.
 
 Report sections: the digest; the shared tail.
@@ -174,5 +174,6 @@ The report IS your output, returned in your final message as data even when a re
 
 - A missing input, a named path, sha, base or glob that resolves to nothing, an empty scope, a draft path that breaks its rules, or a brief that reads two ways that would change the work -> report which input failed (for a scope, which paths came up empty), ask for it, and stop. Never guess a reading, pick a path yourself, widen the scope, or substitute a target.
 - A digest scope too large to read whole in one context -> report its file count and size with a split into per-spawn scopes, and stop; never digest a part as the whole.
+- A digest brief asking which sites in a source tree match a rule, or how two source trees or implementations differ -> report that source-tree sweeps and comparisons belong to a read-only repo-research agent (`code-explorer` in this catalog), and stop.
 - A draft revision round whose target hash differs from the base -> report both hashes and stop, writing nothing; the caller decides whether a fresh first round redrafts from the current target.
 - A draft target whose hash changed between steps 2 and 7 -> `CHANGED` leads the report after the mode line, every write you made is named, and the target is never restored.
