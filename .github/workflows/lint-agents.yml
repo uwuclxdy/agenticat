@@ -30,6 +30,10 @@ jobs:
             [ "$n" -eq "$a" ] || { echo "$t: converted $n of $a defs"; exit 1; }
           done
 
+      # Every run gets a scratch HOME and --dest, so no real install path is touched.
+      - name: converter tests
+        run: bun test bin/
+
       # grep rc: 0 = found (fail), 1 = clean (pass), 2 = a target path is missing (fail).
       - name: no machine-specific references
         run: |

@@ -13,6 +13,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
+import { AGENT_NAME } from "./agent-name";
 
 // Every tool a subagent can be granted. A name outside this set resolves to nothing at
 // spawn time; if ALL of them do, Claude Code refuses to launch the agent.
@@ -60,7 +61,10 @@ function lint(path: string, portable: boolean): Finding[] {
   const denied = list(fm.disallowedTools);
 
   if (!fm.name) err("missing `name`");
-  else if (fm.name !== file.replace(/\.md$/, "")) err(`name \`${fm.name}\` does not match filename`);
+  else {
+    if (fm.name !== file.replace(/\.md$/, "")) err(`name \`${fm.name}\` does not match filename`);
+    if (!AGENT_NAME.test(fm.name)) err(`name \`${fm.name}\` is not a plain agent name (${AGENT_NAME})`);
+  }
   if (!fm.description) err("missing `description`");
 
   // Claude Code ignores disallowedTools whenever tools is set, so a def carrying both

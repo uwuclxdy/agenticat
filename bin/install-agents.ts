@@ -5,14 +5,15 @@
 //
 // usage:
 //   bun bin/install-agents.ts --to opencode|codex|all [--project] [--dest <dir>] [names...]
-//   bun bin/install-agents.ts --update        # git pull + reinstall what the manifest lists
+//   bun bin/install-agents.ts --update [--dest <dir>]  # reinstall the manifest's agents (a full install: the whole current catalog), apply renames, prune defs the catalog dropped; git pull unless --dest
 //   bun bin/install-agents.ts --list
 
-import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from "node:fs";
+import { join, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { AGENT_NAME } from "./agent-name";
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url))); // repo root (bin/..)
 const AGENTS_DIR = join(REPO, "agents");
@@ -23,6 +24,13 @@ const MODEL_MAP: Record<string, string> = {
   sonnet: "anthropic/claude-sonnet-5",
   opus: "anthropic/claude-opus-4-8",
   haiku: "anthropic/claude-haiku-4-5",
+};
+
+// claude agent name -> current name, for defs renamed since a manifest was written.
+// a new rename re-points every older row to the new name: resolution is one hop.
+const RENAMES: Record<string, string> = {
+  "ts-reviewer": "web-reviewer",
+  "frontend-builder": "web-pro",
 };
 
 // claude tool name -> opencode tool key
@@ -120,40 +128,145 @@ function destFor(target: string, project: boolean, override?: string): string {
   return project ? ".codex/agents" : join(homedir(), ".codex/agents");
 }
 
-function install(targets: string[], names: string[], project: boolean, destOverride?: string) {
-  const all = readdirSync(AGENTS_DIR).filter((f: string) => f.endsWith(".md")).map((f: string) => join(AGENTS_DIR, f));
-  const defs = all.map(parseAgent).filter((a: AgentDef) => !names.length || names.includes(a.name));
-  const missing = names.filter((n) => !defs.some((d: AgentDef) => d.name === n));
+const fileName = (target: string, name: string) => `${name}${target === "opencode" ? ".md" : ".toml"}`;
+
+function readCatalog(): AgentDef[] {
+  return readdirSync(AGENTS_DIR)
+    .filter((f: string) => f.endsWith(".md"))
+    .map((f: string) => parseAgent(join(AGENTS_DIR, f)));
+}
+
+// names: null = the whole current catalog, [] = nothing. An empty list is not "all".
+function install(targets: string[], names: string[] | null, project: boolean, destOverride?: string, catalog: AgentDef[] = readCatalog()) {
+  const defs = names === null ? catalog : catalog.filter((a: AgentDef) => names.includes(a.name));
+  const missing = names === null ? [] : names.filter((n: string) => !catalog.some((a: AgentDef) => a.name === n));
   if (missing.length) throw new Error(`unknown agents: ${missing.join(", ")} (see --list)`);
   for (const target of targets) {
     const dest = destFor(target, project, destOverride);
     mkdirSync(dest, { recursive: true });
     for (const a of defs) {
-      const [file, content] =
-        target === "opencode" ? [`${a.name}.md`, toOpencode(a)] : [`${a.name}.toml`, toCodex(a)];
-      writeFileSync(join(dest, file), content);
+      const file = fileName(target, a.name);
+      writeFileSync(join(dest, file), target === "opencode" ? toOpencode(a) : toCodex(a));
       console.log(`  ${target}: ${join(dest, file)}`);
     }
     writeFileSync(
       join(dest, MANIFEST),
-      JSON.stringify({ source: REPO, target, project, agents: defs.map((d: AgentDef) => d.name), installedAt: new Date().toISOString() }, null, 2) + "\n",
+      JSON.stringify({ source: REPO, target, project, all: names === null, agents: defs.map((d: AgentDef) => d.name), installedAt: new Date().toISOString() }, null, 2) + "\n",
     );
   }
   console.log(`installed ${defs.length} agent(s) -> ${targets.join(", ")}`);
 }
 
-function update(project: boolean) {
-  execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
-  let found = false;
+function manifestNames(names: unknown[]): string[] {
+  const valid: string[] = [];
+  for (const name of names) {
+    if (typeof name === "string" && AGENT_NAME.test(name)) valid.push(name);
+    else console.warn(`  warn: manifest name ${JSON.stringify(name)} is not an agent name; skipped`);
+  }
+  return valid;
+}
+
+// the rename table can land before the catalog does: keep an old name the catalog still
+// holds rather than delete it for a replacement that is not there yet.
+function renameTarget(name: string, catalog: string[]): string | undefined {
+  const renamed = RENAMES[name];
+  return renamed && catalog.includes(renamed) ? renamed : undefined;
+}
+
+// fixed-list manifest -> current names, plus the old names whose converted files must go.
+function reconcile(target: string, names: unknown[], catalog: string[]) {
+  const wanted: string[] = [];
+  const stale: string[] = [];
+  for (const name of manifestNames(names)) {
+    const renamed = renameTarget(name, catalog);
+    const current = renamed ?? name;
+    if (!catalog.includes(current)) {
+      stale.push(name);
+      continue;
+    }
+    if (current !== name) {
+      console.log(`  ${target}: ${name} -> ${current}`);
+      stale.push(name);
+    }
+    wanted.push(current);
+  }
+  return { wanted, stale };
+}
+
+function prune(dest: string, target: string, names: string[]) {
+  for (const name of names) {
+    const file = join(dest, fileName(target, name));
+    if (!existsSync(file)) continue;
+    unlinkSync(file);
+    console.log(`  ${target}: removed ${file}`);
+  }
+}
+
+const shellQuote = (p: string) => `'${p.replace(/'/g, "'\\''")}'`;
+
+// the fix a malformed manifest's error prints must repair the install it names,
+// from any directory: install.sh is relative to the repo and changes into it, so
+// a cwd-relative location (a relative --dest, every --project) is replayed directly.
+function reinstallCommand(target: string, project: boolean, destOverride?: string): string {
+  if (destOverride) return `${shellQuote(join(REPO, "install.sh"))} --to ${target} --dest ${shellQuote(resolve(destOverride))}`;
+  if (project) return `cd ${shellQuote(process.cwd())} && bun ${shellQuote(join(REPO, "bin/install-agents.ts"))} --to ${target} --project`;
+  return `${shellQuote(join(REPO, "install.sh"))} --to ${target}`;
+}
+
+// a manifest feeds a path join and a rewrite, so validate it at the boundary before either.
+function readManifest(path: string, reinstall: string): { agents: unknown[]; all: boolean } {
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    throw new Error(`${path}: cannot read (${(err as { code?: string }).code}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
+  }
+  let m: unknown;
+  try {
+    m = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`${path}: not valid JSON (${(err as Error).message}); reinstall with: ${reinstall}`);
+  }
+  if (m === null || !Array.isArray((m as { agents?: unknown }).agents)) {
+    throw new Error(`${path}: no "agents" array; reinstall with: ${reinstall}`);
+  }
+  const { agents, all } = m as { agents: unknown[]; all?: unknown };
+  return { agents, all: all === true };
+}
+
+function update(project: boolean, destOverride?: string) {
+  if (!destOverride) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
+  const catalog = readCatalog();
+  const catalogNames = catalog.map((a: AgentDef) => a.name);
+  // read and validate every present manifest before acting on any: a bad one must not
+  // leave another target half-updated.
+  const pending: { target: string; dest: string; agents: unknown[]; all: boolean }[] = [];
   for (const target of ["opencode", "codex"]) {
-    const dest = destFor(target, project);
+    const dest = destFor(target, project, destOverride);
     const mf = join(dest, MANIFEST);
     if (!existsSync(mf)) continue;
-    found = true;
-    const m = JSON.parse(readFileSync(mf, "utf8"));
-    install([target], m.agents, project);
+    pending.push({ target, dest, ...readManifest(mf, reinstallCommand(target, project, destOverride)) });
   }
-  if (!found) console.log("no agenticat manifest found; nothing to update (install first)");
+  if (!pending.length) {
+    console.log("no agenticat manifest found; nothing to update (install first)");
+    return;
+  }
+  for (const { target, dest, agents, all } of pending) {
+    let wanted: string[] | null = null;
+    let stale: string[];
+    if (all) {
+      stale = manifestNames(agents).filter((n: string) => !catalogNames.includes(n));
+      for (const name of stale) {
+        const renamed = renameTarget(name, catalogNames);
+        if (renamed) console.log(`  ${target}: ${name} -> ${renamed}`);
+      }
+    } else {
+      // a manifest written before `all` existed carries no flag and stays a fixed list.
+      ({ wanted, stale } = reconcile(target, agents, catalogNames));
+    }
+    install([target], wanted, project, destOverride, catalog);
+    prune(dest, target, stale);
+  }
 }
 
 // --- args
@@ -182,12 +295,9 @@ if (targets.some((t) => !["opencode", "codex"].includes(t))) {
 }
 
 if (doList) {
-  for (const f of readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md"))) {
-    const a = parseAgent(join(AGENTS_DIR, f));
-    console.log(`${a.name}: ${a.description.slice(0, 90)}`);
-  }
+  for (const a of readCatalog()) console.log(`${a.name}: ${a.description.slice(0, 90)}`);
 } else if (doUpdate) {
-  update(project);
+  update(project, destOverride);
 } else {
-  install(targets, argv, project, destOverride);
+  install(targets, argv.length ? argv : null, project, destOverride);
 }
