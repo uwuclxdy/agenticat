@@ -116,7 +116,16 @@ function toOpencode(a: AgentDef): string {
   return `---\n${lines.join("\n")}\n---\n\n${a.body}\n`;
 }
 
+// a TOML basic string carries no control byte but tab and the CR of a CRLF pair, and
+// JSON.stringify leaves DEL raw plus turns a lone surrogate into an escape TOML's parser
+// rejects; a frontmatter value holding one is a catalog defect like the ''' case below.
+const TOML_VALUE_UNSAFE = /[\x7f]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+const TOML_BODY_UNSAFE = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]|\r(?!\n)/;
+
 function toCodex(a: AgentDef): string {
+  if (TOML_VALUE_UNSAFE.test(a.name)) throw new Error(`${JSON.stringify(a.name)}: name holds a character TOML cannot carry`);
+  if (TOML_VALUE_UNSAFE.test(a.description)) throw new Error(`${a.name}: description holds a character TOML cannot carry`);
+  if (TOML_BODY_UNSAFE.test(a.body)) throw new Error(`${a.name}: body holds a control character TOML cannot carry`);
   // Bash alone stays read-only: our read-only agents carry it for git diff/checks,
   // and codex's read-only sandbox still allows command execution, just no fs writes.
   // denylist form: read-only only when both write tools are denied; deny-Edit-only

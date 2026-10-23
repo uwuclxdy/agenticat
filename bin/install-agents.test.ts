@@ -679,3 +679,49 @@ describe("--update without --dest", () => {
   });
 });
 
+describe("codex conversion", () => {
+  const defWithBody = (name: string, body: string) => `---\nname: ${name}\ndescription: "fixture ${name}"\n---\n\n${body}\n`;
+
+  test.each([
+    ["an ESC byte", "before\x1bafter"],
+    ["a DEL byte", "before\x7fafter"],
+    ["a bare CR", "before\rafter"],
+  ])("a def body holding %s fails the conversion loudly and writes no codex file", (_label, body) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "bad.md"), defWithBody("bad", body));
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("bad: ");
+    expect(existsSync(join(f.dest, "codex", "bad.toml"))).toBe(false);
+  });
+
+  test.each([
+    ["a CRLF line end", "before\r\nafter"],
+    ["a tab", "before\tafter"],
+    ["backslashes and quotes", "a \\d+ regex and \"quotes\" and 'single' ones"],
+  ])("a def body holding %s converts to a codex file that parses as TOML", (_label, body) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "ok.md"), defWithBody("ok", body));
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    const parsed = Bun.TOML.parse(readFileSync(join(f.dest, "codex", "ok.toml"), "utf8")) as { name: string; developer_instructions: string };
+    expect(parsed.name).toBe("ok");
+    // the TOML spec lets a parser normalize a newline inside a multi-line string; bun's reads CRLF as LF.
+    expect(parsed.developer_instructions.trim()).toBe(body.replace(/\r\n/g, "\n"));
+  });
+
+  test("a control byte in a description never yields a codex file that fails to parse", () => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "desc.md"), `---\nname: desc\ndescription: "fixture\x7fdesc"\n---\n\nbody\n`);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    const toml = join(f.dest, "codex", "desc.toml");
+    if (r.status === 0) expect(() => Bun.TOML.parse(readFileSync(toml, "utf8"))).not.toThrow();
+    else expect(existsSync(toml)).toBe(false);
+  });
+});
