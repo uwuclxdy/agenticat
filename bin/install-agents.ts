@@ -119,10 +119,10 @@ function toOpencode(a: AgentDef): string {
   return `---\n${lines.join("\n")}\n---\n\n${a.body}\n`;
 }
 
-// a TOML basic string carries no control byte but tab and the CR of a CRLF pair, and
-// JSON.stringify leaves DEL raw plus turns a lone surrogate into an escape TOML's parser
-// rejects; a frontmatter value holding one is a catalog defect like the ''' case below.
-const TOML_VALUE_UNSAFE = /[\x7f]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+// a TOML basic string carries no raw control byte but tab and the CR of a CRLF pair;
+// JSON.stringify escapes every C0 byte but leaves DEL raw, so a value holding one is a
+// catalog defect like the ''' case below.
+const TOML_VALUE_UNSAFE = /\x7f/;
 const TOML_BODY_UNSAFE = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]|\r(?!\n)/;
 
 function toCodex(a: AgentDef): string {
@@ -171,14 +171,19 @@ function readCatalog(): AgentDef[] {
     .map((f: string) => parseAgent(join(AGENTS_DIR, f)));
 }
 
+// one-line quoted form for untrusted text in a refusal: JSON.stringify leaves DEL, the C1
+// controls and the line separators raw, and each would print as itself or split the line.
+const quote = (text: string) =>
+  JSON.stringify(text).replace(/[\x7f-\x9f\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+
 const cannotCreate = (dest: string, code?: string) =>
-  new InputError(`${JSON.stringify(dest)}: cannot create (${code}); fix that path or pass a --dest that is a writable directory`);
+  new InputError(`${quote(dest)}: cannot create (${code}); fix that path or pass a --dest that is a writable directory`);
 
 const cannotWrite = (dest: string, code?: string) =>
-  new InputError(`${JSON.stringify(dest)}: cannot write (${code}); fix that path or pass a --dest that is a writable directory`);
+  new InputError(`${quote(dest)}: cannot write (${code}); fix that path or pass a --dest that is a writable directory`);
 
 const cannotRemove = (dest: string, code?: string) =>
-  new InputError(`${JSON.stringify(dest)}: cannot remove (${code}); fix that path or pass a --dest that is a writable directory`);
+  new InputError(`${quote(dest)}: cannot remove (${code}); fix that path or pass a --dest that is a writable directory`);
 
 // a failure of the filesystem itself, not of the path: it keeps its own trace.
 const GENUINE_WRITE_CODES = ["ENOSPC", "EDQUOT", "EIO"];
@@ -380,17 +385,21 @@ function reconcile(target: string, names: unknown[], catalog: string[]) {
 }
 
 // a newline in a path would split a one-line refusal, so a path holding any control
-// character takes bash ANSI-C quoting; every other path keeps the plain single-quoted form.
+// character, DEL and the C1 range included, takes bash ANSI-C quoting; every other path
+// keeps the plain single-quoted form. Each quoted character is emitted as its UTF-8
+// bytes, which is what bash reads back.
 const ansiCQuote = (p: string) =>
   p
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'")
     .replace(/\n/g, "\\n")
     .replace(/\t/g, "\\t")
-    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`);
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029]/g, (c) =>
+      [...Buffer.from(c, "utf8")].map((b) => `\\x${b.toString(16).padStart(2, "0")}`).join(""),
+    );
 
 const shellQuote = (p: string) =>
-  /[\x00-\x1f\x7f]/.test(p) ? `$'${ansiCQuote(p)}'` : `'${p.replace(/'/g, "'\\''")}'`;
+  /[\x00-\x1f\x7f-\x9f\u2028\u2029]/.test(p) ? `$'${ansiCQuote(p)}'` : `'${p.replace(/'/g, "'\\''")}'`;
 
 // the fix a malformed manifest's error prints must repair the install it names,
 // from any directory: install.sh is relative to the repo and changes into it, so
@@ -407,18 +416,18 @@ function readManifest(path: string, reinstall: string): { agents: unknown[]; all
   try {
     raw = readFileSync(path, "utf8");
   } catch (err) {
-    throw new InputError(`${JSON.stringify(path)}: cannot read (${(err as { code?: string }).code}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
+    throw new InputError(`${quote(path)}: cannot read (${(err as { code?: string }).code}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
   }
   let m: unknown;
   try {
     m = JSON.parse(raw);
   } catch (err) {
     // the parser quotes the offending input, so a raw control byte from the manifest
-    // would reach stderr; the JSON-quoted message keeps the refusal one clean line.
-    throw new InputError(`${JSON.stringify(path)}: not valid JSON (${JSON.stringify((err as Error).message)}); reinstall with: ${reinstall}`);
+    // would reach stderr; the quoted message keeps the refusal one clean line.
+    throw new InputError(`${quote(path)}: not valid JSON (${quote((err as Error).message)}); reinstall with: ${reinstall}`);
   }
   if (m === null || !Array.isArray((m as { agents?: unknown }).agents)) {
-    throw new InputError(`${JSON.stringify(path)}: no "agents" array; reinstall with: ${reinstall}`);
+    throw new InputError(`${quote(path)}: no "agents" array; reinstall with: ${reinstall}`);
   }
   const { agents, all } = m as { agents: unknown[]; all?: unknown };
   return { agents, all: all === true };

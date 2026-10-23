@@ -931,3 +931,52 @@ describe("codex conversion", () => {
     expect(existsSync(f.dest)).toBe(false);
   });
 });
+
+describe("untrusted text in a refusal", () => {
+  // Every refusal is one line a terminal prints verbatim: a control byte, a C1 control or a
+  // line separator from a path or a manifest must arrive escaped.
+  const RAW_UNSAFE = /[\x00-\x1f\x7f-\x9f\u2028\u2029]/;
+
+  test.each([
+    ["DEL", "{\x7f"],
+    ["a C1 control", "{\u009b"],
+    ["a line separator", "{\u2028"],
+  ])("a malformed manifest holding %s never echoes it raw", (_label, content) => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    writeFileSync(join(codex, MANIFEST), content);
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr.endsWith("\n")).toBe(true);
+    expect(r.stderr.slice(0, -1)).not.toMatch(RAW_UNSAFE);
+  });
+
+  // The reinstall tail must survive bash: extract the --dest word and let bash print it.
+  test.each([
+    ["a control byte before a hex digit", "a\x01b"],
+    ["a quote and a newline", "q'\nq"],
+    ["a backslash and a newline", "b\\\nb"],
+    ["an ESC", "e\x1be"],
+    ["a DEL", "d\x7fd"],
+    ["a C1 control", "c\u009bc"],
+  ])("a --dest holding %s prints a reinstall command bash reads back to the same path", (_label, name) => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, name);
+    const codex = join(dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    writeFileSync(join(codex, MANIFEST), "{\"agents\": [");
+
+    const r = f.run("--update", "--dest", dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr.endsWith("\n")).toBe(true);
+    expect(r.stderr.slice(0, -1)).not.toMatch(RAW_UNSAFE);
+    const word = r.stderr.slice(r.stderr.indexOf("--dest ") + "--dest ".length, -1);
+    const echoed = spawnSync("bash", ["-c", `printf %s ${word}`], { encoding: "utf8" });
+    expect(echoed.status).toBe(0);
+    expect(echoed.stdout).toBe(dest);
+  });
+});
