@@ -17,7 +17,7 @@ const AGENTS_DIR = join(REPO, "agents");
 const MANIFEST = ".agenticat.json";
 
 const USAGE = `usage: bun bin/install-agents.ts [--to opencode|codex|all] [--project] [--dest <dir>] [names...]
-       bun bin/install-agents.ts --update [--project] [--dest <dir>]  # reinstall the manifest's agents (a full install: the whole current catalog), apply renames, prune defs the catalog dropped; git pull unless --dest
+       bun bin/install-agents.ts --update [--project] [--dest <dir>]  # reinstall the manifest's agents (a full install: the whole current catalog), apply renames, prune defs the catalog dropped; git pull before reinstalling, unless --dest
        bun bin/install-agents.ts --list
        bun bin/install-agents.ts -h, --help`;
 
