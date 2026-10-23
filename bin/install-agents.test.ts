@@ -207,9 +207,21 @@ describe("--update --dest", () => {
     const r = f.run("--update", "--dest", f.dest);
 
     expect(r.status).not.toBe(0);
-    expect(r.stderr).toContain("EISDIR");
-    expect(r.stderr).not.toContain("not valid JSON");
-    expect(r.stderr).toContain("remove or fix the permissions of that path, then reinstall with:");
+    expect(r.stderr).toBe(
+      `${JSON.stringify(join(codex, MANIFEST))}: cannot read (EISDIR); remove or fix the permissions of that path, then reinstall with: '${join(f.repo, "install.sh")}' --to codex --dest '${f.dest}'\n`,
+    );
+  });
+
+  test("a malformed manifest's refusal opens on the quoted path", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    writeFileSync(join(codex, MANIFEST), "{\"agents\": [");
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr.startsWith(`${JSON.stringify(join(codex, MANIFEST))}: not valid JSON (`)).toBe(true);
   });
 
   test("a control character in --dest is ANSI-C quoted, so a manifest refusal stays one line", () => {
@@ -466,36 +478,48 @@ describe("argument parsing", () => {
 
   test("a file in an ancestor of the HOME install dir is refused before the other target's dir is made", () => {
     const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
     writeFileSync(join(f.home, ".codex"), "a file where the codex dir would go\n");
 
-    const r = f.run("web-pro");
+    const r = f.runIn(cwd, "web-pro");
 
     expect(r.status).toBe(1);
     expect(r.stderr).toBe(`${JSON.stringify(join(f.home, ".codex", "agents"))}: cannot create (ENOTDIR); ${HINT}\n`);
     expect(existsSync(join(f.home, ".config"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([".codex"]);
   });
 
   test("a dangling symlink where a target dir goes is refused in one line before any target is written", () => {
     const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
     mkdirSync(f.dest);
     symlinkSync(join(f.root, "nowhere"), join(f.dest, "codex"));
 
-    const r = f.run("--dest", f.dest, "web-pro");
+    const r = f.runIn(cwd, "--dest", f.dest, "web-pro");
 
     expect(r.status).toBe(1);
-    expect(r.stderr).toMatch(new RegExp(`^${escapeRegExp(JSON.stringify(join(f.dest, "codex")))}: cannot create \\((ENOENT|EEXIST)\\); ${escapeRegExp(HINT)}\\n$`));
+    expect(r.stderr).toBe(`${JSON.stringify(join(f.dest, "codex"))}: cannot create (ENOENT); ${HINT}\n`);
     expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
   });
 
   test("a path with a newline stays a one-line reason", () => {
     const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
     const dest = join(f.root, "a\nb");
     writeFileSync(dest, "a file where --dest points\n");
 
-    const r = f.run("--dest", dest, "web-pro");
+    const r = f.runIn(cwd, "--dest", dest, "web-pro");
 
     expect(r.status).toBe(1);
     expect(r.stderr).toBe(`${JSON.stringify(join(dest, "opencode"))}: cannot create (ENOTDIR); ${HINT}\n`);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
   });
 
   // chmod binds nothing for root, so these run only as a regular user.
@@ -503,20 +527,26 @@ describe("argument parsing", () => {
 
   asUser("an existing target dir the user cannot write is refused in one line before any target is written", () => {
     const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
     const codex = join(f.dest, "codex");
     mkdirSync(codex, { recursive: true });
     chmodSync(codex, 0o555);
 
-    const r = f.run("--dest", f.dest, "web-pro");
+    const r = f.runIn(cwd, "--dest", f.dest, "web-pro");
     chmodSync(codex, 0o755);
 
     expect(r.status).toBe(1);
     expect(r.stderr).toBe(`${JSON.stringify(codex)}: cannot write (EACCES); ${HINT}\n`);
     expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
   });
 
   asUser("--update refuses an unwritable target before updating the other one", () => {
     const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
     const opencode = join(f.dest, "opencode");
     const codex = join(f.dest, "codex");
     writeManifest(opencode, "opencode", ["web-pro"]);
@@ -524,13 +554,15 @@ describe("argument parsing", () => {
     const opencodeManifest = readFileSync(join(opencode, MANIFEST), "utf8");
     chmodSync(codex, 0o555);
 
-    const r = f.run("--update", "--dest", f.dest);
+    const r = f.runIn(cwd, "--update", "--dest", f.dest);
     chmodSync(codex, 0o755);
 
     expect(r.status).toBe(1);
     expect(r.stderr).toBe(`${JSON.stringify(codex)}: cannot write (EACCES); ${HINT}\n`);
     expect(existsSync(join(opencode, "web-pro.md"))).toBe(false);
     expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
   });
 
   asUser("an existing target dir the user can write but not search is refused before any target is written", () => {
@@ -547,6 +579,23 @@ describe("argument parsing", () => {
     expect(r.status).toBe(1);
     expect(r.stderr).toBe(`${JSON.stringify(codex)}: cannot write (EACCES); ${HINT}\n`);
     expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
+  asUser("a missing target dir under an unwritable ancestor is refused as a write, before any target is made", () => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+    mkdirSync(f.dest);
+    chmodSync(f.dest, 0o555);
+
+    const r = f.runIn(cwd, "--dest", f.dest, "web-pro");
+    chmodSync(f.dest, 0o755);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(join(f.dest, "opencode"))}: cannot write (EACCES); ${HINT}\n`);
+    expect(readdirSync(f.dest)).toEqual([]);
     expect(written(cwd)).toEqual([]);
     expect(written(f.home)).toEqual([]);
   });
