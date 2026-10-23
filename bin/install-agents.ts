@@ -116,9 +116,9 @@ function grantsAgents(a: AgentDef): boolean {
   return true;
 }
 
-// opencode matches the whole command string and the LAST matching rule wins, so the
-// catch-all deny comes first, the read allows next, and every rule that can write or
-// spawn through an allowed read command comes last.
+// opencode splits a command line into its commands and matches each command's text, and
+// the LAST matching rule wins. the catch-all deny comes first, the read allows next, and
+// every pattern that can write or spawn through an allowed read command comes last.
 const OPENCODE_READS = [
   "rg *",
   "ls *",
@@ -134,10 +134,18 @@ const OPENCODE_READS = [
   "git --no-optional-locks status *",
   "git merge-base *",
   "git rev-parse *",
+  // exact, so `git hash-object -w x` stays denied; the unborn-repo fallback
+  // `git diff-index -p "$(git hash-object -t tree /dev/null)"` needs it.
+  "git hash-object -t tree /dev/null",
 ];
 
-// a spaced redirect (opencode does not split one out of its command) and each flag that
-// writes or spawns through an allowed read command.
+// a redirect attached to the matched command, spaced or not (`cat a >b`, `cat a>b`,
+// `git log 1>out`), and each flag that writes or spawns through an allowed read command.
+// opencode sees a redirect only when it is attached to the command node, so a redirect on
+// a group or a loop (`{ cat a; } > out`) and a bare `>out` reach the shell unblocked; the
+// `*>*`-shaped patterns also refuse a search whose pattern holds `>` (`rg '->'`).
+// `git diff` additionally runs a configured diff.external and textconv driver with no
+// flag, which the two flag denies below cannot stop.
 const OPENCODE_DENIES = [
   "* > *",
   "* >> *",
@@ -151,11 +159,25 @@ const OPENCODE_DENIES = [
   "* &> *",
   "* &>> *",
   "* >& *",
+  "* >*",
+  "*>*",
+  "*1>*",
+  "*2>*",
+  "*&>*",
+  "*>&*",
   "git * --output*",
   "git * --ext-diff*",
   "git * --textconv*",
   "rg *--pre*",
 ];
+
+// a def that grants Bash: the allowlist form names it, the denylist form does not deny
+// it, and a def with neither inherits it.
+function grantsBash(a: AgentDef): boolean {
+  if (a.tools) return a.tools.includes("Bash");
+  if (a.disallowedTools) return !a.disallowedTools.includes("Bash");
+  return true;
+}
 
 function toOpencode(a: AgentDef): string {
   const lines = [`description: ${JSON.stringify(a.description)}`, "mode: subagent"];
@@ -177,9 +199,11 @@ function toOpencode(a: AgentDef): string {
       for (const t of denied) lines.push(`  ${t}: false`);
     }
   }
-  // a read-only def keeps its bash tool for inspection, so it needs the allowlist that
-  // keeps that bash from writing; a def that writes keeps bash unrestricted.
-  if (!writesFiles(a)) {
+  // a read-only def that grants bash keeps that bash for inspection, so it needs the
+  // allowlist that keeps bash from writing; a def that writes keeps bash unrestricted,
+  // and a def that denies Bash gets no map at all (opencode puts the rules after the
+  // `tools:` booleans, so a map would re-grant the tool).
+  if (!writesFiles(a) && grantsBash(a)) {
     lines.push("permission:");
     if (!grantsAgents(a)) lines.push("  task: deny");
     lines.push("  bash:");

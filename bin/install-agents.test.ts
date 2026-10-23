@@ -1035,8 +1035,10 @@ describe("untrusted text in a refusal", () => {
 
 describe("opencode permission map", () => {
   // opencode's own matcher (packages/core/src/util/wildcard.ts): `*` is any run of characters,
-  // `?` one character, a trailing ` *` also matches the bare command, the whole command string
-  // is matched, and the LAST matching rule wins (no match: ask).
+  // `?` one character, a trailing ` *` also matches the bare command, and the LAST matching
+  // rule wins (no match: ask). opencode first splits a command line into its commands, each
+  // carrying only the redirects attached to it; this double matches one command as given, so
+  // it cannot see a redirect on a group or loop (`{ cat a; } > out`), which no pattern blocks.
   const wildcard = (pattern: string) => {
     let source = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
     if (source.endsWith(" .*")) source = `${source.slice(0, -3)}( .*)?`;
@@ -1069,6 +1071,7 @@ describe("opencode permission map", () => {
     "git --no-optional-locks status --porcelain",
     "git merge-base main side",
     "git rev-parse --show-toplevel",
+    "git hash-object -t tree /dev/null",
   ];
   const WRITES = [
     "touch x",
@@ -1084,6 +1087,20 @@ describe("opencode permission map", () => {
     "cat README.md > copy.md",
     "git log --output=o.txt",
     "sed -i s/a/b/ f",
+    "cat a >b",
+    "cat a>b",
+    "rg x >o",
+    "git log >out",
+    "git log 1>out",
+    "cat a 2>e",
+    "cat a 2> e",
+    "cat a &>out",
+    "cat a &> out",
+    "cat >out <<'EOF'",
+    "rg --pre cat x",
+    "git diff --ext-diff",
+    "git log --textconv -p",
+    "git hash-object -w x",
   ];
 
   test("a read-only def's map allows the shared reads and refuses writes", () => {
@@ -1128,5 +1145,12 @@ describe("opencode permission map", () => {
     const fm = install("disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n");
 
     expect(fm.permission?.task).toBe("deny");
+  });
+
+  test("a def denying Bash keeps bash off: no map turns it back on", () => {
+    const fm = install("disallowedTools: Bash, Edit, Write, NotebookEdit\n") as { permission?: { bash?: unknown }; tools?: Record<string, boolean> };
+
+    expect(fm.permission?.bash).toBeUndefined();
+    expect(fm.tools?.bash).toBe(false);
   });
 });
