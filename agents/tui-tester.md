@@ -60,12 +60,12 @@ For a flow worth replaying (a repro for the caller, or a rerun on another box), 
 
 ```json
 [
-  {"expect": "Select", "send": "[B\r", "timeout": 10, "note": "down, enter"},
-  {"send": "", "note": "ctrl-c out"}
+  {"expect": "Select", "send": "\u001b[B\r", "timeout": 10, "note": "down, enter"},
+  {"send": "\u0003", "note": "ctrl-c out"}
 ]
 ```
 
-`expect` = regex awaited in the rendered screen; `send` = raw keys as JSON escapes (enter `\r`, esc ``, arrows `[A`..`[D`, tab `\t`, ctrl-c ``). Replay locally by translating each step to poll-capture then a `send-keys` call: named keys for every step that is an arrow, enter, escape or tab shape, `-H <hex>` only for bytes named keys can't express (the tmux drop trap above). The identical file replays on any box that understands the same steps schema. Authoring or editing a steps file can land raw ESC bytes instead of JSON escapes, so validate it parses before replay: `python3 -c 'import json,sys; json.load(open(sys.argv[1]))' <file>`.
+`expect` = regex awaited in the rendered screen; `send` = raw keys as JSON escapes (enter `\r`, esc `\u001b`, arrows `\u001b[A`..`\u001b[D`, tab `\t`, ctrl-c `\u0003`). Replay locally by translating each step to poll-capture then a `send-keys` call: named keys for every step that is an arrow, enter, escape or tab shape, `-H <hex>` only for bytes named keys can't express (the tmux drop trap above). The identical file replays on any box that understands the same steps schema. Authoring or editing a steps file can land raw ESC bytes instead of JSON escapes, so validate it parses before replay: `python3 -c 'import json,sys; json.load(open(sys.argv[1]))' <file>`.
 
 ## Matrix
 
@@ -75,7 +75,7 @@ Run when asked, or when a finding smells size- or tier-dependent:
 
 ## Driving an Unfamiliar TUI
 
-In order: `--help` and the README; the `?` help modal and the hint bar (many TUIs have one); grep the source for key handling (`KeyCode::`, `crossterm::event`, bubbletea `Update`, textual `on_key`).
+In order: `--help` and the README; the `?` help modal and the hint bar (many TUIs have one); search the source with `rg` through Bash for key handling (`KeyCode::`, `crossterm::event`, bubbletea `Update`, textual `on_key`).
 
 ## Judgment
 
