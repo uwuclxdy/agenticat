@@ -81,3 +81,10 @@ jobs:
           bash plugins/agents/scripts/session-start.sh \
             | jq -e '.hookSpecificOutput | (.hookEventName == "SessionStart") and (.additionalContext | type == "string" and test("\\S"))' >/dev/null \
             || { echo "session-start hook: invalid JSON or no non-blank SessionStart additionalContext string"; exit 1; }
+
+      # actionlint is not preinstalled on the runner: fetch the pinned release so the verdict is reproducible.
+      - name: workflow lint
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/actionlint.tar.gz" "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz"
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP"
+          "$RUNNER_TEMP/actionlint" .github/workflows/lint-agents.yml
