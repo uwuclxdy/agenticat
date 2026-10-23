@@ -51,11 +51,11 @@ jobs:
       - name: converter tests
         run: bun test bin/
 
-      # grep rc: 0 = found (fail), 1 = clean (pass), 2 = a target path is missing (fail).
-      # needles use character classes so this file, now scanned via .github/, does not match its own search string.
+      # git grep rc: 0 = found (fail), 1 = clean (pass), anything else = error (fail).
+      # needles use character classes so this file does not match its own search string.
       - name: no machine-specific references
         run: |
-          rc=0; out=$(grep -rEn '/hom[e]/|192[.]168[.]|cloudif[y]|cloudy[-]' agents/ skills/ bin/ plugins/ .claude/ .github/ install.sh README.md) || rc=$?
+          rc=0; out=$(git grep -nE -e '/hom[e]/|192[.]168[.]|cloudif[y]|cloudy[-]|/User[s]/|/mn[t]/') || rc=$?
           if [ "$rc" -ne 1 ]; then
             printf '%s\n' "$out"
             echo "machine-specific reference found (grep rc=$rc; 1 = clean)"
@@ -63,14 +63,14 @@ jobs:
           fi
 
       # Structural '| — |' table cells (an intentionally empty column) are the one sanctioned use.
-      # needles are built from octal escapes so the grep line, now scanned via .github/, carries no literal dash.
+      # needles are built from octal escapes so the grep line carries no literal dash.
       - name: no em or en dashes
         run: |
           em=$(printf '\342\200\224')
           en=$(printf '\342\200\223')
-          rc=0; out=$(grep -rn -e "$em" -e "$en" agents/ skills/ bin/ plugins/ .claude/ .github/ install.sh README.md) || rc=$?
+          rc=0; out=$(git grep -n -e "$em" -e "$en") || rc=$?
           if [ "$rc" -eq 0 ]; then
-            hits=$(printf '%s\n' "$out" | grep -v '| — |' || true)
+            hits=$(printf '%s\n' "$out" | sed "s/| $em |//g" | grep -e "$em" -e "$en" || true)
             if [ -n "$hits" ]; then
               printf '%s\n' "$hits"
               echo "em/en dash found above"
