@@ -4,7 +4,7 @@ description: "MCP knowledge pack for the stateless 2026-07-28 revision."
 when_to_use: "Use when building, reviewing, or migrating an MCP server or client, or when code still calls `initialize` or `Mcp-Session-Id`."
 metadata:
   author: uwuclxdy
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # MCP Stateless

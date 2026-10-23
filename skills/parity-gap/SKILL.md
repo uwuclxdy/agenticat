@@ -4,7 +4,7 @@ description: "Diffs a program against a reference or spec, writing the gaps into
 when_to_use: "Use when matching, catching up to, or surpassing another tool."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Parity Gap
@@ -30,7 +30,7 @@ Map what each side exposes to an end user; skip internals and file structure. Th
 - UI/TUI/CLI surfaces and the actions they expose
 - notable behaviors, formats, integrations
 
-Use `Grep`/`Read`/semantic code search inline. The reference is the spec side, so read it thoroughly; the program is the have side. If the reference is too big to hold inline, offload its mapping to a read-only exploration subagent (e.g. `Explore`) and diff from the returned inventory.
+Use `rg` through Bash, `Read`, and semantic code search inline. The reference is the spec side, so read it thoroughly; the program is the have side. If the reference is too big to hold inline, offload its mapping to a read-only exploration subagent (e.g. `Explore`) and diff from the returned inventory.
 
 ## 3. Diff into Two Buckets
 

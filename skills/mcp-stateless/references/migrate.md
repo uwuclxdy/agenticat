@@ -65,7 +65,7 @@ A modern-only server **SHOULD** name its supported versions in whatever error it
 
 **State**
 
-- [ ] Grep every read and write keyed on a session id: caches, per-conversation config, workflow progress, rate-limit buckets, auth context.
+- [ ] Find every read and write keyed on a session id: caches, per-conversation config, workflow progress, rate-limit buckets, auth context.
 - [ ] Convert multi-call flows to server-minted handles passed as ordinary tool arguments.
 - [ ] Stop treating one connection as one conversation. This binds stdio too, not only HTTP.
 
