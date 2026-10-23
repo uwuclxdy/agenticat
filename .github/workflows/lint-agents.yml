@@ -13,6 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # actionlint is not preinstalled on the runner: fetch the pinned release.
+      - name: workflow lint
+        run: |
+          command -v shellcheck >/dev/null || { echo "shellcheck not on PATH: actionlint would skip run: bodies"; exit 1; }
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/actionlint.tar.gz" "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP"
+          "$RUNNER_TEMP/actionlint"
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -85,10 +95,3 @@ jobs:
           bash plugins/agents/scripts/session-start.sh \
             | jq -e '.hookSpecificOutput | (.hookEventName == "SessionStart") and (.additionalContext | type == "string" and test("\\S"))' >/dev/null \
             || { echo "session-start hook: invalid JSON or no non-blank SessionStart additionalContext string"; exit 1; }
-
-      # actionlint is not preinstalled on the runner: fetch the pinned release so the verdict is reproducible.
-      - name: workflow lint
-        run: |
-          curl -fsSL -o "$RUNNER_TEMP/actionlint.tar.gz" "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz"
-          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP"
-          "$RUNNER_TEMP/actionlint" .github/workflows/lint-agents.yml
