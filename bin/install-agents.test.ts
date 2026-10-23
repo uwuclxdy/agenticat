@@ -1170,10 +1170,32 @@ describe("opencode permission map", () => {
     expect(fm.permission?.bash).toBeUndefined();
   });
 
-  test("a def denying Agent and Task cannot spawn agents on opencode", () => {
-    const fm = install("disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n");
+  test.each([
+    ["Agent and Task", "disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n"],
+    ["Agent alone", "disallowedTools: Edit, Write, NotebookEdit, Agent\n"],
+    ["Task alone", "disallowedTools: Edit, Write, NotebookEdit, Task\n"],
+  ])("a def denying %s cannot spawn agents on opencode", (_label, lines) => {
+    const fm = install(lines);
 
     expect(fm.permission?.task).toBe("deny");
+  });
+
+  test("plain git diff, which rewrites the index, is refused to a read-only def", () => {
+    const fm = install("tools: Read, Bash\n");
+
+    expect(decide(fm.permission?.bash ?? {}, "git diff HEAD")).toBe("deny");
+  });
+
+  test("a bash allow list on a def that can write is a catalog defect on the codex target too", () => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\ntools: Bash, Read, Write\n# opencode-bash-allow: cargo clippy *\n---\n\nbody\n`);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("reader:");
+    expect(r.stderr).toContain("opencode-bash-allow");
+    expect(existsSync(join(f.dest, "codex"))).toBe(false);
   });
 
   test("a writing def whose allowlist names no Agent cannot spawn agents on opencode either", () => {

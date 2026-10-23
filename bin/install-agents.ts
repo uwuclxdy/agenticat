@@ -89,7 +89,7 @@ function parseAgent(path: string): AgentDef {
   const sandbox = m[1].match(/^#\s*sandbox:\s*(\S+)\s*$/m)?.[1];
   if (sandbox !== undefined && sandbox !== "workspace-write")
     throw new Error(`${fm.name}: unknown sandbox marker ${JSON.stringify(sandbox)} (expected "workspace-write")`);
-  return {
+  const def: AgentDef = {
     name: fm.name,
     description: fm.description,
     tools: splitList(fm.tools),
@@ -101,6 +101,11 @@ function parseAgent(path: string): AgentDef {
     bashAllow: m[1].match(/^#\s*opencode-bash-allow:\s*(.+)$/m)?.[1].split(",").map((p) => p.trim()).filter(Boolean),
     body: m[2].trim(),
   };
+  // the marker extends the read-only bash map, so on a def without one it is a catalog
+  // defect rather than a silent no-op; both targets read the catalog, so both refuse.
+  if (def.bashAllow?.length && (writesFiles(def) || !grantsBash(def)))
+    throw new Error(`${def.name}: opencode-bash-allow has no bash map to extend (the def writes files or grants no Bash)`);
+  return def;
 }
 
 // a def that writes the filesystem: the codex sandbox rule and the opencode bash
@@ -117,7 +122,7 @@ function writesFiles(a: AgentDef): boolean {
 // the def grants a way to spawn a subagent, or names neither tool and inherits both.
 function grantsAgents(a: AgentDef): boolean {
   if (a.tools) return a.tools.includes("Agent") || a.tools.includes("Task");
-  if (a.disallowedTools) return !(a.disallowedTools.includes("Agent") && a.disallowedTools.includes("Task"));
+  if (a.disallowedTools) return !(a.disallowedTools.includes("Agent") || a.disallowedTools.includes("Task"));
   return true;
 }
 
@@ -131,7 +136,6 @@ const OPENCODE_READS = [
   "git log *",
   "git show *",
   "git blame *",
-  "git diff *",
   "git diff-tree *",
   "git diff-index *",
   "git diff-files *",
@@ -144,32 +148,16 @@ const OPENCODE_READS = [
   "git hash-object -t tree /dev/null",
 ];
 
-// a redirect attached to the matched command, spaced or not (`cat a >b`, `cat a>b`,
-// `git log 1>out`), and each flag that writes or spawns through an allowed read command.
-// opencode sees a redirect only when it is attached to the command node, so a redirect on
-// a group or a loop (`{ cat a; } > out`) and a bare `>out` reach the shell unblocked; the
-// `*>*`-shaped patterns also refuse a search whose pattern holds `>` (`rg '->'`).
+// anything holding `>` refuses every redirect spelling attached to the matched command
+// (`cat a >b`, `cat a>b`, `git log 2>&1`), and each remaining pattern is a flag spelling
+// that writes or spawns through an allowed read command. opencode sees a redirect only
+// when it is attached to the command node, so a redirect on a group or a loop
+// (`{ cat a; } > out`) and a bare `>out` reach the shell unblocked; `*>*` also refuses a
+// search whose pattern holds `>` (`rg '->'`).
 // `git diff` additionally runs a configured diff.external and textconv driver with no
 // flag, which the two flag denies below cannot stop.
 const OPENCODE_DENIES = [
-  "* > *",
-  "* >> *",
-  "* >| *",
-  "* <> *",
-  "* 1> *",
-  "* 1>> *",
-  "* 2> *",
-  "* 2>> *",
-  "* 2>| *",
-  "* &> *",
-  "* &>> *",
-  "* >& *",
-  "* >*",
   "*>*",
-  "*1>*",
-  "*2>*",
-  "*&>*",
-  "*>&*",
   "git * --output*",
   "git * --ext-diff*",
   "git * --textconv*",
@@ -210,10 +198,6 @@ function toOpencode(a: AgentDef): string {
   // follows the tools grant for every def, so it can stand without a bash map.
   const taskDenied = !grantsAgents(a);
   const bashMap = !writesFiles(a) && grantsBash(a);
-  // the marker extends the read-only map, so on a def without one it is a catalog defect
-  // rather than a silent no-op.
-  if (a.bashAllow?.length && !bashMap)
-    throw new Error(`${a.name}: opencode-bash-allow has no bash map to extend (the def writes files or grants no Bash)`);
   if (taskDenied || bashMap) {
     lines.push("permission:");
     if (taskDenied) lines.push("  task: deny");
