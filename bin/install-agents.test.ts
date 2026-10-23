@@ -907,6 +907,37 @@ describe("--update without --dest", () => {
     expect(existsSync(join(homeCodex, "tui.toml"))).toBe(true);
   });
 
+  (process.getuid?.() === 0 ? test.skip : test)("a broken def in the checkout does not skip the target dir check before the pull", () => {
+    const f = fixture([]);
+    const env = gitEnv(f.home);
+    const git = (cwd: string, ...args: string[]) => {
+      const r = spawnSync("git", args, { cwd, env, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    writeFileSync(join(f.repo, "agents", "tui.md"), `---\nname: tui\ndescription: "fixture tui"\n---\n\nbefore\x1bafter\n`);
+    git(f.repo, "init", "-q", "-b", "main");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "broken");
+    const clone = join(f.root, "clone");
+    git(f.root, "clone", "-q", f.repo, clone);
+    f.addDef("tui");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "fixed");
+    const before = git(clone, "rev-parse", "HEAD");
+    const homeCodex = join(f.home, ".codex", "agents");
+    writeManifest(homeCodex, "codex", ["tui"]);
+    writeFileSync(join(homeCodex, MANIFEST), JSON.stringify({ ...readManifest(homeCodex), all: true }) + "\n");
+    chmodSync(homeCodex, 0o555);
+
+    const r = spawnSync("bun", [join(clone, "bin", "install-agents.ts"), "--update"], { cwd: f.root, env, encoding: "utf8" });
+    chmodSync(homeCodex, 0o755);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(homeCodex)}: cannot write (EACCES); fix that path or pass a --dest that is a writable directory\n`);
+    expect(git(clone, "rev-parse", "HEAD")).toBe(before);
+  });
+
   test("an update without --dest prints each rename and each manifest warning once", () => {
     const f = fixture(["web-reviewer"]);
     const env = gitEnv(f.home);

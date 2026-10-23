@@ -573,10 +573,13 @@ function update(project: boolean, destOverride?: string) {
     });
   };
   if (destOverride === undefined) {
-    // a defect in the local catalog is what this pull may repair, so the pre-pull pass only
-    // refuses on an InputError (a path refusal the checkout already shows) and swallows any
-    // other read, parse or render error for this pass alone; the post-pull pass fails loudly
-    // with the trace if the defect survived. it stays silent so nothing prints twice.
+    // a dir-level refusal needs no catalog, so it lands before the pull even when the local
+    // catalog is too broken to plan. a defect in the local catalog is what this pull may
+    // repair, so the rest of the pre-pull pass only refuses on an InputError (a path refusal
+    // the checkout already shows) and swallows any other read, parse or render error for this
+    // pass alone; the post-pull pass fails loudly with the trace if the defect survived. it
+    // stays silent so nothing prints twice.
+    preflightDirs(pending.map(({ dest }) => dest));
     try {
       preflight(plan(readCatalog(), false));
     } catch (err) {
