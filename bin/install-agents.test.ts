@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -54,6 +54,8 @@ function writeManifest(dir: string, target: string, agents: string[]) {
 }
 
 const readManifest = (dir: string) => JSON.parse(readFileSync(join(dir, MANIFEST), "utf8"));
+
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 describe("--update --dest", () => {
   test("carries a renamed agent to its new name and deletes the old converted file", () => {
@@ -141,6 +143,7 @@ describe("--update --dest", () => {
     const r = f.run("--update", "--dest", f.dest);
 
     expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain(`${JSON.stringify(join(codex, MANIFEST))}: no "agents" array`);
     expect(existsSync(join(opencode, "gone.md"))).toBe(true);
     expect(existsSync(join(opencode, "kept.md"))).toBe(false);
     expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
@@ -323,6 +326,193 @@ describe("full installs follow the catalog", () => {
     expect(r.status).toBe(0);
     expect(existsSync(join(f.dest, "codex", "b.toml"))).toBe(false);
     expect(readManifest(join(f.dest, "codex")).agents).toEqual(["a"]);
+  });
+});
+
+describe("argument parsing", () => {
+  const USAGE_FORMS = ["[--to opencode|codex|all]", "--update [--project] [--dest <dir>]", "--list", "--help"];
+
+  const TO_REASON = (value: string) =>
+    `--to must be opencode, codex, or all (got: ${JSON.stringify(value)}); claude code and gemini have native installers, cursor reads agents/ as claude format`;
+
+  // bun itself creates HOME/.bun on every run; anything else in HOME or the cwd is a write.
+  const written = (dir: string) => readdirSync(dir).filter((entry) => entry !== ".bun");
+
+  test.each([[["--help"]], [["-h"]], [["--bogus", "--help"]], [["web-pro", "-h"]], [["--to", "codex", "--help"]]])("%j prints the usage and installs nothing", (args) => {
+    const f = fixture(["web-pro"]);
+
+    const r = f.run(...args, "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("");
+    for (const form of USAGE_FORMS) expect(r.stdout).toContain(form);
+    expect(existsSync(f.dest)).toBe(false);
+  });
+
+  // Each refusal: exit 1, the named reason on stderr's first line, the usage after it,
+  // and nothing written to the cwd or to HOME (where a missing --dest installs).
+  test.each([
+    [["--bogus"], 'unknown option: "--bogus"'],
+    [["--bogus", "-z"], 'unknown options: "--bogus", "-z"'],
+    [["--to", "codex", "--dest"], "--dest needs a value"],
+    [["--dest", "--to", "codex"], "--dest needs a value"],
+    [["--to", "codex", "--dest", "", "web-pro"], "--dest needs a value"],
+    [["--to", "codex", "--dest", "--", "web-pro"], "--dest needs a value"],
+    [["--to"], "--to needs a value"],
+    [["--to", "--list"], "--to needs a value"],
+    [["--to", "--"], "--to needs a value"],
+    [["--to", "claude"], TO_REASON("claude")],
+    [["--to", ""], TO_REASON("")],
+    [["--to", "co\ndex"], TO_REASON("co\ndex")],
+    [["--dest", "a", "--dest", "b"], "--dest given twice"],
+    [["--project", "--project"], "--project given twice"],
+    [["--update", "web-pro"], '--update takes no agent names: "web-pro"'],
+    [["--update", "web-pro", "x"], '--update takes no agent names: "web-pro", "x"'],
+    [["--list", "web-pro"], '--list takes no agent names: "web-pro"'],
+    [["--list", "web-pro", "x"], '--list takes no agent names: "web-pro", "x"'],
+    [["--update", "--to", "codex"], "--to has no effect with --update"],
+    [["--list", "--to", "codex"], "--to has no effect with --list"],
+    [["--update", "--list"], "--list and --update are separate modes"],
+    [["--list", "--dest", "x"], "--dest has no effect with --list"],
+    [["--list", "--project"], "--project has no effect with --list"],
+  ])("%j is refused with its reason and the usage", (args, reason) => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+
+    const r = f.runIn(cwd, ...args);
+
+    expect(r.status).toBe(1);
+    expect(r.stdout).toBe("");
+    const [first, ...rest] = r.stderr.split("\n");
+    expect(first).toBe(reason);
+    for (const form of USAGE_FORMS) expect(rest.join("\n")).toContain(form);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
+  // A fresh cwd and no --dest, so a refusal that still installs lands in HOME or the cwd.
+  test.each([
+    [["nosuch", "nope"], 'unknown agents: "nosuch", "nope" (see --list)'],
+    [["toString", "web-pro"], 'unknown agents: "toString" (see --list)'],
+  ])("%j: unknown agent names are refused in one line, with no stack trace", (names, reason) => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+
+    const r = f.runIn(cwd, "--to", "codex", ...names);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${reason}\n`);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
+  test("a --dest value that only starts with a dash is a directory name", () => {
+    const f = fixture(["web-pro"]);
+
+    const r = f.runIn(f.root, "--to", "codex", "--dest", "-x", "web-pro");
+
+    expect(r.status).toBe(0);
+    expect(existsSync(join(f.root, "-x", "codex", "web-pro.toml"))).toBe(true);
+  });
+
+  const HINT = "fix that path or pass a --dest that is a writable directory";
+
+  test("a target dir that cannot be created is refused in one line before any target is written", () => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+    mkdirSync(f.dest);
+    writeFileSync(join(f.dest, "codex"), "a file where the codex dir would go\n");
+
+    const r = f.runIn(cwd, "--dest", f.dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(join(f.dest, "codex"))}: cannot create (ENOTDIR); ${HINT}\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
+  test("a file in an ancestor of the HOME install dir is refused before the other target's dir is made", () => {
+    const f = fixture(["web-pro"]);
+    writeFileSync(join(f.home, ".codex"), "a file where the codex dir would go\n");
+
+    const r = f.run("web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(join(f.home, ".codex", "agents"))}: cannot create (ENOTDIR); ${HINT}\n`);
+    expect(existsSync(join(f.home, ".config"))).toBe(false);
+  });
+
+  test("a dangling symlink where a target dir goes is refused in one line before any target is written", () => {
+    const f = fixture(["web-pro"]);
+    mkdirSync(f.dest);
+    symlinkSync(join(f.root, "nowhere"), join(f.dest, "codex"));
+
+    const r = f.run("--dest", f.dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(new RegExp(`^${escapeRegExp(JSON.stringify(join(f.dest, "codex")))}: cannot create \\((ENOENT|EEXIST)\\); ${escapeRegExp(HINT)}\\n$`));
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
+  test("a path with a newline stays a one-line reason", () => {
+    const f = fixture(["web-pro"]);
+    const dest = join(f.root, "a\nb");
+    writeFileSync(dest, "a file where --dest points\n");
+
+    const r = f.run("--dest", dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(join(dest, "opencode"))}: cannot create (ENOTDIR); ${HINT}\n`);
+  });
+
+  // chmod binds nothing for root, so these run only as a regular user.
+  const asUser = process.getuid?.() === 0 ? test.skip : test;
+
+  asUser("an existing target dir the user cannot write is refused in one line before any target is written", () => {
+    const f = fixture(["web-pro"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    chmodSync(codex, 0o555);
+
+    const r = f.run("--dest", f.dest, "web-pro");
+    chmodSync(codex, 0o755);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(codex)}: cannot write (EACCES); ${HINT}\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
+  asUser("--update refuses an unwritable target before updating the other one", () => {
+    const f = fixture(["web-pro"]);
+    const opencode = join(f.dest, "opencode");
+    const codex = join(f.dest, "codex");
+    writeManifest(opencode, "opencode", ["web-pro"]);
+    writeManifest(codex, "codex", ["web-pro"]);
+    const opencodeManifest = readFileSync(join(opencode, MANIFEST), "utf8");
+    chmodSync(codex, 0o555);
+
+    const r = f.run("--update", "--dest", f.dest);
+    chmodSync(codex, 0o755);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(codex)}: cannot write (EACCES); ${HINT}\n`);
+    expect(existsSync(join(opencode, "web-pro.md"))).toBe(false);
+    expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
+  });
+
+  test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
+    const f = fixture(["web-pro"]);
+    writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");
+
+    const r = f.run("--list");
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("no frontmatter block");
+    expect(r.stderr).toContain("parseAgent");
   });
 });
 

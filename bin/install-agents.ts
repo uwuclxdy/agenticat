@@ -3,12 +3,9 @@
 // claude code -> /plugin install agents@agenticat ; gemini -> gemini extensions install <repo>
 // this script covers the gap: opencode + codex (cursor reads claude format natively).
 //
-// usage:
-//   bun bin/install-agents.ts --to opencode|codex|all [--project] [--dest <dir>] [names...]
-//   bun bin/install-agents.ts --update [--dest <dir>]  # reinstall the manifest's agents (a full install: the whole current catalog), apply renames, prune defs the catalog dropped; git pull unless --dest
-//   bun bin/install-agents.ts --list
+// usage: run with --help
 
-import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from "node:fs";
+import { accessSync, constants, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
@@ -18,6 +15,28 @@ import { AGENT_NAME } from "./agent-name";
 const REPO = dirname(dirname(fileURLToPath(import.meta.url))); // repo root (bin/..)
 const AGENTS_DIR = join(REPO, "agents");
 const MANIFEST = ".agenticat.json";
+
+const USAGE = `usage: bun bin/install-agents.ts [--to opencode|codex|all] [--project] [--dest <dir>] [names...]
+       bun bin/install-agents.ts --update [--project] [--dest <dir>]  # reinstall the manifest's agents (a full install: the whole current catalog), apply renames, prune defs the catalog dropped; git pull unless --dest
+       bun bin/install-agents.ts --list
+       bun bin/install-agents.ts -h, --help`;
+
+// bad input from the user or their files (an argument, an unknown agent, a malformed
+// manifest, a target path that cannot be created or whose target dir is unwritable)
+// throws this; the top-level catch prints the message alone, plus the usage for
+// argument errors.
+// a genuine failure rethrows and keeps its trace: a catalog defect, a git failure, or a
+// write-time failure the preflight cannot see (ENOSPC, a read-only file inside a
+// writable dir).
+class InputError extends Error {
+  constructor(message: string, readonly showUsage = false) {
+    super(message);
+  }
+}
+
+const refuse = (reason: string): never => {
+  throw new InputError(reason, true);
+};
 
 // claude alias -> opencode provider/model id. edit when models rotate.
 const MODEL_MAP: Record<string, string> = {
@@ -38,7 +57,8 @@ const TOOL_MAP: Record<string, string> = {
   Read: "read", Write: "write", Edit: "edit", Bash: "bash",
   Grep: "grep", Glob: "glob", WebFetch: "webfetch", WebSearch: "websearch",
 };
-// always emitted explicitly so a read-only agent stays read-only after conversion
+// opencode inherits a tool unless it is named, so the allowlist form must emit each
+// mutating tool the def does not grant as false; a granted bash stays true.
 const MUTATING = ["write", "edit", "bash"];
 
 interface AgentDef {
@@ -122,7 +142,7 @@ function toCodex(a: AgentDef): string {
 }
 
 function destFor(target: string, project: boolean, override?: string): string {
-  if (override) return join(override, target);
+  if (override !== undefined) return join(override, target);
   if (target === "opencode")
     return project ? ".opencode/agents" : join(homedir(), ".config/opencode/agents");
   return project ? ".codex/agents" : join(homedir(), ".codex/agents");
@@ -136,14 +156,62 @@ function readCatalog(): AgentDef[] {
     .map((f: string) => parseAgent(join(AGENTS_DIR, f)));
 }
 
+const cannotCreate = (dest: string, code?: string) =>
+  new InputError(`${JSON.stringify(dest)}: cannot create (${code}); fix that path or pass a --dest that is a writable directory`);
+
+const cannotWrite = (dest: string, code?: string) =>
+  new InputError(`${JSON.stringify(dest)}: cannot write (${code}); fix that path or pass a --dest that is a writable directory`);
+
+const lstatExists = (p: string): boolean => {
+  try {
+    lstatSync(p);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// a path whose nearest existing ancestor (or itself) is not a directory cannot be
+// created, and an existing target dir (or the nearest ancestor when it does not exist
+// yet) the user cannot write cannot be written; deriving both before any mkdir keeps a
+// later target's failure from leaving an earlier target's directory behind.
+function uncreatableCode(dest: string): { verb: "create" | "write"; code?: string } | undefined {
+  let cur = resolve(dest);
+  // lstat sees a dangling symlink; existsSync follows it and would walk past the link.
+  while (!lstatExists(cur) && dirname(cur) !== cur) cur = dirname(cur);
+  let isDir: boolean;
+  try {
+    isDir = statSync(cur).isDirectory();
+  } catch (err) {
+    return { verb: "create", code: (err as { code?: string }).code };
+  }
+  if (!isDir) return { verb: "create", code: "ENOTDIR" };
+  try {
+    accessSync(cur, constants.W_OK);
+  } catch (err) {
+    return { verb: "write", code: (err as { code?: string }).code };
+  }
+  return undefined;
+}
+
 // names: null = the whole current catalog, [] = nothing. An empty list is not "all".
 function install(targets: string[], names: string[] | null, project: boolean, destOverride?: string, catalog: AgentDef[] = readCatalog()) {
   const defs = names === null ? catalog : catalog.filter((a: AgentDef) => names.includes(a.name));
   const missing = names === null ? [] : names.filter((n: string) => !catalog.some((a: AgentDef) => a.name === n));
-  if (missing.length) throw new Error(`unknown agents: ${missing.join(", ")} (see --list)`);
-  for (const target of targets) {
-    const dest = destFor(target, project, destOverride);
-    mkdirSync(dest, { recursive: true });
+  if (missing.length) throw new InputError(`unknown agents: ${missing.map((n: string) => JSON.stringify(n)).join(", ")} (see --list)`);
+  const placed = targets.map((target) => ({ target, dest: destFor(target, project, destOverride) }));
+  for (const { dest } of placed) {
+    const problem = uncreatableCode(dest);
+    if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
+  }
+  for (const { dest } of placed) {
+    try {
+      mkdirSync(dest, { recursive: true });
+    } catch (err) {
+      throw cannotCreate(dest, (err as { code?: string }).code);
+    }
+  }
+  for (const { target, dest } of placed) {
     for (const a of defs) {
       const file = fileName(target, a.name);
       writeFileSync(join(dest, file), target === "opencode" ? toOpencode(a) : toCodex(a));
@@ -208,7 +276,7 @@ const shellQuote = (p: string) => `'${p.replace(/'/g, "'\\''")}'`;
 // from any directory: install.sh is relative to the repo and changes into it, so
 // a cwd-relative location (a relative --dest, every --project) is replayed directly.
 function reinstallCommand(target: string, project: boolean, destOverride?: string): string {
-  if (destOverride) return `${shellQuote(join(REPO, "install.sh"))} --to ${target} --dest ${shellQuote(resolve(destOverride))}`;
+  if (destOverride !== undefined) return `${shellQuote(join(REPO, "install.sh"))} --to ${target} --dest ${shellQuote(resolve(destOverride))}`;
   if (project) return `cd ${shellQuote(process.cwd())} && bun ${shellQuote(join(REPO, "bin/install-agents.ts"))} --to ${target} --project`;
   return `${shellQuote(join(REPO, "install.sh"))} --to ${target}`;
 }
@@ -219,23 +287,23 @@ function readManifest(path: string, reinstall: string): { agents: unknown[]; all
   try {
     raw = readFileSync(path, "utf8");
   } catch (err) {
-    throw new Error(`${path}: cannot read (${(err as { code?: string }).code}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
+    throw new InputError(`${JSON.stringify(path)}: cannot read (${(err as { code?: string }).code}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
   }
   let m: unknown;
   try {
     m = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`${path}: not valid JSON (${(err as Error).message}); reinstall with: ${reinstall}`);
+    throw new InputError(`${JSON.stringify(path)}: not valid JSON (${(err as Error).message}); reinstall with: ${reinstall}`);
   }
   if (m === null || !Array.isArray((m as { agents?: unknown }).agents)) {
-    throw new Error(`${path}: no "agents" array; reinstall with: ${reinstall}`);
+    throw new InputError(`${JSON.stringify(path)}: no "agents" array; reinstall with: ${reinstall}`);
   }
   const { agents, all } = m as { agents: unknown[]; all?: unknown };
   return { agents, all: all === true };
 }
 
 function update(project: boolean, destOverride?: string) {
-  if (!destOverride) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
+  if (destOverride === undefined) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
   const catalog = readCatalog();
   const catalogNames = catalog.map((a: AgentDef) => a.name);
   // read and validate every present manifest before acting on any: a bad one must not
@@ -250,6 +318,12 @@ function update(project: boolean, destOverride?: string) {
   if (!pending.length) {
     console.log("no agenticat manifest found; nothing to update (install first)");
     return;
+  }
+  // preflight every pending target before the first install, so a failure on any one
+  // updates none.
+  for (const { dest } of pending) {
+    const problem = uncreatableCode(dest);
+    if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
   }
   for (const { target, dest, agents, all } of pending) {
     let wanted: string[] | null = null;
@@ -270,34 +344,99 @@ function update(project: boolean, destOverride?: string) {
 }
 
 // --- args
-const argv = process.argv.slice(2);
-const flag = (f: string) => {
-  const i = argv.indexOf(f);
-  if (i === -1) return undefined;
-  return argv.splice(i, 1) && true;
-};
-const opt = (f: string) => {
-  const i = argv.indexOf(f);
-  if (i === -1) return undefined;
-  return argv.splice(i, 2)[1];
-};
+function main(): void {
+  const argv = process.argv.slice(2);
 
-const project = !!flag("--project");
-const doList = !!flag("--list");
-const doUpdate = !!flag("--update");
-const destOverride = opt("--dest");
-const to = opt("--to") ?? "all";
-const targets = to === "all" ? ["opencode", "codex"] : [to];
-if (targets.some((t) => !["opencode", "codex"].includes(t))) {
-  console.error(`--to must be opencode, codex, or all (got: ${to})`);
-  console.error("claude code and gemini have native installers; cursor reads agents/ as claude format.");
-  process.exit(1);
+  // help wins over every other argument, a mistyped one included.
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(USAGE);
+    process.exit(0);
+  }
+
+  let destOverride: string | undefined;
+  let to: string | undefined;
+  let project = false;
+  let doList = false;
+  let doUpdate = false;
+  // one table per kind drives both the branch and the known-option set, so a new option
+  // cannot be added to one and missed in the other.
+  const valueSetters: Record<string, (value: string) => void> = {
+    "--dest": (value) => { destOverride = value; },
+    "--to": (value) => { to = value; },
+  };
+  const flagSetters: Record<string, () => void> = {
+    "--project": () => { project = true; },
+    "--list": () => { doList = true; },
+    "--update": () => { doUpdate = true; },
+  };
+  // also the set that ends an option's value: a known flag right after --dest/--to
+  // refuses the run instead of becoming its value.
+  const KNOWN_OPTS = [...Object.keys(valueSetters), ...Object.keys(flagSetters)];
+  const seen = new Set<string>();
+  const leftover: string[] = [];
+
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (Object.hasOwn(valueSetters, a)) {
+      if (seen.has(a)) refuse(`${a} given twice`);
+      seen.add(a);
+      const next = argv[i + 1];
+      // an empty --dest would read as absent downstream and install into the real HOME;
+      // an empty --to still reaches the value check below, which names it.
+      if (next === undefined || next === "--" || KNOWN_OPTS.includes(next) || (a === "--dest" && next === ""))
+        refuse(`${a} needs a value`);
+      valueSetters[a](next);
+      i++;
+    } else if (Object.hasOwn(flagSetters, a)) {
+      if (seen.has(a)) refuse(`${a} given twice`);
+      seen.add(a);
+      flagSetters[a]();
+    } else {
+      leftover.push(a);
+    }
+  }
+
+  // agent names never start with "-" (AGENT_NAME), so a leftover dash token is a mistyped
+  // flag: refuse it by name instead of throwing it as an unknown agent.
+  const unknownOptions = leftover.filter((a) => a.startsWith("-"));
+  if (unknownOptions.length) {
+    refuse(
+      unknownOptions.length === 1
+        ? `unknown option: ${JSON.stringify(unknownOptions[0])}`
+        : `unknown options: ${unknownOptions.map((n) => JSON.stringify(n)).join(", ")}`,
+    );
+  }
+  const names = leftover;
+
+  if (to !== undefined && !["opencode", "codex", "all"].includes(to)) {
+    refuse(`--to must be opencode, codex, or all (got: ${JSON.stringify(to)}); claude code and gemini have native installers, cursor reads agents/ as claude format`);
+  }
+  const targets = to === undefined || to === "all" ? ["opencode", "codex"] : [to];
+
+  if (doUpdate && doList) refuse("--list and --update are separate modes");
+  if (doList && destOverride !== undefined) refuse("--dest has no effect with --list");
+  if (doList && project) refuse("--project has no effect with --list");
+  if (to !== undefined && doUpdate) refuse("--to has no effect with --update");
+  if (to !== undefined && doList) refuse("--to has no effect with --list");
+  if (doUpdate && names.length) refuse(`--update takes no agent names: ${names.map((n) => JSON.stringify(n)).join(", ")}`);
+  if (doList && names.length) refuse(`--list takes no agent names: ${names.map((n) => JSON.stringify(n)).join(", ")}`);
+
+  if (doList) {
+    for (const a of readCatalog()) console.log(`${a.name}: ${a.description.slice(0, 90)}`);
+  } else if (doUpdate) {
+    update(project, destOverride);
+  } else {
+    install(targets, names.length ? names : null, project, destOverride);
+  }
 }
 
-if (doList) {
-  for (const a of readCatalog()) console.log(`${a.name}: ${a.description.slice(0, 90)}`);
-} else if (doUpdate) {
-  update(project, destOverride);
-} else {
-  install(targets, argv.length ? argv : null, project, destOverride);
+try {
+  main();
+} catch (err) {
+  if (err instanceof InputError) {
+    console.error(err.message);
+    if (err.showUsage) console.error(USAGE);
+    process.exit(1);
+  }
+  throw err;
 }
