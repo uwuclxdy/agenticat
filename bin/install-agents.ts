@@ -363,12 +363,18 @@ function buildPlan(target: string, defs: AgentDef[], all: boolean, project: bool
   };
 }
 
-// one preflight over every target's plan, so a failure on any one writes none of them.
-function preflight(plans: Plan[]) {
-  for (const { dest } of plans) {
+// a dir-level refusal depends only on the dest paths, so it can run before a pull; the
+// per-file checks need the pulled catalog and still follow it.
+function preflightDirs(dests: string[]) {
+  for (const dest of dests) {
     const problem = uncreatableCode(dest);
     if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
   }
+}
+
+// one preflight over every target's plan, so a failure on any one writes none of them.
+function preflight(plans: Plan[]) {
+  preflightDirs(plans.map((plan) => plan.dest));
   for (const plan of plans) {
     for (const path of [...plan.files.map((f) => f.path), plan.manifestPath]) {
       const code = blockedWrite(path);
@@ -524,7 +530,10 @@ function update(project: boolean, destOverride?: string) {
     return;
   }
   // every manifest is validated before the pull, so a malformed one leaves the checkout
-  // where it was; the plan itself needs the pulled catalog.
+  // where it was; a target dir the user cannot create or write refuses here too. the plan
+  // itself needs the pulled catalog, so a per-file refusal on a path only the pull adds
+  // still lands after it.
+  preflightDirs(pending.map(({ dest }) => dest));
   if (destOverride === undefined) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
   const catalog = readCatalog();
   const catalogNames = catalog.map((a: AgentDef) => a.name);
