@@ -36,15 +36,22 @@ Validate at the boundary; parse into a checked value so no call site re-tests a 
 HOST="${1:?host ip required}"        # required positional arg
 : "${DB_URL:?set DB_URL in $CONF}"   # required env/config var
 
-case "$MIN" in *[!0-9]*|'') echo "MIN must be integer" >&2; exit 2;; esac
+case "$MIN" in *[!0123456789]*|'') echo "MIN must be an unsigned decimal integer" >&2; exit 2;; esac
+# strip leading zeros: arithmetic reads a leading 0 as octal, POSIX sh too (08 errors, 010 is 8)
+MIN=${MIN#"${MIN%%[!0]*}"}; MIN=${MIN:-0}
+[ "${#MIN}" -le 18 ] || { echo "MIN must be at most 18 digits past leading zeros" >&2; exit 2; }
 
-safe="${HOST//[^0-9A-Za-z]/_}"       # sanitize untrusted string used as a filename
+# sanitize untrusted string used as a filename (bash only); ASCII spelled out: a locale's range can keep other letters
+safe="${HOST//[^0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]/_}"
 ```
 
-`$(( ))` is a code-execution sink, not a number parser. It re-expands its operand as an expression, so a value of `99+PATH[$(cmd)]` runs `cmd`, and `set -u` does not stop it. `printf '%d'` is a different hazard, not the fix: it never executes, it takes the leading digits and warns to stderr, so `99+PATH[x]` prints `99` and the run continues on a wrong number. Guard before either:
+The 18-digit cap covers any domain below 10^18. For a 19-digit domain (`date +%s%N`), cap the count at 19, then string-compare each 19-digit value against `9223372036854775807` before any arithmetic: the compare alone passes `10000000000000000000`, which sorts below it, and fails a short value like `95`, which sorts above it. ShellCheck flags that compare (SC2071; SC3012 under sh, since only POSIX.1-2024 defines `\>`, though dash and bash implement it), and its suggested `-gt` is the overflow: disable both with that reason.
+
+`$(( ))` is a code-execution sink, not a number parser. It re-expands its operand as an expression, so a value of `99+PATH[$(cmd)]` runs `cmd`, and `set -u` does not stop it. `printf '%d'` is a different hazard, not the fix: it never executes, it takes the leading digits, warns to stderr and returns 1, so `99+PATH[x]` prints `99` and the run continues on a wrong number, and `set -e` is no backstop: it misses, among others, a `local` assignment, a `"$(...)"` argument and any call inside a function run from `if` or `||`. It also reads a leading 0 as octal (`010` prints 8, `08` prints 0 with rc 1), so hand it the converted value, never the raw one. Guard before either:
 
 ```bash
-[[ $kb =~ ^[0-9]+$ ]] || continue     # or the `case` guard above
+[[ $kb =~ ^0*[0123456789]{1,18}$ ]] || continue  # ASCII digits only: a locale's [0-9] range can match other digits; at most 18 past the zeros
+kb=$(( 10#$kb ))                                 # bash: base 10 once, after the guard; 10# fixes the base, not the input
 printf '%d\n' "$(( kb / 1024 ))"
 ```
 
@@ -122,6 +129,7 @@ install -m"$(stat -c %a "$cfg")" -- "$tmp" "$cfg"
 ## Long-Running and Best-Effort
 
 ```bash
+# wait_for CMD TIMEOUT: TIMEOUT must be a decimal literal without a leading 0; it reaches $(( )) unguarded
 wait_for(){ local d=$((SECONDS+${2:-30})); until "$1"; do ((SECONDS<d)) || return 1; sleep 1; done; }
 up(){ timeout 1 bash -c "exec 3<>/dev/tcp/$HOST/22"; }
 wait_for up 60 || exit 1
