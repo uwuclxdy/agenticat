@@ -227,6 +227,20 @@ describe("--update --dest", () => {
     expect(r.stderr.endsWith(`reinstall with: '${join(f.repo, "install.sh")}' --to codex --dest $'${join(f.root, "n")}\\nl'\n`)).toBe(true);
   });
 
+  test("a control byte in a malformed manifest never reaches stderr raw", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    writeFileSync(join(codex, MANIFEST), "{\x1b");
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr.startsWith(`${JSON.stringify(join(codex, MANIFEST))}: not valid JSON (`)).toBe(true);
+    expect(r.stderr.slice(0, -1)).not.toMatch(/[\x00-\x1f\x7f]/);
+    expect(r.stderr.endsWith("\n")).toBe(true);
+  });
+
   test("keeps an old name while its rename target is not in the catalog yet", () => {
     const f = fixture(["ts-reviewer"]);
     const codex = join(f.dest, "codex");

@@ -337,7 +337,9 @@ function readManifest(path: string, reinstall: string): { agents: unknown[]; all
   try {
     m = JSON.parse(raw);
   } catch (err) {
-    throw new InputError(`${JSON.stringify(path)}: not valid JSON (${(err as Error).message}); reinstall with: ${reinstall}`);
+    // the parser quotes the offending input, so a raw control byte from the manifest
+    // would reach stderr; the JSON-quoted message keeps the refusal one clean line.
+    throw new InputError(`${JSON.stringify(path)}: not valid JSON (${JSON.stringify((err as Error).message)}); reinstall with: ${reinstall}`);
   }
   if (m === null || !Array.isArray((m as { agents?: unknown }).agents)) {
     throw new InputError(`${JSON.stringify(path)}: no "agents" array; reinstall with: ${reinstall}`);
