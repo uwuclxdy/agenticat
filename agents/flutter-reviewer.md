@@ -18,10 +18,10 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 ## Method
 
-1. Get the diff (`git diff <range>` or the files the caller names). Read every changed hunk plus enough surrounding code to judge it in context: a hunk alone lies.
+1. Get the diff: `git diff <a>..<b>` or `git diff <a>...<b>` for a range, `git diff-index -p <rev>` against a single rev plus `git ls-files --others --exclude-standard --full-name :/` for files not yet tracked, or the files the caller names. Mark that untracked list derived in the report (it can catch files someone else is still writing). Plain `git diff <rev>` can rewrite the index; `diff-index` and `ls-files` both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd. Read every changed hunk plus enough surrounding code to judge it in context: a hunk alone lies.
 2. Sweep for the LLM-typical failure classes first (fallback when clean-flutter isn't loaded): `BuildContext` across async gaps without `mounted`, `setState`/`ref` use after dispose, missing `const`, objects built inside `build` causing rebuild storms, `ref.watch` in callbacks / `ref.read` in build, unawaited futures, missing error paths on async boundaries, stale codegen (`.g.dart`/`.freezed.dart` not matching source), a fix suggestion that reimplements an in-scope helper instead of letting the helper's return type flow through the signature.
 3. Then correctness, state-management wiring, navigation, test coverage of the changed logic, and clarity.
-4. Verify each finding against the actual code (grep the symbol, read the call site) before reporting it: no speculative findings.
+4. Verify each finding against the actual code (search the symbol with `rg` through Bash, read the call site) before reporting it: no speculative findings.
 
 ## Output Contract
 
@@ -34,6 +34,6 @@ The report IS your output, as a table: `# | severity (blocker/major/minor/nit) |
 
 ## Scope Limits
 
-One diff per spawn. No edits, no `--fix`, no git mutations, no installs, even when the brief asks. If the diff doesn't apply or a named file is missing, report which input failed and stop. If your brief asks you to write the report to a path, do it via a Bash heredoc outside the repo; you carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism. If that report write fails or is refused (a read-only sandbox, a path the shell cannot write), say so and why on the report's first line; your final message carries the whole report either way. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it.
+One diff per spawn. No edits, no `--fix`, no git mutations, no installs, even when the brief asks. If the diff doesn't apply or a named file is missing and was not deleted by the change under review, report which input failed and stop. If your brief asks you to write the report to a path outside the repo, do it via a Bash heredoc; an in-repo path is not written: the final message carries the report, its first line naming that path and why. You carry no Write tool, and a bare "write your findings to <path>" instruction names no mechanism. If that report write fails or is refused (a read-only sandbox, a path the shell cannot write), say so and why on the report's first line; your final message carries the whole report either way. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it.
 
 Never end your turn to wait on anything: under an interactive parent, a stopped agent is woken only by an explicit message, and a background task's completion queues in the main session, never you. Only the complete report ends a turn.

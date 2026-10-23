@@ -25,7 +25,7 @@ Refreshes this repo's `skills/ratatui-patterns/` + `agents/ratatui-pro.md` after
    - `limitations.md`: re-check every gap row against the delta; a gap that gained a built-in MOVES to the checklist (this is the whole point of the file). Note the release that closed it.
    - `patterns.md` / `testing.md`: only if the delta touches their content.
 
-4. **Sweep for drift.** Grep old version strings + every changed public symbol across all of `skills/ratatui-patterns/`, `.claude/commands/ratatui-pro-update.md`, and `agents/ratatui-pro.md`; fix stale mentions.
+4. **Sweep for drift.** Search with `rg` through Bash for old version strings + every changed public symbol across all of `skills/ratatui-patterns/`, `.claude/commands/ratatui-pro-update.md`, and `agents/ratatui-pro.md`, passed as `rg` path arguments (a recursive search skips `.claude/`: it is hidden, and a global gitignore listing `.claude` hides it even from `--hidden`); fix stale mentions.
 
 5. **Verify.** Spot-check 5 random cheat-sheet rows against docs.rs for the new version. If a sandbox repo is handy, `cargo add ratatui@<new>` + compile one snippet per NEW api-reference claim. Report what was verified vs taken from changelog only.
 
