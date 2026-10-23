@@ -22,12 +22,11 @@ const USAGE = `usage: bun bin/install-agents.ts [--to opencode|codex|all] [--pro
        bun bin/install-agents.ts -h, --help`;
 
 // bad input from the user or their files (an argument, an unknown agent, a malformed
-// manifest, a target path that cannot be created or whose target dir is unwritable)
-// throws this; the top-level catch prints the message alone, plus the usage for
-// argument errors.
+// manifest, a target path that cannot be created, or a file path that is blocked or
+// unwritable) throws this; the top-level catch prints the message alone, plus the usage
+// for argument errors.
 // a genuine failure rethrows and keeps its trace: a catalog defect, a git failure, or a
-// write-time failure the preflight cannot see (ENOSPC, a read-only file inside a
-// writable dir).
+// write-time failure that is not about the path (ENOSPC, EDQUOT, EIO).
 class InputError extends Error {
   constructor(message: string, readonly showUsage = false) {
     super(message);
@@ -178,13 +177,37 @@ const cannotCreate = (dest: string, code?: string) =>
 const cannotWrite = (dest: string, code?: string) =>
   new InputError(`${JSON.stringify(dest)}: cannot write (${code}); fix that path or pass a --dest that is a writable directory`);
 
-// a directory where a file goes refuses the write with EISDIR; finding it in the
+const cannotRemove = (dest: string, code?: string) =>
+  new InputError(`${JSON.stringify(dest)}: cannot remove (${code}); fix that path or pass a --dest that is a writable directory`);
+
+// a directory where a file goes, an existing file the user cannot write, and a stat
+// failure other than "not there yet" all refuse the write; finding them in the
 // preflight keeps the failure from landing after another target was written.
 function blockedWrite(p: string): string | undefined {
+  let info;
+  try {
+    info = statSync(p);
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    return code === "ENOENT" ? undefined : code;
+  }
+  if (info.isDirectory()) return "EISDIR";
+  try {
+    accessSync(p, constants.W_OK);
+  } catch (err) {
+    return (err as { code?: string }).code;
+  }
+  return undefined;
+}
+
+// unlink refuses a directory with EISDIR, and any other stat failure but "not there
+// yet" is that path's own refusal.
+function blockedRemove(p: string): string | undefined {
   try {
     return statSync(p).isDirectory() ? "EISDIR" : undefined;
-  } catch {
-    return undefined;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    return code === "ENOENT" ? undefined : code;
   }
 }
 
@@ -237,41 +260,82 @@ function uncreatableCode(dest: string): { verb: "create" | "write"; code?: strin
   return undefined;
 }
 
-// names: null = the whole current catalog, [] = nothing. An empty list is not "all".
-function install(targets: string[], names: string[] | null, project: boolean, destOverride?: string, catalog: AgentDef[] = readCatalog()) {
-  const defs = names === null ? catalog : catalog.filter((a: AgentDef) => names.includes(a.name));
-  const missing = names === null ? [] : names.filter((n: string) => !catalog.some((a: AgentDef) => a.name === n));
-  if (missing.length) throw new InputError(`unknown agents: ${missing.map((n: string) => JSON.stringify(n)).join(", ")} (see --list)`);
-  const placed = targets.map((target) => ({ target, dest: destFor(target, project, destOverride) }));
-  for (const { dest } of placed) {
+interface Plan {
+  target: string;
+  dest: string;
+  files: { path: string; content: string }[];
+  manifestPath: string;
+  manifest: string;
+  prune: string[];
+}
+
+// every rendered file is built here, before the first mkdir: a catalog defect throws
+// before any target has been written.
+function buildPlan(target: string, defs: AgentDef[], all: boolean, project: boolean, destOverride?: string, prune: string[] = []): Plan {
+  const dest = destFor(target, project, destOverride);
+  return {
+    target,
+    dest,
+    files: defs.map((a: AgentDef) => ({
+      path: join(dest, fileName(target, a.name)),
+      content: target === "opencode" ? toOpencode(a) : toCodex(a),
+    })),
+    manifestPath: join(dest, MANIFEST),
+    manifest: JSON.stringify({ source: REPO, target, project, all, agents: defs.map((d: AgentDef) => d.name), installedAt: new Date().toISOString() }, null, 2) + "\n",
+    prune,
+  };
+}
+
+// one preflight over every target's plan, so a failure on any one writes none of them.
+function preflight(plans: Plan[]) {
+  for (const { dest } of plans) {
     const problem = uncreatableCode(dest);
     if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
   }
-  for (const { target, dest } of placed) {
-    for (const file of [...defs.map((a: AgentDef) => join(dest, fileName(target, a.name))), join(dest, MANIFEST)]) {
-      const code = blockedWrite(file);
-      if (code) throw cannotWrite(file, code);
+  for (const plan of plans) {
+    for (const path of [...plan.files.map((f) => f.path), plan.manifestPath]) {
+      const code = blockedWrite(path);
+      if (code) throw cannotWrite(path, code);
+    }
+    for (const path of plan.prune) {
+      const code = blockedRemove(path);
+      if (code) throw cannotRemove(path, code);
     }
   }
-  for (const { dest } of placed) {
+}
+
+function apply(plans: Plan[]) {
+  preflight(plans);
+  for (const { dest } of plans) {
     try {
       mkdirSync(dest, { recursive: true });
     } catch (err) {
       throw cannotCreate(dest, (err as { code?: string }).code);
     }
   }
-  for (const { target, dest } of placed) {
-    for (const a of defs) {
-      const file = fileName(target, a.name);
-      writeFileSync(join(dest, file), target === "opencode" ? toOpencode(a) : toCodex(a));
-      console.log(`  ${target}: ${join(dest, file)}`);
+  for (const { target, files, manifestPath, manifest } of plans) {
+    for (const file of files) {
+      writeFileSync(file.path, file.content);
+      console.log(`  ${target}: ${file.path}`);
     }
-    writeFileSync(
-      join(dest, MANIFEST),
-      JSON.stringify({ source: REPO, target, project, all: names === null, agents: defs.map((d: AgentDef) => d.name), installedAt: new Date().toISOString() }, null, 2) + "\n",
-    );
+    writeFileSync(manifestPath, manifest);
   }
-  console.log(`installed ${defs.length} agent(s) -> ${targets.join(", ")}`);
+  for (const { target, prune } of plans) {
+    for (const path of prune) {
+      if (!existsSync(path)) continue;
+      unlinkSync(path);
+      console.log(`  ${target}: removed ${path}`);
+    }
+  }
+  for (const { target, files } of plans) console.log(`installed ${files.length} agent(s) -> ${target}`);
+}
+
+// names: null = the whole current catalog, [] = nothing. An empty list is not "all".
+function install(targets: string[], names: string[] | null, project: boolean, destOverride?: string, catalog: AgentDef[] = readCatalog()) {
+  const defs = names === null ? catalog : catalog.filter((a: AgentDef) => names.includes(a.name));
+  const missing = names === null ? [] : names.filter((n: string) => !catalog.some((a: AgentDef) => a.name === n));
+  if (missing.length) throw new InputError(`unknown agents: ${missing.map((n: string) => JSON.stringify(n)).join(", ")} (see --list)`);
+  apply(targets.map((target) => buildPlan(target, defs, names === null, project, destOverride)));
 }
 
 function manifestNames(names: unknown[]): string[] {
@@ -308,15 +372,6 @@ function reconcile(target: string, names: unknown[], catalog: string[]) {
     wanted.push(current);
   }
   return { wanted, stale };
-}
-
-function prune(dest: string, target: string, names: string[]) {
-  for (const name of names) {
-    const file = join(dest, fileName(target, name));
-    if (!existsSync(file)) continue;
-    unlinkSync(file);
-    console.log(`  ${target}: removed ${file}`);
-  }
 }
 
 // a newline in a path would split a one-line refusal, so a path holding any control
@@ -385,18 +440,12 @@ function update(project: boolean, destOverride?: string) {
     console.log("no agenticat manifest found; nothing to update (install first)");
     return;
   }
-  // preflight every pending target before the first install, so a failure on any one
-  // updates none.
-  for (const { dest } of pending) {
-    const problem = uncreatableCode(dest);
-    if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
-  }
-  // the checks above answer the checkout as it is now; pulling first would move the
-  // checkout under a run that then refuses, so the pull waits for every refusal.
+  // every manifest is validated before the pull, so a malformed one leaves the checkout
+  // where it was; the plan itself needs the pulled catalog.
   if (destOverride === undefined) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
   const catalog = readCatalog();
   const catalogNames = catalog.map((a: AgentDef) => a.name);
-  for (const { target, dest, agents, all } of pending) {
+  const plans = pending.map(({ target, dest, agents, all }) => {
     let wanted: string[] | null = null;
     let stale: string[];
     if (all) {
@@ -409,9 +458,10 @@ function update(project: boolean, destOverride?: string) {
       // a manifest written before `all` existed carries no flag and stays a fixed list.
       ({ wanted, stale } = reconcile(target, agents, catalogNames));
     }
-    install([target], wanted, project, destOverride, catalog);
-    prune(dest, target, stale);
-  }
+    const defs = wanted === null ? catalog : catalog.filter((a: AgentDef) => wanted!.includes(a.name));
+    return buildPlan(target, defs, all, project, destOverride, stale.map((name) => join(dest, fileName(target, name))));
+  });
+  apply(plans);
 }
 
 // --- args

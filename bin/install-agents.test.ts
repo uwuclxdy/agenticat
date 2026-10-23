@@ -658,6 +658,94 @@ describe("argument parsing", () => {
     expect(written(f.home)).toEqual([]);
   });
 
+  test("--update refuses a blocked file path of any target before updating any target", () => {
+    const f = fixture(["web-pro"]);
+    const opencode = join(f.dest, "opencode");
+    const codex = join(f.dest, "codex");
+    writeManifest(opencode, "opencode", ["web-pro"]);
+    writeManifest(codex, "codex", ["web-pro"]);
+    const opencodeManifest = readFileSync(join(opencode, MANIFEST), "utf8");
+    const blocked = join(codex, "web-pro.toml");
+    mkdirSync(blocked);
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(blocked)}: cannot write (EISDIR); ${HINT}\n`);
+    expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
+    expect(existsSync(join(opencode, "web-pro.md"))).toBe(false);
+  });
+
+  test("--update refuses a directory where a stale file would be pruned, before updating any target", () => {
+    const f = fixture(["web-pro"]);
+    const opencode = join(f.dest, "opencode");
+    const codex = join(f.dest, "codex");
+    writeManifest(opencode, "opencode", ["web-pro", "gone"]);
+    writeManifest(codex, "codex", ["web-pro"]);
+    const opencodeManifest = readFileSync(join(opencode, MANIFEST), "utf8");
+    const codexManifest = readFileSync(join(codex, MANIFEST), "utf8");
+    const blocked = join(opencode, "gone.md");
+    mkdirSync(blocked);
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(blocked)}: cannot remove (EISDIR); ${HINT}\n`);
+    expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
+    expect(readFileSync(join(codex, MANIFEST), "utf8")).toBe(codexManifest);
+    expect(existsSync(join(opencode, "web-pro.md"))).toBe(false);
+    expect(existsSync(join(codex, "web-pro.toml"))).toBe(false);
+  });
+
+  test("a converted-file path past the path limit is refused and creates nothing", () => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+    // the dirs fit PATH_MAX (4096 with the NUL) while `<dest>/opencode/web-pro.md` does not
+    let dest = join(f.root, "deep");
+    while (4080 - dest.length - 1 >= 1) dest = join(dest, "d".repeat(Math.min(200, 4080 - dest.length - 1)));
+    const file = join(dest, "opencode", "web-pro.md");
+    expect(join(dest, "opencode").length).toBeLessThan(4096);
+    expect(file.length).toBeGreaterThan(4095);
+
+    const r = f.runIn(cwd, "--dest", dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(file)}: cannot write (ENAMETOOLONG); ${HINT}\n`);
+    expect(existsSync(join(f.root, "deep"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
+  asUser("an existing converted file the user cannot write is refused before any target is written", () => {
+    const f = fixture(["web-pro"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    const file = join(codex, "web-pro.toml");
+    writeFileSync(file, "old\n");
+    chmodSync(file, 0o444);
+
+    const r = f.run("--dest", f.dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(file)}: cannot write (EACCES); ${HINT}\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
+  test("a symlink loop where a converted file goes is refused before any target is written", () => {
+    const f = fixture(["web-pro"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    const file = join(codex, "web-pro.toml");
+    symlinkSync("web-pro.toml", file);
+
+    const r = f.run("--dest", f.dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(file)}: cannot write (ELOOP); ${HINT}\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
   test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
     const f = fixture(["web-pro"]);
     writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");
@@ -746,7 +834,7 @@ describe("codex conversion", () => {
     const r = f.run("--to", "codex", "--dest", f.dest);
 
     expect(r.status).not.toBe(0);
-    expect(r.stderr).toContain("bad: ");
+    expect(r.stderr).toContain("bad: body holds a control character TOML cannot carry");
     expect(existsSync(join(f.dest, "codex", "bad.toml"))).toBe(false);
   });
 
@@ -801,5 +889,27 @@ describe("codex conversion", () => {
     const toml = join(f.dest, "codex", "desc.toml");
     if (r.status === 0) expect(() => Bun.TOML.parse(readFileSync(toml, "utf8"))).not.toThrow();
     else expect(existsSync(toml)).toBe(false);
+  });
+
+  test("a DEL in a def name fails the conversion loudly", () => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "bad.md"), `---\nname: ba\x7fd\ndescription: "fixture bad"\n---\n\nbody\n`);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("name holds a character TOML cannot carry");
+    expect(existsSync(join(f.dest, "codex"))).toBe(false);
+  });
+
+  test("a def codex cannot carry stops the install before any target is written", () => {
+    const f = fixture(["aaa"]);
+    writeFileSync(join(f.repo, "agents", "zzz.md"), defWithBody("zzz", "before\x1bafter"));
+
+    const r = f.run("--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("zzz: body holds a control character TOML cannot carry");
+    expect(existsSync(f.dest)).toBe(false);
   });
 });
