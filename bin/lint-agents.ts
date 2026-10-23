@@ -30,12 +30,24 @@ const TOOLS = new Set([
 // Tool names a body can reference. Bare "Read"/"Write" are too common as English to match.
 const MENTIONABLE = ["WebFetch", "WebSearch", "NotebookEdit", "TodoWrite", "ToolSearch", "Glob", "Grep", "Bash"];
 
-const READONLY_CLAIM = /\b(read-only|never edits?|reviewer, not a fixer|investigation only)\b/i;
-// Only a qualifier ABOUT the agent's own writes clears a read-only claim: a scoped claim
-// ("read-only on source") or an explicit write scope ("writes only the threat-model doc").
-// A bare verb elsewhere in the description ("copies or builds the target") is about the
-// target rather than about what the agent writes.
-const QUALIFIED_WRITES = /\bread-only on\b|\b(writes?|edits?) only\b/i;
+// A read-only def may neither mutate the tree nor spawn a writer.
+const READ_ONLY_TOOLS = ["Edit", "Write", "NotebookEdit", "Agent", "Task"];
+const LINT_DIRECTIVES = new Set(["sandboxed", "read-only"]);
+
+// Fenced code and HTML comments quote text; only live body text counts as a rule. One
+// leftmost-first pass, per CommonMark: a fence opener and closer, and a comment opener,
+// sit at most three columns in (four is an indented code block), a backtick info string
+// holds no backtick, a fence closes only on the same character repeated at least as long
+// as the opener, and an unclosed construct runs to the end. A regex cannot track list
+// containers, so a rule nested four-plus columns under a list item reads as missing: a
+// loud error, never a silent pass.
+function withoutQuoted(body: string): string {
+  return body.replace(
+    /^ {0,3}(([`~])\2{2,})(?!(?<=`)[^\n]*`)[^\n]*\n[\s\S]*?(?:^ {0,3}\1\2*[ \t]*$|(?![\s\S]))|^ {0,3}(?=<!--)(?:[^\n]*?-->[^\n]*|[\s\S]*?-->[^\n]*|[\s\S]*)/gm,
+    "",
+  );
+}
+
 const ABS_PATH = /(?:^|[\s`(])(~\/[\w./-]+|\/home\/[\w./-]+)/g;
 
 interface Finding { level: "error" | "warn"; file: string; msg: string }
@@ -60,6 +72,26 @@ function lint(path: string, portable: boolean): Finding[] {
   const tools = list(fm.tools);
   const denied = list(fm.disallowedTools);
 
+  // Every `# lint: <directives>` comment line in the frontmatter is one directive source;
+  // prose after the first full stop is a note, not more directives. A near-miss spelling
+  // would leave the def unchecked with exit 0, so it is an error instead.
+  const directives = new Set<string>();
+  for (const line of m[1].split("\n")) {
+    const lm = line.match(/^\s*#\s*lint\s*:\s*(.*)$/);
+    if (lm) {
+      for (const d of lm[1].split(".")[0].split(/[,\s]+/).filter(Boolean)) directives.add(d);
+    } else if (
+      // A hash inside a quoted value is data, not a comment.
+      /(?:^|\s)#\s*lints?\b/i.test(line.replace(/^(\s*[\w-]+:\s*)(["'])(?:(?!\2).)*\2/, "$1"))
+    ) {
+      err(`malformed lint comment \`${line.trim()}\``);
+    }
+  }
+  for (const d of directives) {
+    if (!LINT_DIRECTIVES.has(d)) err(`unknown lint directive \`${d}\``);
+  }
+  const readOnly = directives.has("read-only");
+
   if (!fm.name) err("missing `name`");
   else {
     if (fm.name !== file.replace(/\.md$/, "")) err(`name \`${fm.name}\` does not match filename`);
@@ -81,7 +113,7 @@ function lint(path: string, portable: boolean): Finding[] {
   // An allowlist is exact: MCP tools are excluded unless named, and without ToolSearch a
   // deferred MCP tool can never be loaded. A def that wants the tight sandbox says so with
   // a `# lint: sandboxed` YAML comment in its frontmatter.
-  if (tools.length && !/^\s*#\s*lint: sandboxed/m.test(m[1])) {
+  if (tools.length && !directives.has("sandboxed")) {
     const hasMcp = tools.some((t) => t.startsWith("mcp__"));
     if (!tools.includes("ToolSearch") && !hasMcp) {
       warn("`tools` allowlist without `ToolSearch` or any `mcp__*` entry: this agent cannot reach any MCP server");
@@ -90,18 +122,21 @@ function lint(path: string, portable: boolean): Finding[] {
 
   const grants = (t: string) => (tools.length ? tools.includes(t) : !denied.includes(t));
   for (const t of MENTIONABLE) {
+    // A rule that names the tools it denies states no dependency on them.
+    if (readOnly && READ_ONLY_TOOLS.includes(t)) continue;
     if (new RegExp(`\\b${t}\\b`).test(body) && !grants(t)) {
       warn(`body references \`${t}\` but the frontmatter does not grant it`);
     }
   }
 
-  // A def that calls itself read-only should not be able to mutate the tree.
-  if (READONLY_CLAIM.test(fm.description ?? "") && !QUALIFIED_WRITES.test(fm.description ?? "")) {
-    for (const t of ["Edit", "Write", "NotebookEdit"]) {
-      if (grants(t)) {
-        warn(`description claims read-only but \`${t}\` is granted`);
-        break;
-      }
+  // A def's `# lint: read-only` marker is the only read-only trigger: an unmarked def is
+  // checked by nothing.
+  if (readOnly) {
+    for (const t of READ_ONLY_TOOLS) {
+      if (grants(t)) err(`marked read-only but \`${t}\` is granted`);
+    }
+    if (!/^ {0,3}- \*\*Read-only\.\*\*/m.test(withoutQuoted(body))) {
+      err("marked read-only but the body has no `- **Read-only.**` rule");
     }
   }
 
