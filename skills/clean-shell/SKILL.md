@@ -4,7 +4,7 @@ description: "Defensive Bash and POSIX shell rules: strict-mode flags, traps, id
 when_to_use: "Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck and bats into CI."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Clean Shell
@@ -21,7 +21,7 @@ Shell-specific conventions for writing, hardening, reviewing, and testing script
 
 - Pick `set` flags by intent and comment the reason next to them: `set -euo pipefail` for orchestration where any failure aborts; drop `-e` when steps may fail without aborting; `set -u` alone for long-running loops. A thin wrapper sets no flags and ends with `exec`.
 - Quote every expansion (`"$var"`, `"${arr[@]}"`, `"$(cmd)"`); `--` end-of-options guard before untrusted operands.
-- Validate input at the boundary into a checked value (`"${1:?msg}"`, a `case` guard `*[!0123456789]*|''`, since a locale's `[0-9]` can match other digits); no call site re-tests a raw string. Arithmetic executes text it evaluates (`a[$(cmd)]` runs `cmd`): `$(( ))`, `(( ))`, `let`, `[[ -eq/-lt/... ]]`, an indexed-array subscript, a `${s:off:len}` offset, and any assignment to a `declare -i`/`local -i` variable; anything reaching one gets, in order: the guard; a leading-zero strip (`v=${v#"${v%%[!0]*}"}; v=${v:-0}`; octal in sh and bash: `08` errors, `010` is 8); a digit count (at most 18) before any arithmetic, `10#` included (19+ digits can overflow silently, comparisons too); the domain's range check. `references/defensive.md` holds the code and the 19-digit case.
+- Validate input at the boundary into a checked value (`"${1:?msg}"`, a `case` guard `*[!0123456789]*|''`, since a locale's `[0-9]` can match other digits); no call site re-tests a raw string. Arithmetic executes text it evaluates (`a[$(cmd)]` runs `cmd`): `$(( ))`, `(( ))`, `let`, `[[ -eq/-lt/... ]]`, an indexed-array subscript, a `${s:off:len}` offset, and any assignment to a `declare -i`/`local -i` variable; anything reaching one gets, in order: the guard; a leading-zero strip (octal in sh and bash: `08` errors, `010` is 8) with `v=${v#"${v%%[!0]*}"}; v=${v:-0}`; a digit count (at most 18) before any arithmetic, `10#` included (19+ digits can overflow silently, comparisons too); the domain's range check. `references/defensive.md` holds the code for the first three steps and the 19-digit case.
 - Text another process controls is untrusted input even when a local file carries it (`/proc/*/comm`, `/proc/*/cmdline`, filenames); strip every delimiter you later split on.
 - Every `mktemp` gets an EXIT trap right after creation. Traps are best-effort: SIGKILL, OOM-kill, and power loss skip them.
 - Anything that mutates system state is check-then-act idempotent; add `flock` where concurrent runs are possible.
