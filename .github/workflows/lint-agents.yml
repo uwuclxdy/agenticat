@@ -21,6 +21,8 @@ jobs:
         run: bun bin/lint-agents.ts agents --portable
 
       # A def that parses but converts to nothing usable still fails a user's install.
+      # Counting misses a broken emit: a raw control byte in a body lands verbatim in a
+      # TOML literal string, so parse every emitted codex .toml too.
       - name: converter smoke test
         run: |
           bun bin/install-agents.ts --dest "$RUNNER_TEMP/out"
@@ -28,6 +30,11 @@ jobs:
             n=$(find "$RUNNER_TEMP/out/$t" -name '*.md' -o -name '*.toml' | wc -l)
             a=$(find agents -name '*.md' | wc -l)
             [ "$n" -eq "$a" ] || { echo "$t: converted $n of $a defs"; exit 1; }
+          done
+          for f in "$RUNNER_TEMP/out/codex"/*.toml; do
+            [ -e "$f" ] || continue
+            bun -e 'const { readFileSync } = require("node:fs"); const f = process.argv[1]; Bun.TOML.parse(readFileSync(f, "utf8"));' "$f" \
+              || { echo "codex: $f is not valid TOML"; exit 1; }
           done
 
       # Every run gets a scratch HOME and --dest, so no real install path is touched.
