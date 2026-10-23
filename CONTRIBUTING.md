@@ -6,7 +6,7 @@ Welcome contributions: new agents, new skills, fixes to existing ones, and READM
 
 - **Claude Code format is canonical.** `agents/*.md` and `skills/<name>/SKILL.md` are the source of truth; opencode/codex output derives from them at install time via `bin/install-agents.ts`. Don't PR generated files.
 - **Don't PR a vendored third-party skill.** If a skill you didn't write is worth sharing, PR a row in the README's external skills table instead. It installs from its own repo with `npx skills add <owner>/<repo> --skill <name>`. A few are vendored here (`webapp-testing`, Apache-2.0), each with its LICENSE and a modification note; that call stays with the maintainer.
-- **Nothing personal or machine-specific**: absolute paths, IPs, hostnames, private tooling. `git grep -nE '/hom[e]/|192[.]168[.]|cloudif[y]|cloudy[-]|/User[s]/|/mn[t]/'` must come back clean. This is the same scan the CI gate runs.
+- **Nothing personal or machine-specific**: absolute paths, IPs, hostnames, private tooling. `git grep -nE '/hom[e]/|192[.]168[.]|cloudif[y]|cloudy[-]|/User[s]/|/mn[t]/'` must come back clean; run it after `git add` so new files are scanned. This is the same scan the CI gate runs.
 
 ## Agents
 
