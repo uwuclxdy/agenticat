@@ -6,7 +6,7 @@
 // usage: run with --help
 
 import { accessSync, constants, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, existsSync, unlinkSync, writeFileSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { join, basename, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -162,14 +162,15 @@ const cannotCreate = (dest: string, code?: string) =>
 const cannotWrite = (dest: string, code?: string) =>
   new InputError(`${JSON.stringify(dest)}: cannot write (${code}); fix that path or pass a --dest that is a writable directory`);
 
-const lstatExists = (p: string): boolean => {
+// a directory where a file goes refuses the write with EISDIR; finding it in the
+// preflight keeps the failure from landing after another target was written.
+function blockedWrite(p: string): string | undefined {
   try {
-    lstatSync(p);
-    return true;
+    return statSync(p).isDirectory() ? "EISDIR" : undefined;
   } catch {
-    return false;
+    return undefined;
   }
-};
+}
 
 // a path whose nearest existing ancestor (or itself) is not a directory cannot be
 // created, and an existing target dir (or the nearest ancestor when it does not exist
@@ -177,8 +178,32 @@ const lstatExists = (p: string): boolean => {
 // later target's failure from leaving an earlier target's directory behind.
 function uncreatableCode(dest: string): { verb: "create" | "write"; code?: string } | undefined {
   let cur = resolve(dest);
+  const missing: string[] = [];
   // lstat sees a dangling symlink; existsSync follows it and would walk past the link.
-  while (!lstatExists(cur) && dirname(cur) !== cur) cur = dirname(cur);
+  // only ENOENT means the path may still be creatable from a higher ancestor: a symlink
+  // loop is this path's own refusal.
+  for (;;) {
+    try {
+      lstatSync(cur);
+      break;
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code !== "ENOENT" || dirname(cur) === cur) return { verb: "create", code };
+      missing.unshift(basename(cur));
+      cur = dirname(cur);
+    }
+  }
+  // a component past the filesystem's name limit reports ENAMETOOLONG only where its
+  // parent exists, so the walk above sees ENOENT under a missing ancestor; probing each
+  // component under the nearest existing ancestor catches it before any mkdir runs.
+  for (const part of missing) {
+    try {
+      lstatSync(join(cur, part));
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "ENAMETOOLONG") return { verb: "create", code };
+    }
+  }
   let isDir: boolean;
   try {
     isDir = statSync(cur).isDirectory();
@@ -205,6 +230,12 @@ function install(targets: string[], names: string[] | null, project: boolean, de
   for (const { dest } of placed) {
     const problem = uncreatableCode(dest);
     if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
+  }
+  for (const { target, dest } of placed) {
+    for (const file of [...defs.map((a: AgentDef) => join(dest, fileName(target, a.name))), join(dest, MANIFEST)]) {
+      const code = blockedWrite(file);
+      if (code) throw cannotWrite(file, code);
+    }
   }
   for (const { dest } of placed) {
     try {

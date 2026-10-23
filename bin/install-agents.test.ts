@@ -557,6 +557,40 @@ describe("argument parsing", () => {
     expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
   });
 
+  test.each([
+    ["a converted file", (dest: string) => join(dest, "codex", "web-pro.toml")],
+    ["the manifest", (dest: string) => join(dest, "codex", MANIFEST)],
+  ])("a directory where %s goes is refused in one line before any target is written", (_label, at) => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+    const blocked = at(f.dest);
+    mkdirSync(blocked, { recursive: true });
+
+    const r = f.runIn(cwd, "--dest", f.dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(blocked)}: cannot write (EISDIR); ${HINT}\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
+  test("a --dest component past the name limit is refused and creates nothing", () => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+    const dest = join(f.root, "new", "x".repeat(300));
+
+    const r = f.runIn(cwd, "--dest", dest, "web-pro");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(join(dest, "opencode"))}: cannot create (ENAMETOOLONG); ${HINT}\n`);
+    expect(existsSync(join(f.root, "new"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
   test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
     const f = fixture(["web-pro"]);
     writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");
