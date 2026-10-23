@@ -2,6 +2,7 @@
 name: prober
 description: "Runs a build, test, lint, or any command and returns a pass/fail probe (exit code, warn/error counts) instead of the full log. - Use when only the pass/fail outcome matters, not the log, or to double-check a gate result. Never mutates; no analysis, no fixes. Spawn one per check."
 # lint: sandboxed. Bash+Read is the whole job, no MCP access intended.
+# sandbox: workspace-write
 tools: Bash, Read
 model: haiku
 ---
