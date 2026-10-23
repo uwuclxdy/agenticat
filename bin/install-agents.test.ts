@@ -1160,4 +1160,19 @@ describe("opencode permission map", () => {
     expect(fm.permission?.bash).toBeUndefined();
     expect(fm.tools?.bash).toBe(false);
   });
+
+  test.each([
+    ["an unknown sandbox marker", "tools: Bash, Read\n# sandbox: workspace_write\n", '"workspace_write"'],
+    ["a bash allow list on a def that can write", "tools: Bash, Read, Write\n# opencode-bash-allow: cargo clippy *\n", "opencode-bash-allow"],
+  ])("%s is a catalog defect on the opencode target too", (_label, lines, named) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\n${lines}---\n\nbody\n`);
+
+    const r = f.run("--to", "opencode", "--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("reader:");
+    expect(r.stderr).toContain(named);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
 });

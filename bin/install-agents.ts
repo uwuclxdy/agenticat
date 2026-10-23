@@ -84,6 +84,11 @@ function parseAgent(path: string): AgentDef {
     if (kv) fm[kv[1]] = kv[2].replace(/^["']|["']$/g, "");
   }
   if (!fm.name || !fm.description) throw new Error(`${path}: name + description required`);
+  // a value the reader does not know would silently ship read-only, so it is a defect;
+  // both targets read the marker from here, so both refuse it before any write.
+  const sandbox = m[1].match(/^#\s*sandbox:\s*(\S+)\s*$/m)?.[1];
+  if (sandbox !== undefined && sandbox !== "workspace-write")
+    throw new Error(`${fm.name}: unknown sandbox marker ${JSON.stringify(sandbox)} (expected "workspace-write")`);
   return {
     name: fm.name,
     description: fm.description,
@@ -92,7 +97,7 @@ function parseAgent(path: string): AgentDef {
     model: fm.model,
     // YAML comments, so no harness's frontmatter parser reads them as a key; the lint's
     // own exemptions live the same way.
-    sandbox: m[1].match(/^#\s*sandbox:\s*(\S+)\s*$/m)?.[1],
+    sandbox,
     bashAllow: m[1].match(/^#\s*opencode-bash-allow:\s*(.+)$/m)?.[1].split(",").map((p) => p.trim()).filter(Boolean),
     body: m[2].trim(),
   };
@@ -205,6 +210,10 @@ function toOpencode(a: AgentDef): string {
   // follows the tools grant for every def, so it can stand without a bash map.
   const taskDenied = !grantsAgents(a);
   const bashMap = !writesFiles(a) && grantsBash(a);
+  // the marker extends the read-only map, so on a def without one it is a catalog defect
+  // rather than a silent no-op.
+  if (a.bashAllow?.length && !bashMap)
+    throw new Error(`${a.name}: opencode-bash-allow has no bash map to extend (the def writes files or grants no Bash)`);
   if (taskDenied || bashMap) {
     lines.push("permission:");
     if (taskDenied) lines.push("  task: deny");
@@ -234,9 +243,6 @@ function toCodex(a: AgentDef): string {
   // agents (testers writing scratch/screenshots) still need workspace-write.
   // a def whose Bash is its whole job writes no target file, so the tool grant alone
   // would call it read-only; the frontmatter marker opts it into a writable sandbox.
-  // a value the reader does not know would silently ship read-only, so it is a defect.
-  if (a.sandbox !== undefined && a.sandbox !== "workspace-write")
-    throw new Error(`${a.name}: unknown sandbox marker ${JSON.stringify(a.sandbox)} (expected "workspace-write")`);
   const sandbox = writesFiles(a) ? "workspace-write" : "read-only";
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
   // bodies survive verbatim. A body containing ''' cannot be represented; fail loud.
