@@ -588,3 +588,46 @@ describe("the rename table", () => {
   });
 });
 
+describe("--update without --dest", () => {
+  // git with no inherited GIT_* state (a hook's GIT_DIR/GIT_INDEX_FILE) and no user or
+  // system config, so the fixture repos never see the box's hooks or identity.
+  const gitEnv = (home: string) => ({
+    ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_"))),
+    HOME: home,
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_AUTHOR_NAME: "fixture",
+    GIT_AUTHOR_EMAIL: "fixture@example.invalid",
+    GIT_COMMITTER_NAME: "fixture",
+    GIT_COMMITTER_EMAIL: "fixture@example.invalid",
+  });
+
+  test("a refused run leaves the checkout where it was", () => {
+    const f = fixture(["kept"]);
+    const env = gitEnv(f.home);
+    const git = (cwd: string, ...args: string[]) => {
+      const r = spawnSync("git", args, { cwd, env, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    git(f.repo, "init", "-q", "-b", "main");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "first");
+    const clone = join(f.root, "clone");
+    git(f.root, "clone", "-q", f.repo, clone);
+    f.addDef("later");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "second");
+    const before = git(clone, "rev-parse", "HEAD");
+    const homeCodex = join(f.home, ".codex", "agents");
+    mkdirSync(homeCodex, { recursive: true });
+    writeFileSync(join(homeCodex, MANIFEST), "{\"agents\": [");
+
+    const r = spawnSync("bun", [join(clone, "bin", "install-agents.ts"), "--update"], { cwd: f.root, env, encoding: "utf8" });
+
+    expect(r.status).toBe(1);
+    expect(r.stderr.startsWith(`${JSON.stringify(join(homeCodex, MANIFEST))}: not valid JSON (`)).toBe(true);
+    expect(git(clone, "rev-parse", "HEAD")).toBe(before);
+  });
+});
+

@@ -316,9 +316,6 @@ function readManifest(path: string, reinstall: string): { agents: unknown[]; all
 }
 
 function update(project: boolean, destOverride?: string) {
-  if (destOverride === undefined) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
-  const catalog = readCatalog();
-  const catalogNames = catalog.map((a: AgentDef) => a.name);
   // read and validate every present manifest before acting on any: a bad one must not
   // leave another target half-updated.
   const pending: { target: string; dest: string; agents: unknown[]; all: boolean }[] = [];
@@ -345,6 +342,11 @@ function update(project: boolean, destOverride?: string) {
     const problem = uncreatableCode(dest);
     if (problem) throw problem.verb === "write" ? cannotWrite(dest, problem.code) : cannotCreate(dest, problem.code);
   }
+  // the checks above answer the checkout as it is now; pulling first would move the
+  // checkout under a run that then refuses, so the pull waits for every refusal.
+  if (destOverride === undefined) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
+  const catalog = readCatalog();
+  const catalogNames = catalog.map((a: AgentDef) => a.name);
   for (const { target, dest, agents, all } of pending) {
     let wanted: string[] | null = null;
     let stale: string[];
