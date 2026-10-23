@@ -930,6 +930,18 @@ describe("codex conversion", () => {
     expect(r.stderr).toContain("zzz: body holds a control character TOML cannot carry");
     expect(existsSync(f.dest)).toBe(false);
   });
+
+  test("an unknown sandbox marker value is a catalog defect naming the def", () => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\ntools: Bash, Read\n# sandbox: workspace_write\n---\n\nbody\n`);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("runner:");
+    expect(r.stderr).toContain('"workspace_write"');
+    expect(existsSync(join(f.dest, "codex", "runner.toml"))).toBe(false);
+  });
 });
 
 describe("untrusted text in a refusal", () => {

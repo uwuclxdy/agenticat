@@ -140,6 +140,9 @@ function toCodex(a: AgentDef): string {
       : true;
   // a def whose Bash is its whole job writes no target file, so the tool grant alone
   // would call it read-only; the frontmatter marker opts it into a writable sandbox.
+  // a value the reader does not know would silently ship read-only, so it is a defect.
+  if (a.sandbox !== undefined && a.sandbox !== "workspace-write")
+    throw new Error(`${a.name}: unknown sandbox marker ${JSON.stringify(a.sandbox)} (expected "workspace-write")`);
   const sandbox = mutates || a.sandbox === "workspace-write" ? "workspace-write" : "read-only";
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
   // bodies survive verbatim. A body containing ''' cannot be represented; fail loud.
