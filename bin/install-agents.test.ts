@@ -764,6 +764,16 @@ describe("argument parsing", () => {
     expect(r.stderr).not.toContain(HINT);
   });
 
+  test("--update with a --dest that is a file finds no manifest and exits 0", () => {
+    const f = fixture(["web-pro"]);
+    writeFileSync(f.dest, "a file where --dest points\n");
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("no agenticat manifest found");
+  });
+
   test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
     const f = fixture(["web-pro"]);
     writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");
