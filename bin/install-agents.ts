@@ -67,6 +67,7 @@ interface AgentDef {
   disallowedTools?: string[];
   model?: string;
   sandbox?: string;
+  bashAllow?: string[];
   body: string;
 }
 
@@ -89,12 +90,72 @@ function parseAgent(path: string): AgentDef {
     tools: splitList(fm.tools),
     disallowedTools: splitList(fm.disallowedTools),
     model: fm.model,
-    // a YAML comment, so no harness's frontmatter parser reads it as a key; the lint's
+    // YAML comments, so no harness's frontmatter parser reads them as a key; the lint's
     // own exemptions live the same way.
     sandbox: m[1].match(/^#\s*sandbox:\s*(\S+)\s*$/m)?.[1],
+    bashAllow: m[1].match(/^#\s*opencode-bash-allow:\s*(.+)$/m)?.[1].split(",").map((p) => p.trim()).filter(Boolean),
     body: m[2].trim(),
   };
 }
+
+// a def that writes the filesystem: the codex sandbox rule and the opencode bash
+// allowlist both key on it.
+function writesFiles(a: AgentDef): boolean {
+  const mutates = a.tools
+    ? a.tools.some((t) => ["Write", "Edit"].includes(t))
+    : a.disallowedTools
+      ? !["Write", "Edit"].every((t) => a.disallowedTools!.includes(t))
+      : true;
+  return mutates || a.sandbox === "workspace-write";
+}
+
+// the def grants a way to spawn a subagent, or names neither tool and inherits both.
+function grantsAgents(a: AgentDef): boolean {
+  if (a.tools) return a.tools.includes("Agent") || a.tools.includes("Task");
+  if (a.disallowedTools) return !(a.disallowedTools.includes("Agent") && a.disallowedTools.includes("Task"));
+  return true;
+}
+
+// opencode matches the whole command string and the LAST matching rule wins, so the
+// catch-all deny comes first, the read allows next, and every rule that can write or
+// spawn through an allowed read command comes last.
+const OPENCODE_READS = [
+  "rg *",
+  "ls *",
+  "cat *",
+  "git log *",
+  "git show *",
+  "git blame *",
+  "git diff *",
+  "git diff-tree *",
+  "git diff-index *",
+  "git diff-files *",
+  "git ls-files *",
+  "git --no-optional-locks status *",
+  "git merge-base *",
+  "git rev-parse *",
+];
+
+// a spaced redirect (opencode does not split one out of its command) and each flag that
+// writes or spawns through an allowed read command.
+const OPENCODE_DENIES = [
+  "* > *",
+  "* >> *",
+  "* >| *",
+  "* <> *",
+  "* 1> *",
+  "* 1>> *",
+  "* 2> *",
+  "* 2>> *",
+  "* 2>| *",
+  "* &> *",
+  "* &>> *",
+  "* >& *",
+  "git * --output*",
+  "git * --ext-diff*",
+  "git * --textconv*",
+  "rg *--pre*",
+];
 
 function toOpencode(a: AgentDef): string {
   const lines = [`description: ${JSON.stringify(a.description)}`, "mode: subagent"];
@@ -116,6 +177,16 @@ function toOpencode(a: AgentDef): string {
       for (const t of denied) lines.push(`  ${t}: false`);
     }
   }
+  // a read-only def keeps its bash tool for inspection, so it needs the allowlist that
+  // keeps that bash from writing; a def that writes keeps bash unrestricted.
+  if (!writesFiles(a)) {
+    lines.push("permission:");
+    if (!grantsAgents(a)) lines.push("  task: deny");
+    lines.push("  bash:");
+    lines.push('    "*": deny');
+    for (const pattern of [...OPENCODE_READS, ...(a.bashAllow ?? [])]) lines.push(`    ${JSON.stringify(pattern)}: allow`);
+    for (const pattern of OPENCODE_DENIES) lines.push(`    ${JSON.stringify(pattern)}: deny`);
+  }
   return `---\n${lines.join("\n")}\n---\n\n${a.body}\n`;
 }
 
@@ -133,17 +204,12 @@ function toCodex(a: AgentDef): string {
   // and codex's read-only sandbox still allows command execution, just no fs writes.
   // denylist form: read-only only when both write tools are denied; deny-Edit-only
   // agents (testers writing scratch/screenshots) still need workspace-write.
-  const mutates = a.tools
-    ? a.tools.some((t) => ["Write", "Edit"].includes(t))
-    : a.disallowedTools
-      ? !["Write", "Edit"].every((t) => a.disallowedTools!.includes(t))
-      : true;
   // a def whose Bash is its whole job writes no target file, so the tool grant alone
   // would call it read-only; the frontmatter marker opts it into a writable sandbox.
   // a value the reader does not know would silently ship read-only, so it is a defect.
   if (a.sandbox !== undefined && a.sandbox !== "workspace-write")
     throw new Error(`${a.name}: unknown sandbox marker ${JSON.stringify(a.sandbox)} (expected "workspace-write")`);
-  const sandbox = mutates || a.sandbox === "workspace-write" ? "workspace-write" : "read-only";
+  const sandbox = writesFiles(a) ? "workspace-write" : "read-only";
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
   // bodies survive verbatim. A body containing ''' cannot be represented; fail loud.
   if (a.body.includes("'''")) throw new Error(`${a.name}: body contains ''' (unrepresentable in TOML literal string)`);

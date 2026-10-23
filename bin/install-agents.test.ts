@@ -992,3 +992,101 @@ describe("untrusted text in a refusal", () => {
     expect(echoed.stdout).toBe(dest);
   });
 });
+
+describe("opencode permission map", () => {
+  // opencode's own matcher (packages/core/src/util/wildcard.ts): `*` is any run of characters,
+  // `?` one character, a trailing ` *` also matches the bare command, the whole command string
+  // is matched, and the LAST matching rule wins (no match: ask).
+  const wildcard = (pattern: string) => {
+    let source = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+    if (source.endsWith(" .*")) source = `${source.slice(0, -3)}( .*)?`;
+    return new RegExp(`^${source}$`, "s");
+  };
+  const decide = (rules: Record<string, string>, command: string) =>
+    Object.entries(rules).findLast(([pattern]) => wildcard(pattern).test(command))?.[1] ?? "ask";
+  const frontmatter = (file: string) => Bun.YAML.parse(readFileSync(file, "utf8").split("\n---\n")[0].replace(/^---\n/, "")) as {
+    permission?: { bash?: Record<string, string>; task?: string };
+  };
+  const install = (frontmatterLines: string) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\n${frontmatterLines}---\n\nbody\n`);
+    const r = f.run("--to", "opencode", "--dest", f.dest);
+    expect(r.status).toBe(0);
+    return frontmatter(join(f.dest, "opencode", "reader.md"));
+  };
+
+  const READS = [
+    "git log --oneline -5",
+    "git show HEAD",
+    "git blame src/a.ts",
+    "rg foo src/",
+    "ls -la",
+    "cat README.md",
+    "git diff-tree -r -p -M main side",
+    "git diff-index -p -M HEAD",
+    "git diff-files -p",
+    "git ls-files --others --exclude-standard --full-name :/",
+    "git --no-optional-locks status --porcelain",
+    "git merge-base main side",
+    "git rev-parse --show-toplevel",
+  ];
+  const WRITES = [
+    "touch x",
+    "rm -rf y",
+    "mv a b",
+    "cp a b",
+    "tee f",
+    "git commit -m x",
+    "git push",
+    "git checkout main",
+    "git log > out.txt",
+    "git log >> out.txt",
+    "cat README.md > copy.md",
+    "git log --output=o.txt",
+    "sed -i s/a/b/ f",
+  ];
+
+  test("a read-only def's map allows the shared reads and refuses writes", () => {
+    const fm = install("tools: Read, Bash\n");
+
+    const bash = fm.permission?.bash ?? {};
+    expect(Object.keys(bash)[0]).toBe("*");
+    expect(bash["*"]).toBe("deny");
+    for (const command of READS) expect([command, decide(bash, command)]).toEqual([command, "allow"]);
+    for (const command of WRITES) expect([command, decide(bash, command)]).toEqual([command, "deny"]);
+  });
+
+  test("a denylist read-only def gets the same map", () => {
+    const fm = install("disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n");
+
+    const bash = fm.permission?.bash ?? {};
+    for (const command of READS) expect([command, decide(bash, command)]).toEqual([command, "allow"]);
+    for (const command of WRITES) expect([command, decide(bash, command)]).toEqual([command, "deny"]);
+  });
+
+  test("a def's own declared checks are allowed and still cannot redirect", () => {
+    const fm = install("tools: Read, Bash\n# opencode-bash-allow: cargo clippy *, cargo check *\n");
+
+    const bash = fm.permission?.bash ?? {};
+    expect(decide(bash, "cargo clippy --all-targets")).toBe("allow");
+    expect(decide(bash, "cargo check")).toBe("allow");
+    expect(decide(bash, "cargo build")).toBe("deny");
+    expect(decide(bash, "cargo clippy > o.txt")).toBe("deny");
+  });
+
+  test.each([
+    ["no tool restriction", ""],
+    ["a Write grant", "tools: Read, Bash, Write\n"],
+    ["the workspace-write marker", "tools: Bash, Read\n# sandbox: workspace-write\n"],
+  ])("a def with %s gets no bash permission map", (_label, lines) => {
+    const fm = install(lines);
+
+    expect(fm.permission?.bash).toBeUndefined();
+  });
+
+  test("a def denying Agent and Task cannot spawn agents on opencode", () => {
+    const fm = install("disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n");
+
+    expect(fm.permission?.task).toBe("deny");
+  });
+});
