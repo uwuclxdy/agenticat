@@ -21,7 +21,7 @@ Skill and Agent frontmatter is in Claude Code compat format by default; use `npx
 ## Install
 
 > [!NOTE]
-> Two plugins ship separately: `agents` and `skills`. Install one or both; on opencode/codex, cherry-pick by name with `./install.sh --to opencode prober web-researcher` (list with `./install.sh --list`). 
+> Two plugins ship separately: `agents` and `skills`. Install one or both; on opencode/codex, cherry-pick by name with `./install.sh --to opencode prober web-researcher` (list with `./install.sh --list`, every flag with `./install.sh --help`). 
 
 <details>
 <summary>Claude Code</summary>
