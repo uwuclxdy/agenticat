@@ -522,6 +522,26 @@ describe("argument parsing", () => {
     expect(written(f.home)).toEqual([]);
   });
 
+  asUser("--update reports a manifest it cannot stat instead of skipping its target", () => {
+    const f = fixture(["web-pro"]);
+    const opencode = join(f.dest, "opencode");
+    const codex = join(f.dest, "codex");
+    writeManifest(opencode, "opencode", ["web-pro"]);
+    writeManifest(codex, "codex", ["web-pro"]);
+    const opencodeManifest = readFileSync(join(opencode, MANIFEST), "utf8");
+    chmodSync(codex, 0o644);
+
+    const r = f.run("--update", "--dest", f.dest);
+    chmodSync(codex, 0o755);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(
+      `${JSON.stringify(join(codex, MANIFEST))}: cannot read (EACCES); remove or fix the permissions of that path, then reinstall with: '${join(f.repo, "install.sh")}' --to codex --dest '${f.dest}'\n`,
+    );
+    expect(existsSync(join(opencode, "web-pro.md"))).toBe(false);
+    expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
+  });
+
   test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
     const f = fixture(["web-pro"]);
     writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");

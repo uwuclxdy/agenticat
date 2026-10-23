@@ -314,7 +314,14 @@ function update(project: boolean, destOverride?: string) {
   for (const target of ["opencode", "codex"]) {
     const dest = destFor(target, project, destOverride);
     const mf = join(dest, MANIFEST);
-    if (!existsSync(mf)) continue;
+    // existsSync reads an EACCES as absent; only a manifest the path layout says is not
+    // there may skip its target, and anything else reaches readManifest's read error.
+    try {
+      statSync(mf);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "ENOENT" || code === "ENOTDIR") continue;
+    }
     pending.push({ target, dest, ...readManifest(mf, reinstallCommand(target, project, destOverride)) });
   }
   if (!pending.length) {
