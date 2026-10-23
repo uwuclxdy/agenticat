@@ -397,8 +397,8 @@ function buildPlan(target: string, defs: AgentDef[], all: boolean, project: bool
   };
 }
 
-// a dir-level refusal depends only on the dest paths, so it can run before a pull; the
-// per-file checks need the pulled catalog and still follow it.
+// a dir-level refusal depends only on the dest paths; preflight runs it with the per-file
+// checks, so both land before the first write.
 function preflightDirs(dests: string[]) {
   for (const dest of dests) {
     const problem = uncreatableCode(dest);
@@ -564,30 +564,35 @@ function update(project: boolean, destOverride?: string) {
     return;
   }
   // every manifest is validated before the pull, so a malformed one leaves the checkout
-  // where it was; a target dir the user cannot create or write refuses here too. the plan
-  // itself needs the pulled catalog, so a per-file refusal on a path only the pull adds
-  // still lands after it.
-  preflightDirs(pending.map(({ dest }) => dest));
-  if (destOverride === undefined) execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
-  const catalog = readCatalog();
-  const catalogNames = catalog.map((a: AgentDef) => a.name);
-  const plans = pending.map(({ target, dest, agents, all }) => {
-    let wanted: string[] | null = null;
-    let stale: string[];
-    if (all) {
-      stale = manifestNames(agents).filter((n: string) => !catalogNames.includes(n));
-      for (const name of stale) {
-        const renamed = renameTarget(name, catalogNames);
-        if (renamed) console.log(`  ${target}: ${name} -> ${renamed}`);
+  // where it was. the plan and its full preflight run against the pre-pull catalog too, so
+  // a blocked path the current catalog already plans refuses before the pull; after it,
+  // only a path the pulled catalog newly adds can still reach the preflight late.
+  const plan = (catalog: AgentDef[], announce: boolean) => {
+    const catalogNames = catalog.map((a: AgentDef) => a.name);
+    return pending.map(({ target, dest, agents, all }) => {
+      let wanted: string[] | null = null;
+      let stale: string[];
+      if (all) {
+        stale = manifestNames(agents).filter((n: string) => !catalogNames.includes(n));
+        if (announce) {
+          for (const name of stale) {
+            const renamed = renameTarget(name, catalogNames);
+            if (renamed) console.log(`  ${target}: ${name} -> ${renamed}`);
+          }
+        }
+      } else {
+        // a manifest written before `all` existed carries no flag and stays a fixed list.
+        ({ wanted, stale } = reconcile(target, agents, catalogNames));
       }
-    } else {
-      // a manifest written before `all` existed carries no flag and stays a fixed list.
-      ({ wanted, stale } = reconcile(target, agents, catalogNames));
-    }
-    const defs = wanted === null ? catalog : catalog.filter((a: AgentDef) => wanted!.includes(a.name));
-    return buildPlan(target, defs, all, project, destOverride, stale.map((name) => join(dest, fileName(target, name))));
-  });
-  apply(plans);
+      const defs = wanted === null ? catalog : catalog.filter((a: AgentDef) => wanted!.includes(a.name));
+      return buildPlan(target, defs, all, project, destOverride, stale.map((name) => join(dest, fileName(target, name))));
+    });
+  };
+  if (destOverride === undefined) {
+    preflight(plan(readCatalog(), false));
+    execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
+  }
+  apply(plan(readCatalog(), true));
 }
 
 // --- args

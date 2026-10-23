@@ -876,6 +876,35 @@ describe("--update without --dest", () => {
     expect(r.stderr).toBe(`${JSON.stringify(homeCodex)}: cannot write (EACCES); fix that path or pass a --dest that is a writable directory\n`);
     expect(git(clone, "rev-parse", "HEAD")).toBe(before);
   });
+
+  test("a blocked file path the checkout already plans leaves the checkout where it was", () => {
+    const f = fixture(["kept"]);
+    const env = gitEnv(f.home);
+    const git = (cwd: string, ...args: string[]) => {
+      const r = spawnSync("git", args, { cwd, env, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    git(f.repo, "init", "-q", "-b", "main");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "first");
+    const clone = join(f.root, "clone");
+    git(f.root, "clone", "-q", f.repo, clone);
+    f.addDef("later");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "second");
+    const before = git(clone, "rev-parse", "HEAD");
+    const homeCodex = join(f.home, ".codex", "agents");
+    writeManifest(homeCodex, "codex", ["kept"]);
+    const blocked = join(homeCodex, "kept.toml");
+    mkdirSync(blocked);
+
+    const r = spawnSync("bun", [join(clone, "bin", "install-agents.ts"), "--update"], { cwd: f.root, env, encoding: "utf8" });
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(blocked)}: cannot write (EISDIR); fix that path or pass a --dest that is a writable directory\n`);
+    expect(git(clone, "rev-parse", "HEAD")).toBe(before);
+  });
 });
 
 describe("codex conversion", () => {
