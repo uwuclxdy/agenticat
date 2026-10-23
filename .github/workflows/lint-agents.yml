@@ -42,9 +42,10 @@ jobs:
         run: bun test bin/
 
       # grep rc: 0 = found (fail), 1 = clean (pass), 2 = a target path is missing (fail).
+      # needles use character classes so this file, now scanned via .github/, does not match its own search string.
       - name: no machine-specific references
         run: |
-          rc=0; out=$(grep -rEn '/home/|192\.168\.|cloudify|cloudy-' agents/ skills/ bin/ plugins/ .claude/ install.sh README.md) || rc=$?
+          rc=0; out=$(grep -rEn '/hom[e]/|192[.]168[.]|cloudif[y]|cloudy[-]' agents/ skills/ bin/ plugins/ .claude/ .github/ install.sh README.md) || rc=$?
           if [ "$rc" -ne 1 ]; then
             printf '%s\n' "$out"
             echo "machine-specific reference found (grep rc=$rc; 1 = clean)"
@@ -52,9 +53,12 @@ jobs:
           fi
 
       # Structural '| — |' table cells (an intentionally empty column) are the one sanctioned use.
+      # needles are built from octal escapes so the grep line, now scanned via .github/, carries no literal dash.
       - name: no em or en dashes
         run: |
-          rc=0; out=$(grep -rn -e '—' -e '–' agents/ skills/ bin/ plugins/ .claude/ install.sh README.md) || rc=$?
+          em=$(printf '\342\200\224')
+          en=$(printf '\342\200\223')
+          rc=0; out=$(grep -rn -e "$em" -e "$en" agents/ skills/ bin/ plugins/ .claude/ .github/ install.sh README.md) || rc=$?
           if [ "$rc" -eq 0 ]; then
             hits=$(printf '%s\n' "$out" | grep -v '| — |' || true)
             if [ -n "$hits" ]; then
