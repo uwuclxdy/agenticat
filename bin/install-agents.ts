@@ -187,7 +187,9 @@ function uncreatableCode(dest: string): { verb: "create" | "write"; code?: strin
   }
   if (!isDir) return { verb: "create", code: "ENOTDIR" };
   try {
-    accessSync(cur, constants.W_OK);
+    // a dir the user can write but not search refuses every write inside it with EACCES,
+    // so the write leg needs both bits.
+    accessSync(cur, constants.W_OK | constants.X_OK);
   } catch (err) {
     return { verb: "write", code: (err as { code?: string }).code };
   }

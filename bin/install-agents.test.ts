@@ -504,6 +504,24 @@ describe("argument parsing", () => {
     expect(readFileSync(join(opencode, MANIFEST), "utf8")).toBe(opencodeManifest);
   });
 
+  asUser("an existing target dir the user can write but not search is refused before any target is written", () => {
+    const f = fixture(["web-pro"]);
+    const cwd = join(f.root, "cwd");
+    mkdirSync(cwd);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    chmodSync(codex, 0o644);
+
+    const r = f.runIn(cwd, "--dest", f.dest, "web-pro");
+    chmodSync(codex, 0o755);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`${JSON.stringify(codex)}: cannot write (EACCES); ${HINT}\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(written(cwd)).toEqual([]);
+    expect(written(f.home)).toEqual([]);
+  });
+
   test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
     const f = fixture(["web-pro"]);
     writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");
@@ -534,3 +552,4 @@ describe("the rename table", () => {
     expect(rows.filter(([, to]) => oldNames.has(to))).toEqual([]);
   });
 });
+
