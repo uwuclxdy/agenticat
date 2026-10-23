@@ -180,6 +180,9 @@ const cannotWrite = (dest: string, code?: string) =>
 const cannotRemove = (dest: string, code?: string) =>
   new InputError(`${JSON.stringify(dest)}: cannot remove (${code}); fix that path or pass a --dest that is a writable directory`);
 
+// a failure of the filesystem itself, not of the path: it keeps its own trace.
+const GENUINE_WRITE_CODES = ["ENOSPC", "EDQUOT", "EIO"];
+
 // a directory where a file goes, an existing file the user cannot write, and a stat
 // failure other than "not there yet" all refuse the write; finding them in the
 // preflight keeps the failure from landing after another target was written.
@@ -310,7 +313,9 @@ function apply(plans: Plan[]) {
     try {
       mkdirSync(dest, { recursive: true });
     } catch (err) {
-      throw cannotCreate(dest, (err as { code?: string }).code);
+      const code = (err as { code?: string }).code;
+      if (code && GENUINE_WRITE_CODES.includes(code)) throw err;
+      throw cannotCreate(dest, code);
     }
   }
   for (const { target, files, manifestPath, manifest } of plans) {

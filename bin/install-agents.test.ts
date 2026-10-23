@@ -746,6 +746,24 @@ describe("argument parsing", () => {
     expect(existsSync(join(f.dest, "opencode"))).toBe(false);
   });
 
+  // An inode-exhausted filesystem fails the mkdir itself: a genuine failure, not a bad path.
+  const canUnshare = spawnSync("unshare", ["-rm", "true"]).status === 0;
+  (canUnshare ? test : test.skip)("a full filesystem under --dest keeps its trace instead of a path hint", () => {
+    const f = fixture(["web-pro"]);
+    const mnt = join(f.root, "mnt");
+    mkdirSync(mnt);
+
+    const r = spawnSync(
+      "unshare",
+      ["-rm", "sh", "-c", 'mount -t tmpfs -o size=1m,nr_inodes=3 none "$1" && exec bun "$2" --dest "$1/a/b/c" web-pro', "sh", mnt, join(f.repo, "bin", "install-agents.ts")],
+      { cwd: f.root, env: { ...process.env, HOME: f.home }, encoding: "utf8" },
+    );
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("ENOSPC");
+    expect(r.stderr).not.toContain(HINT);
+  });
+
   test("a broken catalog def is a bug, not a usage error, and keeps its stack trace", () => {
     const f = fixture(["web-pro"]);
     writeFileSync(join(f.repo, "agents", "broken.md"), "no frontmatter here\n");
