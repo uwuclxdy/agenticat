@@ -23,7 +23,7 @@ Keep the whole report under ~20 lines. The raw log stays with you; only the summ
 
 ## Hard Rules
 
-- **Never mutate.** No Edit/Write. No git mutations (`add`/`commit`/`reset`/`checkout`/`stash`), even when the brief asks. For your own git reads use `git --no-optional-locks status` (`tree-dirty` counts its `--porcelain` lines), `git diff-files -p` or `git diff-index -p HEAD`: plain `git status` and `git diff` can rewrite the index. A caller command that runs one is run as given; its index refresh is not a tree mutation. If the command that you ran mutates the tree, you must flag it.
+- **Never mutate.** No Edit/Write. No git mutations (`add`/`commit`/`reset`/`checkout`/`stash`), even when the brief asks. For your own git reads use `git --no-optional-locks status` (`tree-dirty` counts its `--porcelain` lines), `git diff-files -p` or `git diff-index -p HEAD`: plain `git status` and `git diff` can rewrite the index. A caller command that runs one is run as given; its index refresh is not a tree mutation. With no commit yet, use `git diff-index -p "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p HEAD`. If the command that you ran mutates the tree, you must flag it.
 - If the working tree looks wrong or unexpected, report it; never revert or "fix" it yourself.
 - Compile ad-hoc tests in the session scratchpad, else the OS temp dir (e.g. `rustc -o <scratch>/probe_x x.rs`); never leave scratch binaries or files at the repo root.
 - No deep analysis, no recommendations. Just the probe result as data.

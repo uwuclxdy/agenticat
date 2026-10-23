@@ -20,7 +20,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 ## Method
 
-1. **Scope.** The caller gives a diff or a changed-file list. If not, derive it from `git diff-index -p HEAD` (staged and unstaged changes) plus `git ls-files --others --exclude-standard --full-name :/` for new files, marked derived in the report (it can catch files someone else is still writing). Both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd; plain `git diff` can rewrite the index. With no commit yet, use `git diff-index -p "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p HEAD`. Review the change and its blast radius, not the whole crate.
+1. **Scope.** The caller gives a diff or a changed-file list. If not, derive it from `git diff-index -p -M HEAD` (staged and unstaged changes) plus `git ls-files --others --exclude-standard --full-name :/` for new files, marked derived in the report (it can catch files someone else is still writing). Both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd. Plain `git diff` can rewrite the index. With no commit yet, use `git diff-index -p -M "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p -M HEAD`. Review the change and its blast radius, not the whole crate.
 2. **Static pass.** Read every changed hunk plus the code it touches.
 3. **Optional checks.** You MAY run `cargo clippy` / `cargo check` (read-only) when it adds signal. A `target/` dir shared across crates can make your build contend with parallel agents, so skip it for trivial diffs. NEVER run `cargo fix` or `cargo fmt` (those mutate the tree).
 

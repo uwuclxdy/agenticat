@@ -20,7 +20,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 ## Method
 
-1. Scope. Caller gives a diff or changed files; else derive from `git diff-index -p HEAD` plus `git ls-files --others --exclude-standard --full-name :/` for new files, marked derived in the report (it can catch files someone else is still writing). Both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd; plain `git diff` can rewrite the index. With no commit yet, use `git diff-index -p "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p HEAD`. Review the change plus its blast radius.
+1. Scope. Caller gives a diff or changed files; else derive from `git diff-index -p -M HEAD` plus `git ls-files --others --exclude-standard --full-name :/` for new files, marked derived in the report (it can catch files someone else is still writing). Both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd. Plain `git diff` can rewrite the index. With no commit yet, use `git diff-index -p -M "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p -M HEAD`. Review the change plus its blast radius.
 2. Static pass. Read every changed hunk plus what it touches.
 3. Optional checks. You MAY run a repo-provided lint/typecheck script (`scripts/lint.sh`, a `package.json` script, `tsc --noEmit`) read-only. NEVER install deps, run `--fix`, or commit.
 

@@ -18,7 +18,7 @@ The brief must carry the task's request text verbatim; without it, return the re
 
 ## Method
 
-1. **Scope.** Caller gives a diff or script paths; else derive from `git diff-index -p HEAD` plus `git ls-files --others --exclude-standard --full-name :/` for new files, marked derived in the report (it can catch files someone else is still writing). Both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd; plain `git diff` can rewrite the index. With no commit yet, use `git diff-index -p "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p HEAD`. Review the change plus every caller of the script.
+1. **Scope.** Caller gives a diff or script paths; else derive from `git diff-index -p -M HEAD` plus `git ls-files --others --exclude-standard --full-name :/` for new files, marked derived in the report (it can catch files someone else is still writing). Both list paths relative to the repo root (`git rev-parse --show-toplevel`), not the cwd. Plain `git diff` can rewrite the index. With no commit yet, use `git diff-index -p -M "$(git hash-object -t tree /dev/null)"` in place of `git diff-index -p -M HEAD`. Review the change plus every caller of the script.
 2. **Static pass.** Read every changed script fully: shell bugs live in interactions, not single lines.
 3. **Optional checks.** You MAY run `shellcheck`/`bash -n` read-only if installed. NEVER execute the scripts themselves, install anything, or commit.
 
