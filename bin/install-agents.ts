@@ -199,17 +199,21 @@ function toOpencode(a: AgentDef): string {
       for (const t of denied) lines.push(`  ${t}: false`);
     }
   }
-  // a read-only def that grants bash keeps that bash for inspection, so it needs the
-  // allowlist that keeps bash from writing; a def that writes keeps bash unrestricted,
-  // and a def that denies Bash gets no map at all (opencode puts the rules after the
-  // `tools:` booleans, so a map would re-grant the tool).
-  if (!writesFiles(a) && grantsBash(a)) {
+  // a read-only def that grants bash needs the allowlist that keeps that bash from
+  // writing; a def that denies Bash gets no map, since opencode puts permission rules
+  // after the `tools:` booleans and the map would re-grant the tool. the task rule
+  // follows the tools grant for every def, so it can stand without a bash map.
+  const taskDenied = !grantsAgents(a);
+  const bashMap = !writesFiles(a) && grantsBash(a);
+  if (taskDenied || bashMap) {
     lines.push("permission:");
-    if (!grantsAgents(a)) lines.push("  task: deny");
-    lines.push("  bash:");
-    lines.push('    "*": deny');
-    for (const pattern of [...OPENCODE_READS, ...(a.bashAllow ?? [])]) lines.push(`    ${JSON.stringify(pattern)}: allow`);
-    for (const pattern of OPENCODE_DENIES) lines.push(`    ${JSON.stringify(pattern)}: deny`);
+    if (taskDenied) lines.push("  task: deny");
+    if (bashMap) {
+      lines.push("  bash:");
+      lines.push('    "*": deny');
+      for (const pattern of [...OPENCODE_READS, ...(a.bashAllow ?? [])]) lines.push(`    ${JSON.stringify(pattern)}: allow`);
+      for (const pattern of OPENCODE_DENIES) lines.push(`    ${JSON.stringify(pattern)}: deny`);
+    }
   }
   return `---\n${lines.join("\n")}\n---\n\n${a.body}\n`;
 }

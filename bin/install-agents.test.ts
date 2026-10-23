@@ -1147,6 +1147,13 @@ describe("opencode permission map", () => {
     expect(fm.permission?.task).toBe("deny");
   });
 
+  test("a writing def whose allowlist names no Agent cannot spawn agents on opencode either", () => {
+    const fm = install("tools: Bash, Read\n# sandbox: workspace-write\n");
+
+    expect(fm.permission?.task).toBe("deny");
+    expect(fm.permission?.bash).toBeUndefined();
+  });
+
   test("a def denying Bash keeps bash off: no map turns it back on", () => {
     const fm = install("disallowedTools: Bash, Edit, Write, NotebookEdit\n") as { permission?: { bash?: unknown }; tools?: Record<string, boolean> };
 
