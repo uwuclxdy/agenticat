@@ -272,7 +272,18 @@ function prune(dest: string, target: string, names: string[]) {
   }
 }
 
-const shellQuote = (p: string) => `'${p.replace(/'/g, "'\\''")}'`;
+// a newline in a path would split a one-line refusal, so a path holding any control
+// character takes bash ANSI-C quoting; every other path keeps the plain single-quoted form.
+const ansiCQuote = (p: string) =>
+  p
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, "\\n")
+    .replace(/\t/g, "\\t")
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`);
+
+const shellQuote = (p: string) =>
+  /[\x00-\x1f\x7f]/.test(p) ? `$'${ansiCQuote(p)}'` : `'${p.replace(/'/g, "'\\''")}'`;
 
 // the fix a malformed manifest's error prints must repair the install it names,
 // from any directory: install.sh is relative to the repo and changes into it, so

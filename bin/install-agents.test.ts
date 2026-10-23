@@ -212,6 +212,21 @@ describe("--update --dest", () => {
     expect(r.stderr).toContain("remove or fix the permissions of that path, then reinstall with:");
   });
 
+  test("a control character in --dest is ANSI-C quoted, so a manifest refusal stays one line", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, "n\nl");
+    const codex = join(dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    writeFileSync(join(codex, MANIFEST), "{\"agents\": [");
+
+    const r = f.run("--update", "--dest", dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr.split("\n")).toHaveLength(2);
+    expect(r.stderr.startsWith(`${JSON.stringify(join(codex, MANIFEST))}: not valid JSON (`)).toBe(true);
+    expect(r.stderr.endsWith(`reinstall with: '${join(f.repo, "install.sh")}' --to codex --dest $'${join(f.root, "n")}\\nl'\n`)).toBe(true);
+  });
+
   test("keeps an old name while its rename target is not in the catalog yet", () => {
     const f = fixture(["ts-reviewer"]);
     const codex = join(f.dest, "codex");
