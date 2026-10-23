@@ -67,6 +67,7 @@ interface AgentDef {
   tools?: string[];
   disallowedTools?: string[];
   model?: string;
+  sandbox?: string;
   body: string;
 }
 
@@ -89,6 +90,9 @@ function parseAgent(path: string): AgentDef {
     tools: splitList(fm.tools),
     disallowedTools: splitList(fm.disallowedTools),
     model: fm.model,
+    // a YAML comment, so no harness's frontmatter parser reads it as a key; the lint's
+    // own exemptions live the same way.
+    sandbox: m[1].match(/^#\s*sandbox:\s*(\S+)\s*$/m)?.[1],
     body: m[2].trim(),
   };
 }
@@ -135,13 +139,16 @@ function toCodex(a: AgentDef): string {
     : a.disallowedTools
       ? !["Write", "Edit"].every((t) => a.disallowedTools!.includes(t))
       : true;
+  // a def whose Bash is its whole job writes no target file, so the tool grant alone
+  // would call it read-only; the frontmatter marker opts it into a writable sandbox.
+  const sandbox = mutates || a.sandbox === "workspace-write" ? "workspace-write" : "read-only";
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
   // bodies survive verbatim. A body containing ''' cannot be represented; fail loud.
   if (a.body.includes("'''")) throw new Error(`${a.name}: body contains ''' (unrepresentable in TOML literal string)`);
   return [
     `name = ${JSON.stringify(a.name)}`,
     `description = ${JSON.stringify(a.description)}`,
-    `sandbox_mode = ${JSON.stringify(mutates ? "workspace-write" : "read-only")}`,
+    `sandbox_mode = ${JSON.stringify(sandbox)}`,
     "",
     `developer_instructions = '''`,
     a.body,

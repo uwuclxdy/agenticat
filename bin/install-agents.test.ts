@@ -714,6 +714,31 @@ describe("codex conversion", () => {
     expect(parsed.developer_instructions.trim()).toBe(body.replace(/\r\n/g, "\n"));
   });
 
+  test.each([
+    ["no marker", "", "read-only"],
+    ["the workspace-write marker", "# sandbox: workspace-write\n", "workspace-write"],
+  ])("a Bash-and-Read def with %s gets its codex sandbox", (_label, marker, mode) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\ntools: Bash, Read\n${marker}---\n\nbody\n`);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    expect((Bun.TOML.parse(readFileSync(join(f.dest, "codex", "runner.toml"), "utf8")) as { sandbox_mode: string }).sandbox_mode).toBe(mode);
+  });
+
+  test("the shipped prober runs its builds under workspace-write while a shipped reviewer stays read-only", () => {
+    const f = fixture([]);
+    for (const name of ["prober", "rust-reviewer"]) copyFileSync(join(import.meta.dir, "..", "agents", `${name}.md`), join(f.repo, "agents", `${name}.md`));
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    const sandbox = (name: string) => (Bun.TOML.parse(readFileSync(join(f.dest, "codex", `${name}.toml`), "utf8")) as { sandbox_mode: string }).sandbox_mode;
+    expect(sandbox("prober")).toBe("workspace-write");
+    expect(sandbox("rust-reviewer")).toBe("read-only");
+  });
+
   test("a control byte in a description never yields a codex file that fails to parse", () => {
     const f = fixture([]);
     writeFileSync(join(f.repo, "agents", "desc.md"), `---\nname: desc\ndescription: "fixture\x7fdesc"\n---\n\nbody\n`);
