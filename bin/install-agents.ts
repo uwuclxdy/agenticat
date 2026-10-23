@@ -172,7 +172,7 @@ function grantsBash(a: AgentDef): boolean {
   return true;
 }
 
-function toOpencode(a: AgentDef): string {
+function toOpencode(a: AgentDef, announce = true): string {
   const lines = [`description: ${JSON.stringify(a.description)}`, "mode: subagent"];
   const model = a.model && MODEL_MAP[a.model];
   if (model) lines.push(`model: ${model}`);
@@ -182,7 +182,7 @@ function toOpencode(a: AgentDef): string {
     for (const t of mapped) lines.push(`  ${t}: true`);
     for (const t of MUTATING) if (!mapped.includes(t)) lines.push(`  ${t}: false`);
     const unknown = a.tools.filter((t) => !TOOL_MAP[t]);
-    if (unknown.length) console.warn(`  warn: ${a.name}: no opencode mapping for ${unknown.join(", ")}, skipped`);
+    if (unknown.length && announce) console.warn(`  warn: ${a.name}: no opencode mapping for ${unknown.join(", ")}, skipped`);
   } else if (a.disallowedTools) {
     // denylist form: everything else inherits, so only the denials are emitted.
     // an unmapped denial (NotebookEdit) is a no-op in opencode, not a warning.
@@ -366,14 +366,14 @@ interface Plan {
 
 // every rendered file is built here, before the first mkdir: a catalog defect throws
 // before any target has been written.
-function buildPlan(target: string, defs: AgentDef[], all: boolean, project: boolean, destOverride?: string, prune: string[] = []): Plan {
+function buildPlan(target: string, defs: AgentDef[], all: boolean, project: boolean, destOverride?: string, prune: string[] = [], announce = true): Plan {
   const dest = destFor(target, project, destOverride);
   return {
     target,
     dest,
     files: defs.map((a: AgentDef) => ({
       path: join(dest, fileName(target, a.name)),
-      content: target === "opencode" ? toOpencode(a) : toCodex(a),
+      content: target === "opencode" ? toOpencode(a, announce) : toCodex(a),
     })),
     manifestPath: join(dest, MANIFEST),
     manifest: JSON.stringify({ source: REPO, target, project, all, agents: defs.map((d: AgentDef) => d.name), installedAt: new Date().toISOString() }, null, 2) + "\n",
@@ -441,11 +441,11 @@ function install(targets: string[], names: string[] | null, project: boolean, de
   apply(targets.map((target) => buildPlan(target, defs, names === null, project, destOverride)));
 }
 
-function manifestNames(names: unknown[]): string[] {
+function manifestNames(names: unknown[], announce = true): string[] {
   const valid: string[] = [];
   for (const name of names) {
     if (typeof name === "string" && AGENT_NAME.test(name)) valid.push(name);
-    else console.warn(`  warn: manifest name ${JSON.stringify(name)} is not an agent name; skipped`);
+    else if (announce) console.warn(`  warn: manifest name ${JSON.stringify(name)} is not an agent name; skipped`);
   }
   return valid;
 }
@@ -458,10 +458,10 @@ function renameTarget(name: string, catalog: string[]): string | undefined {
 }
 
 // fixed-list manifest -> current names, plus the old names whose converted files must go.
-function reconcile(target: string, names: unknown[], catalog: string[]) {
+function reconcile(target: string, names: unknown[], catalog: string[], announce = true) {
   const wanted: string[] = [];
   const stale: string[] = [];
-  for (const name of manifestNames(names)) {
+  for (const name of manifestNames(names, announce)) {
     const renamed = renameTarget(name, catalog);
     const current = renamed ?? name;
     if (!catalog.includes(current)) {
@@ -469,7 +469,7 @@ function reconcile(target: string, names: unknown[], catalog: string[]) {
       continue;
     }
     if (current !== name) {
-      console.log(`  ${target}: ${name} -> ${current}`);
+      if (announce) console.log(`  ${target}: ${name} -> ${current}`);
       stale.push(name);
     }
     wanted.push(current);
@@ -548,16 +548,16 @@ function update(project: boolean, destOverride?: string) {
     return;
   }
   // every manifest is validated before the pull, so a malformed one leaves the checkout
-  // where it was. the plan and its full preflight run against the pre-pull catalog too, so
-  // a blocked path the current catalog already plans refuses before the pull; after it,
-  // only a path the pulled catalog newly adds can still reach the preflight late.
+  // where it was. when the local catalog can be read, the plan and its full preflight run
+  // against it too, so a blocked path the current catalog already plans refuses before the
+  // pull; after it, only a path the pulled catalog newly adds can still reach the preflight late.
   const plan = (catalog: AgentDef[], announce: boolean) => {
     const catalogNames = catalog.map((a: AgentDef) => a.name);
     return pending.map(({ target, dest, agents, all }) => {
       let wanted: string[] | null = null;
       let stale: string[];
       if (all) {
-        stale = manifestNames(agents).filter((n: string) => !catalogNames.includes(n));
+        stale = manifestNames(agents, announce).filter((n: string) => !catalogNames.includes(n));
         if (announce) {
           for (const name of stale) {
             const renamed = renameTarget(name, catalogNames);
@@ -566,14 +566,22 @@ function update(project: boolean, destOverride?: string) {
         }
       } else {
         // a manifest written before `all` existed carries no flag and stays a fixed list.
-        ({ wanted, stale } = reconcile(target, agents, catalogNames));
+        ({ wanted, stale } = reconcile(target, agents, catalogNames, announce));
       }
       const defs = wanted === null ? catalog : catalog.filter((a: AgentDef) => wanted!.includes(a.name));
-      return buildPlan(target, defs, all, project, destOverride, stale.map((name) => join(dest, fileName(target, name))));
+      return buildPlan(target, defs, all, project, destOverride, stale.map((name) => join(dest, fileName(target, name))), announce);
     });
   };
   if (destOverride === undefined) {
-    preflight(plan(readCatalog(), false));
+    // a defect in the local catalog is what this pull may repair, so the pre-pull pass only
+    // refuses on an InputError (a path refusal the checkout already shows) and swallows any
+    // other read, parse or render error for this pass alone; the post-pull pass fails loudly
+    // with the trace if the defect survived. it stays silent so nothing prints twice.
+    try {
+      preflight(plan(readCatalog(), false));
+    } catch (err) {
+      if (err instanceof InputError) throw err;
+    }
     execFileSync("git", ["pull", "--ff-only"], { cwd: REPO, stdio: "inherit" });
   }
   apply(plan(readCatalog(), true));

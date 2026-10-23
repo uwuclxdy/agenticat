@@ -877,6 +877,59 @@ describe("--update without --dest", () => {
     expect(git(clone, "rev-parse", "HEAD")).toBe(before);
   });
 
+  // A catalog defect in the local checkout is what an update's pull exists to repair.
+  test("a broken def in the checkout still lets the update pull its fix and install", () => {
+    const f = fixture([]);
+    const env = gitEnv(f.home);
+    const git = (cwd: string, ...args: string[]) => {
+      const r = spawnSync("git", args, { cwd, env, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    writeFileSync(join(f.repo, "agents", "tui.md"), `---\nname: tui\ndescription: "fixture tui"\n---\n\nbefore\x1bafter\n`);
+    git(f.repo, "init", "-q", "-b", "main");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "broken");
+    const clone = join(f.root, "clone");
+    git(f.root, "clone", "-q", f.repo, clone);
+    f.addDef("tui");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "fixed");
+    const fixedHead = git(f.repo, "rev-parse", "HEAD");
+    const homeCodex = join(f.home, ".codex", "agents");
+    writeManifest(homeCodex, "codex", ["tui"]);
+    writeFileSync(join(homeCodex, MANIFEST), JSON.stringify({ ...readManifest(homeCodex), all: true }) + "\n");
+
+    const r = spawnSync("bun", [join(clone, "bin", "install-agents.ts"), "--update"], { cwd: f.root, env, encoding: "utf8" });
+
+    expect(r.status).toBe(0);
+    expect(git(clone, "rev-parse", "HEAD")).toBe(fixedHead);
+    expect(existsSync(join(homeCodex, "tui.toml"))).toBe(true);
+  });
+
+  test("an update without --dest prints each rename and each manifest warning once", () => {
+    const f = fixture(["web-reviewer"]);
+    const env = gitEnv(f.home);
+    const git = (cwd: string, ...args: string[]) => {
+      const r = spawnSync("git", args, { cwd, env, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    git(f.repo, "init", "-q", "-b", "main");
+    git(f.repo, "add", ".");
+    git(f.repo, "commit", "-qm", "first");
+    const clone = join(f.root, "clone");
+    git(f.root, "clone", "-q", f.repo, clone);
+    const homeCodex = join(f.home, ".codex", "agents");
+    writeManifest(homeCodex, "codex", ["ts-reviewer", "../outside"]);
+
+    const r = spawnSync("bun", [join(clone, "bin", "install-agents.ts"), "--update"], { cwd: f.root, env, encoding: "utf8" });
+
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("ts-reviewer -> web-reviewer").length - 1).toBe(1);
+    expect(r.stderr.split('"../outside"').length - 1).toBe(1);
+  });
+
   test("a blocked file path the checkout already plans leaves the checkout where it was", () => {
     const f = fixture(["kept"]);
     const env = gitEnv(f.home);
