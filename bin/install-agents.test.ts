@@ -2,11 +2,15 @@
 // beside a fixture agents/ dir, so it resolves that dir as its repo, and every run gets a
 // scratch HOME and an explicit --dest, so no real user path is read or written.
 
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+// every case spawns a bun subprocess or sets up a tree, so a loaded box can push one past
+// bun's 5000 ms default without the case doing anything wrong.
+setDefaultTimeout(30000);
 
 const SCRIPT = join(import.meta.dir, "install-agents.ts");
 const MANIFEST = ".agenticat.json";
