@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# the quoted delimiter keeps the payload literal JSON: an unquoted one would run the
+# backticks in it as command substitution.
 
 exec cat << 'EOF'
 {
