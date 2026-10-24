@@ -61,9 +61,23 @@ export function markerForm(lines: string[], index: number, key: string, stem: st
 }
 
 // Every harness that reads the catalog parses the block as YAML, so the scripts read it
-// through the same parser: a block YAML rejects is a catalog defect, never a value to
-// guess at. A field the scripts read as text must be one.
+// through the same parser: a block YAML rejects, a repeated top-level key, or a top-level
+// line that is not a plain `key: value` entry is a catalog defect, never a value to guess
+// at. A field the scripts read as text must be one.
 export type Frontmatter = Record<string, unknown>;
+
+// the delimiter match copies Claude Code's own frontmatter reader: one leading byte order
+// mark is stripped, the opener is `---` plus optional spaces or tabs, and the block closes
+// on the first later `---` plus optional spaces or tabs followed by a line end. taking the
+// same shape is what makes an accepted def one Claude Code parses. only the block's line
+// ends are folded, CRLF and a lone CR alike (both are YAML line breaks), so every reader of
+// the block sees the same lines; the body is copied out as written ("" when the closer
+// ends the file).
+export function splitFrontmatter(raw: string): { block: string; body: string } | undefined {
+  const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+  const m = text.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|$)/);
+  return m ? { block: m[1].replace(/\r\n?/g, "\n"), body: text.slice(m[0].length) } : undefined;
+}
 
 export function readFrontmatter(block: string): { fields: Frontmatter } | { defect: string } {
   let parsed: unknown;
@@ -75,6 +89,32 @@ export function readFrontmatter(block: string): { fields: Frontmatter } | { defe
   if (parsed === null) return { fields: {} };
   if (typeof parsed !== "object" || Array.isArray(parsed))
     return { defect: "frontmatter is not a YAML mapping" };
+  // Bun.YAML.parse keeps a repeated key's last value silently, and only a plain key can be
+  // read off its line exactly, so every top-level line is held to a plain `key: value`
+  // entry and the repeat check runs over those names alone. that covers every top-level
+  // line, not only keys: a `[ \t]`-led line holding content before the first key (only an
+  // indented root mapping puts one there) and a core-schema spelling (`true`/`True`,
+  // `null`/`NULL`, ...) that resolves to one key each are refused too.
+  const seen = new Set<string>();
+  for (const line of block.split("\n")) {
+    if (/^[ \t]*(?:#|$)/.test(line)) continue;
+    // once the parse returns a mapping, a column-0 `-` item can only belong to the key
+    // above: a column-0 sequence anywhere else fails the parse. skipped so a block sequence
+    // value, a valid def, is not refused as a top-level line; `-x:` and `---x` stay read.
+    if (/^-([ \t]|$)/.test(line)) continue;
+    if (/^[ \t]/.test(line)) {
+      if (seen.size === 0)
+        return { defect: `frontmatter line ${quote(line)} is not a plain top-level \`key: value\` entry` };
+      continue;
+    }
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_-]*):(?=[ \t]|$)/);
+    if (!m || /^(?:null|Null|NULL|true|True|TRUE|false|False|FALSE)$/.test(m[1]))
+      return { defect: `frontmatter line ${quote(line)} is not a plain top-level \`key: value\` entry` };
+    const key = m[1];
+    if (seen.has(key))
+      return { defect: `frontmatter key ${quote(key)} appears more than once; YAML keeps only the last` };
+    seen.add(key);
+  }
   return { fields: parsed as Frontmatter };
 }
 

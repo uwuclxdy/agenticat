@@ -10,7 +10,7 @@ import { join, basename, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { AGENT_NAME, allowDefect, grantsBash, OPENCODE_DENIES, quote, readFrontmatter, readMarkers, stringField, writesFiles } from "./agent-name";
+import { AGENT_NAME, allowDefect, grantsBash, OPENCODE_DENIES, quote, readFrontmatter, readMarkers, splitFrontmatter, stringField, writesFiles } from "./agent-name";
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url))); // repo root (bin/..)
 const AGENTS_DIR = join(REPO, "agents");
@@ -76,9 +76,9 @@ const splitList = (v?: string) =>
 
 function parseAgent(path: string): AgentDef {
   const raw = readFileSync(path, "utf8");
-  const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!m) throw new Error(`${path}: no frontmatter block`);
-  const frontmatter = readFrontmatter(m[1]);
+  const split = splitFrontmatter(raw);
+  if (!split) throw new Error(`${path}: no frontmatter block`);
+  const frontmatter = readFrontmatter(split.block);
   if ("defect" in frontmatter) throw new Error(`${path}: ${frontmatter.defect}`);
   const field = (key: string): string | undefined => {
     const reading = stringField(frontmatter.fields, key);
@@ -89,7 +89,7 @@ function parseAgent(path: string): AgentDef {
   const description = field("description");
   if (!name || !description) throw new Error(`${path}: name + description required`);
   // both targets read the markers from here, so both refuse a defect before any write.
-  const markers = readMarkers(m[1]);
+  const markers = readMarkers(split.block);
   if ("defect" in markers) throw new Error(`${name}: ${markers.defect}`);
   const def: AgentDef = {
     name,
@@ -101,7 +101,7 @@ function parseAgent(path: string): AgentDef {
     // own exemptions live the same way.
     sandbox: markers.markers.sandbox,
     bashAllow: markers.markers.bashAllow,
-    body: m[2].trim(),
+    body: split.body.trim(),
   };
   // the allow checks are shared with the lint, so its gate previews every refusal here.
   const defect = allowDefect(def);

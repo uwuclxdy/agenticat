@@ -1186,6 +1186,129 @@ describe("codex conversion", () => {
     }
   });
 
+  // the YAML reader keeps a repeated key's last value, so the first copy would ship unread;
+  // a marker-shaped line in that copy's block scalar must not be read as a marker either.
+  test.each([
+    ["a repeated key", "description: again\n", "description"],
+    ["a repeated key whose first copy is a block scalar holding a marker line", "notes: |\n  # sandbox: bogus\nnotes: plain\n", "notes"],
+  ])("%s is a catalog defect on both targets", (_label, extra, key) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\ntools: Bash, Read\n${extra}---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`${join(f.repo, "agents", "runner.md")}: frontmatter key "${key}" appears more than once; YAML keeps only the last\n`);
+      expect(r.stderr).not.toContain("sandbox marker");
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // whole files: the first copy of the repeated key comes before the fields the fixture
+  // above always writes, or the file opens with a byte order mark.
+  test.each([
+    ["a block-scalar description repeated after other keys", "---\nname: runner\ndescription: |\n  fixture runner\n  # sandbox: bogus\ntools: Bash, Read\ndescription: second\n---\n\nbody\n", "description"],
+    ["a repeat whose first copy holds an alias and a marker-shaped block line", "---\nname: runner\ndescription: fixture runner\nbase: &b 1\nnotes:\n  a: *b\n  text: |\n    # sandbox: bogus\nnotes: plain\n---\n\nbody\n", "notes"],
+    ["a repeat in a file that opens with a byte order mark", "\ufeff---\nname: runner\ndescription: fixture runner\nname: again\n---\n\nbody\n", "name"],
+    ["a repeat behind a lone carriage return", "---\nname: runner\ndescription: fixture runner\nnotes: a\rnotes: b\n---\n\nbody\n", "notes"],
+  ])("%s is a catalog defect on both targets", (_label, file, key) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), file);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`${join(f.repo, "agents", "runner.md")}: frontmatter key "${key}" appears more than once; YAML keeps only the last\n`);
+      expect(r.stderr).not.toContain("sandbox marker");
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // a top-level key must be a plain name at column 0, so the repeat check reads every key
+  // straight off its line; any other spelling could hide a key the parser still reads.
+  test.each([
+    ["a quoted key", 'name: runner\ndescription: fixture runner\n"description": again\n', String.raw`"\"description\": again"`],
+    ["an explicit key", "name: runner\ndescription: fixture runner\n? a\n: 1\n", '"? a"'],
+    ["a merge key", "name: runner\ndescription: fixture runner\nbase: &a\n  k: anchored\n<<: *a\n", '"<<: *a"'],
+    ["a key that starts with three dashes", "name: runner\ndescription: fixture runner\n---x: 1\n", '"---x: 1"'],
+    ["a flow-mapping block", '{\nname: runner,\ndescription: fixture runner\n}\n', '"{"'],
+    ["a tagged key", "name: runner\ndescription: fixture runner\n!!str k: v\n", '"!!str k: v"'],
+    ["a byte order mark inside the block", "name: runner\ndescription: fixture runner\n\ufeffname: again\n", String.raw`"\ufeffname: again"`],
+    ["an indented root mapping", "  name: first\n  description: fixture runner\n  name: runner\n", '"  name: first"'],
+    ["an indented root mapping behind a comment", "# c\n  name: first\n  description: fixture runner\n  name: runner\n", '"  name: first"'],
+    ["a key behind a lone carriage return", "name: runner\ndescription: fixture runner\nx: a\r!!str k: v\n", '"!!str k: v"'],
+    ["a core-schema boolean key", "name: runner\ndescription: fixture runner\nTRUE: a\n", '"TRUE: a"'],
+    ["a core-schema null key", "name: runner\ndescription: fixture runner\nnull: a\n", '"null: a"'],
+    ["a digit-first key", "name: runner\ndescription: fixture runner\n1: x\n", '"1: x"'],
+    ["a key holding a colon", "name: runner\ndescription: fixture runner\nx:y: 1\n", '"x:y: 1"'],
+  ])("%s is a catalog defect on both targets", (_label, block, quoted) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\n${block}---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`${join(f.repo, "agents", "runner.md")}: frontmatter line ${quoted} is not a plain top-level \`key: value\` entry\n`);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // what a harness's own frontmatter reader accepts converts too: a closer with trailing
+  // whitespace, CRLF line ends, a byte order mark before the opener; nor is a key name
+  // inside a block scalar, or an anchor or alias in a value, a repeated key.
+  test.each([
+    ["a key name inside a block scalar body", '---\nname: runner\ndescription: "fixture runner"\nnotes: |\n  description: inside\n  name: also inside\n---\n\nbody\n'],
+    ["anchors and aliases in values", '---\nname: runner\ndescription: "fixture runner"\nbase: &b 1\nnotes:\n  a: *b\n---\n\nbody\n'],
+    ["a closer with trailing whitespace", '---\nname: runner\ndescription: "fixture runner"\n--- \t\n\nbody\n'],
+    ["CRLF line ends", '---\r\nname: runner\r\ndescription: "fixture runner"\r\nnotes:\r\n  a: 1\r\n---\r\n\r\nbody\r\n'],
+    ["a byte order mark before the opener", '\ufeff---\nname: runner\ndescription: "fixture runner"\n---\n\nbody\n'],
+    ["an opener with trailing whitespace", '--- \nname: runner\ndescription: "fixture runner"\n---\n\nbody\n'],
+    ["a blank line between keys", '---\nname: runner\n\ndescription: "fixture runner"\n---\n\nbody\n'],
+    ["a tab after a key's colon", '---\nname:\trunner\ndescription: "fixture runner"\n---\n\nbody\n'],
+    ["a column-0 sequence under a key", '---\nname: runner\ndescription: "fixture runner"\nskills:\n- a\n- b\n---\n\nbody\n'],
+    ["an indented comment before the first key", '---\n  # c\nname: runner\ndescription: "fixture runner"\n---\n\nbody\n'],
+    ["a tab-only line before the first key", '---\n\t\nname: runner\ndescription: "fixture runner"\n---\n\nbody\n'],
+  ])("%s converts on both targets", (_label, file) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), file);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status, r.stderr]).toEqual([target, 0, ""]);
+      expect(existsSync(join(f.dest, target, `runner.${target === "codex" ? "toml" : "md"}`))).toBe(true);
+    }
+  });
+
+  // every reader of the block, the marker reader included, sees the same lines: a marker
+  // after a CRLF or a lone CR line end is read exactly.
+  test.each([
+    ["CRLF line ends", '---\r\nname: runner\r\ndescription: "fixture runner"\r\ntools: Bash, Read\r\n# sandbox: workspace-write\r\n---\r\n\r\nbody\r\n'],
+    ["a lone carriage return before it", '---\nname: runner\ndescription: "fixture runner"\ntools: Bash, Read\r# sandbox: workspace-write\n---\n\nbody\n'],
+  ])("a sandbox marker after %s is read", (_label, file) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), file);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect([r.status, r.stderr]).toEqual([0, ""]);
+    expect(readFileSync(join(f.dest, "codex", "runner.toml"), "utf8")).toContain('sandbox_mode = "workspace-write"');
+  });
+
+  // the frontmatter's line ends are folded for the readers, but the body is copied as written.
+  test("a CRLF body keeps its line ends in the converted def", () => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), '---\nname: runner\ndescription: "fixture runner"\n---\n\nline one\r\nline two\n');
+
+    const r = f.run("--to", "opencode", "--dest", f.dest);
+
+    expect([r.status, r.stderr]).toEqual([0, ""]);
+    expect(readFileSync(join(f.dest, "opencode", "runner.md"), "utf8")).toContain("line one\r\nline two");
+  });
+
   // a field read as text that YAML reads as a list or a number would drop silently (a denylist
   // read as absent gives a read-only def every tool), so it is a defect.
   test.each([

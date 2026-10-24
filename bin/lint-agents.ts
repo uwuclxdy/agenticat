@@ -13,7 +13,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { AGENT_NAME, allowDefect, markerForm, readFrontmatter, readMarkers, stringField } from "./agent-name";
+import { AGENT_NAME, allowDefect, markerForm, readFrontmatter, readMarkers, splitFrontmatter, stringField } from "./agent-name";
 
 // Every tool a subagent can be granted. A name outside this set resolves to nothing at
 // spawn time; if ALL of them do, Claude Code refuses to launch the agent.
@@ -62,16 +62,17 @@ function lint(path: string, portable: boolean): Finding[] {
   const warn = (msg: string) => out.push({ level: "warn", file, msg });
 
   const raw = readFileSync(path, "utf8");
-  const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!m) return [{ level: "error", file, msg: "no frontmatter block" }];
+  const split = splitFrontmatter(raw);
+  if (!split) return [{ level: "error", file, msg: "no frontmatter block" }];
 
-  // The block is what every harness parses, so a block YAML rejects, or a text field that
-  // is not one, is a defect here too.
-  const frontmatter = readFrontmatter(m[1]);
+  // The block is what every harness parses, so a block YAML rejects, a repeated top-level
+  // key, a top-level line that is not a plain `key: value` entry, or a text field that is
+  // not one, is a defect here too.
+  const frontmatter = readFrontmatter(split.block);
   if ("defect" in frontmatter) return [{ level: "error", file, msg: frontmatter.defect }];
   const name = stringField(frontmatter.fields, "name");
   const description = stringField(frontmatter.fields, "description");
-  const body = m[2];
+  const body = split.body;
   const list = (v?: string) => (v ? v.split(",").map((t) => t.trim()).filter(Boolean) : []);
   // undefined keeps "field absent" distinct from "field empty": the shared allow checks
   // read an absent tool list as the inherited every-tool grant. A defect read also yields
@@ -95,7 +96,7 @@ function lint(path: string, portable: boolean): Finding[] {
 
   // The converter refuses these markers and allow patterns on both targets, so the lint
   // reports the same defect first: one gate previews every refusal.
-  const markers = readMarkers(m[1]);
+  const markers = readMarkers(split.block);
   if ("defect" in markers) err(markers.defect);
   else if (!toolListDefect) {
     const defect = allowDefect({
@@ -111,7 +112,7 @@ function lint(path: string, portable: boolean): Finding[] {
   // prose after the first full stop is a note, not more directives. A near-miss spelling
   // would leave the def unchecked with exit 0, so it is an error instead.
   const directives = new Set<string>();
-  const frontmatterLines = m[1].split("\n");
+  const frontmatterLines = split.block.split("\n");
   for (const [i, line] of frontmatterLines.entries()) {
     const form = markerForm(frontmatterLines, i, "lint", "lint");
     if (form === "near-miss") {

@@ -180,6 +180,8 @@ test.each([
   ["a wildcard before the last word", "tools: Read, Bash\n# opencode-bash-allow: cargo * --help\n", 'opencode-bash-allow pattern "cargo * --help" has a wildcard before its last word, which matches commands no check names'],
   ["an allow line on a def that writes", "tools: Read, Bash, Write\n# opencode-bash-allow: cargo check\n", "opencode-bash-allow has no bash map to extend (the def writes files or grants no Bash)"],
   ["a frontmatter YAML cannot read", 'notes: "unterminated\n', "frontmatter is not valid YAML ("],
+  ["a repeated key", "description: again\n", 'frontmatter key "description" appears more than once; YAML keeps only the last\n'],
+  ["a repeated key whose first copy is a block scalar holding a marker line", "notes: |\n  # sandbox: bogus\nnotes: plain\n", 'frontmatter key "notes" appears more than once; YAML keeps only the last\n'],
 ])("%s is a lint error in the converter's words", (_label, frontmatter, message) => {
   const r = lintDef(frontmatter, "body");
 
@@ -194,6 +196,64 @@ test("a tool list that is not text reports that defect alone", () => {
   expect(r.status).toBe(1);
   expect(r.stdout).toContain('ERR  reader.md: frontmatter field "tools" is not a string');
   expect(r.stdout).not.toContain("no bash map to extend");
+});
+
+test.each([
+  ["a key name inside a block scalar body", "notes: |\n  description: inside\n  name: also inside\n"],
+  ["anchors and aliases in values", "base: &b 1\nnotes:\n  a: *b\n"],
+  ["a blank line between keys", "\nnotes: x\n"],
+  ["a tab after a key's colon", "notes:\tx\n"],
+  ["a column-0 sequence under a key", "skills:\n- a\n- b\n"],
+  ["a column-0 sequence with a tab item and a bare item", "skills:\n-\ta\n-\n"],
+])("%s is not a repeated key", (_label, frontmatter) => {
+  const r = lintDef(frontmatter, "body");
+
+  expect(r.status).toBe(0);
+  expect(r.stdout).toContain("0 error(s), 0 warning(s)");
+});
+
+// a top-level key must be a plain name at column 0, so the repeat check reads every key
+// straight off its line; any other spelling could hide a key the parser still reads.
+test.each([
+  ["a quoted key", '"description": again\n', String.raw`"\"description\": again"`],
+  ["an explicit key", "? a\n: 1\n", '"? a"'],
+  ["a merge key", "base: &a\n  k: anchored\n<<: *a\n", '"<<: *a"'],
+  ["a key that starts with three dashes", "---x: 1\n", '"---x: 1"'],
+  ["a tagged key", "!!str k: v\n", '"!!str k: v"'],
+  ["a key that starts with a colon", ":x: 1\n", '":x: 1"'],
+  ["a key behind a lone carriage return", "x: a\r!!str k: v\n", '"!!str k: v"'],
+  ["a core-schema boolean key", "true: a\n", '"true: a"'],
+  ["a core-schema null key", "Null: a\n", '"Null: a"'],
+  ["a capitalised core-schema boolean key", "True: a\n", '"True: a"'],
+  ["an upper-case core-schema false key", "False: a\n", '"False: a"'],
+  ["an upper-case core-schema null key", "NULL: a\n", '"NULL: a"'],
+  ["a key that starts with a dash", "-x: 1\n", '"-x: 1"'],
+  ["a digit-first key", "1: x\n", '"1: x"'],
+  ["a key holding a colon", "x:y: 1\n", '"x:y: 1"'],
+])("%s is a lint error in the converter's words", (_label, frontmatter, quoted) => {
+  const r = lintDef(frontmatter, "body");
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain(`ERR  reader.md: frontmatter line ${quoted} is not a plain top-level \`key: value\` entry\n`);
+  expect(r.stdout).not.toContain("sandbox marker");
+});
+
+test.each([
+  ["a repeat whose first copy holds an alias and a marker-shaped block line", "base: &b 1\nnotes:\n  a: *b\n  text: |\n    # sandbox: bogus\nnotes: plain\n", "notes"],
+])("%s is a lint error in the converter's words", (_label, frontmatter, key) => {
+  const r = lintDef(frontmatter, "body");
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain(`ERR  reader.md: frontmatter key "${key}" appears more than once; YAML keeps only the last\n`);
+  expect(r.stdout).not.toContain("sandbox marker");
+});
+
+// a hash glued to a word is data even inside a comment, so the stem after it is no marker.
+test("a comment holding the lint stem right after a word is no lint comment", () => {
+  const r = lintDef("# see foo#lint-staged for hooks\n", "body");
+
+  expect(r.status).toBe(0);
+  expect(r.stdout).toContain("0 error(s), 0 warning(s)");
 });
 
 test("a block-scalar line holding the lint stem is data", () => {
@@ -266,8 +326,14 @@ test.each([
   expect(r.stdout).toContain("0 error(s), 0 warning(s)");
 });
 
+test("C# in a quoted description is not a lint comment", () => {
+  const r = lintDef(MARKER + DENY_WRITES, RULE, "reader", "Runs C# lint checks");
+
+  expect(r.status).toBe(0);
+  expect(r.stdout).toContain("0 error(s), 0 warning(s)");
+});
+
 test.each([
-  ["C# in a quoted description", 'description: "Runs C# lint checks"'],
   ["a hash in a quoted value", 'summary: "Fixes #lint-staged hooks"'],
   ["a URL fragment", "homepage: https://example.com/docs#lint"],
 ])("%s is not a lint comment", (_label, line) => {
