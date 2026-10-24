@@ -192,12 +192,11 @@ function toCodex(a: AgentDef): string {
   if (TOML_VALUE_UNSAFE.test(a.name)) throw new Error(`${quote(a.name)}: name holds a character TOML cannot carry`);
   if (TOML_VALUE_UNSAFE.test(a.description)) throw new Error(`${a.name}: description holds a character TOML cannot carry`);
   if (TOML_BODY_UNSAFE.test(a.body)) throw new Error(`${a.name}: body holds a control character TOML cannot carry`);
-  // Bash alone stays read-only: our read-only agents carry it for git diff/checks,
-  // and codex's read-only sandbox still allows command execution, just no fs writes.
-  // denylist form: read-only only when both write tools are denied; deny-Edit-only
-  // agents (testers writing scratch/screenshots) still need workspace-write.
-  // a def whose Bash is its whole job writes no target file, so the tool grant alone
-  // would call it read-only; the frontmatter marker opts it into a writable sandbox.
+  // the line states the sandbox the def needs: Bash alone stays read-only (our read-only
+  // agents carry it for git reads and checks); in the denylist form only a def denying both
+  // write tools is read-only; a def whose Bash is its whole job asks for a writable sandbox
+  // through its frontmatter marker. codex 0.163.0 parses the line and ignores it (a spawned
+  // role runs under its parent session's sandbox), so it is kept for a codex that honours it.
   const sandbox = writesFiles(a) ? "workspace-write" : "read-only";
   // TOML literal multi-line string: no escape processing, so regex/backslashes in
   // bodies survive verbatim. A body containing ''' cannot be represented; fail loud.
