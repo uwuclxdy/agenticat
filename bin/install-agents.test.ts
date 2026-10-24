@@ -1091,16 +1091,188 @@ describe("codex conversion", () => {
     const r = f.run("--to", "codex", "--dest", f.dest);
 
     expect(r.status).not.toBe(0);
-    expect(r.stderr).toContain("runner:");
-    expect(r.stderr).toContain('"workspace_write"');
+    expect(r.stderr).toContain('runner: unknown sandbox marker "workspace_write" (expected "workspace-write")');
     expect(existsSync(join(f.dest, "codex", "runner.toml"))).toBe(false);
+  });
+
+  // `# lint:` takes prose after a full stop; this marker never does, so a contributor copying
+  // that form must be told, not silently shipped read-only.
+  test("a sandbox marker with anything after its value is a catalog defect", () => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\ntools: Bash, Read\n# sandbox: workspace-write. builds write\n---\n\nbody\n`);
+
+    const r = f.run("--to", "codex", "--dest", f.dest);
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain('runner: sandbox marker "# sandbox: workspace-write. builds write" must be exactly "# sandbox: <value>" with nothing after the value');
+    expect(existsSync(join(f.dest, "codex", "runner.toml"))).toBe(false);
+  });
+
+  // a later marker line goes unchecked, and a lookalike spelling is read as no marker, so
+  // either would ship a sandbox no line asked for.
+  test.each([
+    ["a bad value on a second marker line", "# sandbox: workspace-write\n# sandbox: workspace_write\n", 'runner: unknown sandbox marker "workspace_write" (expected "workspace-write")'],
+    ["a second marker line naming another value", "# sandbox: workspace-write\n# sandbox: read-only\n", 'runner: unknown sandbox marker "read-only" (expected "workspace-write")'],
+    ["a capitalized marker key", "# Sandbox: workspace-write\n", 'runner: sandbox marker "# Sandbox: workspace-write" must be exactly "# sandbox: <value>" with nothing after the value'],
+    ["a longer marker key", "# sandboxed: workspace-write\n", 'runner: sandbox marker "# sandboxed: workspace-write" must be exactly "# sandbox: <value>" with nothing after the value'],
+    ["an indented marker", " # sandbox: workspace-write\n", 'runner: sandbox marker " # sandbox: workspace-write" must be exactly "# sandbox: <value>" with nothing after the value'],
+    ["a bare sandbox key", "sandbox: workspace-write\n", 'runner: sandbox marker "sandbox: workspace-write" must be exactly "# sandbox: <value>" with nothing after the value'],
+  ])("%s is a catalog defect on both targets", (_label, marker, named) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\ntools: Bash, Read\n${marker}---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(named);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // a top-level key sits at column 0, so a nested key that merely shares a marker's stem is data.
+  test.each([
+    ["a nested sandbox key", "mcpServers:\n  sandbox:\n    command: e2b\n"],
+    ["a nested opencode-bash-allow key", "mcpServers:\n  opencode-bash-allow:\n    command: x\n"],
+  ])("%s is no marker on either target", (_label, lines) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\n${lines}---\n\nbody\n`);
+
+      expect([target, f.run("--to", target, "--dest", f.dest).status]).toEqual([target, 0]);
+    }
+  });
+
+  // a hash inside a quoted value is data, whatever YAML escape sits before it.
+  test.each([
+    ["a double-quoted description", 'description: "runs in a # sandbox"'],
+    ["an escaped quote before it", 'description: "say \\"hi\\" in a # sandbox"'],
+    ["a doubled single quote before it", "description: 'it''s a # sandbox'"],
+  ])("a # sandbox inside %s is data on both targets", (_label, descriptionLine) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\n${descriptionLine}\ntools: Bash, Read\n---\n\nbody\n`);
+
+      expect([target, f.run("--to", target, "--dest", f.dest).status]).toEqual([target, 0]);
+    }
+  });
+
+  test.each([
+    ["an escaped double quote", 'description: "say \\"hi\\" now"', 'say "hi" now'],
+    ["a doubled single quote", "description: 'it''s fine'", "it's fine"],
+    ["a hex escape", 'description: "\\x41bc"', "Abc"],
+    ["a raw tab beside an escaped quote", 'description: "a\tb \\"c\\""', 'a\tb "c"'],
+    ["a trailing comment after the closing quote", 'description: "say hi" # a note', "say hi"],
+  ])("a description holding %s reaches both targets as YAML reads it", (_label, descriptionLine, expected) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\n${descriptionLine}\n---\n\nbody\n`);
+
+    expect(f.run("--dest", f.dest).status).toBe(0);
+    expect((Bun.TOML.parse(readFileSync(join(f.dest, "codex", "runner.toml"), "utf8")) as { description: string }).description).toBe(expected);
+    const opencode = readFileSync(join(f.dest, "opencode", "runner.md"), "utf8").split("\n---\n")[0].replace(/^---\n/, "");
+    expect((Bun.YAML.parse(opencode) as { description: string }).description).toBe(expected);
+  });
+
+  test("a frontmatter YAML cannot read is a catalog defect on both targets", () => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "say hi\n---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`${join(f.repo, "agents", "runner.md")}: frontmatter is not valid YAML (`);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // a field read as text that YAML reads as a list or a number would drop silently (a denylist
+  // read as absent gives a read-only def every tool), so it is a defect.
+  test.each([
+    ["a denylist written as a YAML list", "disallowedTools: [Edit, Write]\n", "disallowedTools"],
+    ["an allowlist written as a block list", "tools:\n  - Read\n  - Bash\n", "tools"],
+    ["a numeric model", "model: 4\n", "model"],
+  ])("%s is a catalog defect on both targets", (_label, lines, key) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\ndescription: "fixture runner"\n${lines}---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`${join(f.repo, "agents", "runner.md")}: frontmatter field "${key}" is not a string`);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // a `#` line YAML reads as scalar text (a block scalar's body) is data, not a marker comment.
+  test.each([
+    ["a block-scalar description line", "description: |\n  runs in a\n  # sandbox of its own\n", "runs in a\n# sandbox of its own\n"],
+    ["a block-scalar line with a mid-line hash", "description: >-\n  builds # sandbox images\n", "builds # sandbox images"],
+  ])("%s holding a marker stem is data on both targets", (_label, lines, expected) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\n${lines}tools: Bash, Read\n---\n\nbody\n`);
+
+      expect([target, f.run("--to", target, "--dest", f.dest).status]).toEqual([target, 0]);
+    }
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "runner.md"), `---\nname: runner\n${lines}tools: Bash, Read\n---\n\nbody\n`);
+    expect(f.run("--to", "codex", "--dest", f.dest).status).toBe(0);
+    const toml = Bun.TOML.parse(readFileSync(join(f.dest, "codex", "runner.toml"), "utf8")) as { description: string; sandbox_mode: string };
+    expect([toml.description, toml.sandbox_mode]).toEqual([expected, "read-only"]);
   });
 });
 
 describe("untrusted text in a refusal", () => {
   // Every refusal is one line a terminal prints verbatim: a control byte, a C1 control or a
-  // line separator from a path or a manifest must arrive escaped.
-  const RAW_UNSAFE = /[\x00-\x1f\x7f-\x9f\u2028\u2029]/;
+  // line separator from a path, a manifest or an argument must arrive escaped.
+  // Every control, format character (bidi, byte order mark, zero-width) and line or paragraph
+  // separator, by Unicode category, so the escape set is held to the standard, not to itself.
+  const RAW_UNSAFE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u;
+
+  test.each([
+    ["an unknown agent name", ["--to", "codex", "a\x7fb"], true],
+    ["a --to value", ["--to", "co\u2028dex"], true],
+    ["an unknown option", ["--bo\u0085gus"], true],
+    ["a pair of unknown options", ["--bo\u0085gus", "--x\u2028y"], true],
+    ["an agent name after --update", ["--update", "a\x7fb"], true],
+    ["an agent name after --list", ["--list", "a\x7fb"], false],
+    ["a --to value holding a bidi override", ["--to", "co\u202edex"], true],
+    ["an unknown agent name holding a byte order mark", ["--to", "codex", "a\ufeffb"], true],
+    ["a --to value holding an Arabic letter mark", ["--to", `co${String.fromCharCode(0x61c)}dex`], true],
+  ])("%s never reaches stderr raw", (_label, args, withDest) => {
+    const f = fixture(["kept"]);
+
+    const r = withDest ? f.run(...args, "--dest", f.dest) : f.run(...args);
+
+    expect(r.status).toBe(1);
+    for (const line of r.stderr.split("\n")) expect(line).not.toMatch(RAW_UNSAFE);
+  });
+
+  // a format character past U+FFFF is two UTF-16 units, and each must arrive escaped.
+  test("a --to value holding an astral format character prints both halves escaped", () => {
+    const f = fixture(["kept"]);
+
+    const r = f.run("--to", `co${String.fromCodePoint(0xe0001)}dex`, "--dest", f.dest);
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain(String.raw`(got: "co\udb40\udc01dex")`);
+  });
+
+  test("a manifest name that is not an agent name is warned about as written, escaped", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    writeFileSync(join(codex, MANIFEST), JSON.stringify({ target: "codex", agents: [["kept"], "a\x7fb", "kept"] }) + "\n");
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain('manifest name ["kept"] is not an agent name');
+    expect(r.stderr).toContain('manifest name "a\\u007fb" is not an agent name');
+    for (const line of r.stderr.split("\n")) expect(line).not.toMatch(RAW_UNSAFE);
+  });
 
   test.each([
     ["DEL", "{\x7f"],
@@ -1127,6 +1299,9 @@ describe("untrusted text in a refusal", () => {
     ["an ESC", "e\x1be"],
     ["a DEL", "d\x7fd"],
     ["a C1 control", "c\u009bc"],
+    ["a carriage return", "c\rr"],
+    ["a bidi override", `r${String.fromCharCode(0x202e)}r`],
+    ["an astral format character", `a${String.fromCodePoint(0xe0001)}a`],
   ])("a --dest holding %s prints a reinstall command bash reads back to the same path", (_label, name) => {
     const f = fixture(["kept"]);
     const dest = join(f.root, name);
@@ -1211,6 +1386,8 @@ describe("opencode permission map", () => {
     "cat a &> out",
     "cat >out <<'EOF'",
     "rg --pre cat x",
+    "rg --hostname-bin ./hn.sh --hyperlink-format default needle f.txt",
+    "rg --hostname-bin=./hn.sh needle",
     "git diff --ext-diff",
     "git log --textconv -p",
     "git hash-object -w x",
@@ -1242,6 +1419,128 @@ describe("opencode permission map", () => {
     expect(decide(bash, "cargo check")).toBe("allow");
     expect(decide(bash, "cargo build")).toBe("deny");
     expect(decide(bash, "cargo clippy > o.txt")).toBe("deny");
+  });
+
+  test("several opencode-bash-allow lines merge", () => {
+    const fm = install("tools: Read, Bash\n# opencode-bash-allow: cargo clippy *\n# opencode-bash-allow: cargo check *\n");
+
+    const bash = fm.permission?.bash ?? {};
+    expect(decide(bash, "cargo clippy --all-targets")).toBe("allow");
+    expect(decide(bash, "cargo check")).toBe("allow");
+  });
+
+  // opencode reads a frontmatter whose map repeats a key as no frontmatter at all and then
+  // grants every tool; Bun.YAML accepts the repeat, so the key paths are read off the emitted
+  // text (keyPaths, below).
+  test.each([
+    ["a pattern repeated across marker lines", "# opencode-bash-allow: cargo check *\n# opencode-bash-allow: cargo clippy *, cargo check *\n"],
+    ["a pattern the shared reads already hold", "# opencode-bash-allow: rg *\n"],
+  ])("%s is emitted once", (_label, allow) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\ntools: Read, Bash\n${allow}---\n\nbody\n`);
+    expect(f.run("--to", "opencode", "--dest", f.dest).status).toBe(0);
+
+    const paths = keyPaths(join(f.dest, "opencode", "reader.md"));
+    expect(paths).toContain('permission.bash."rg *"');
+    expect(paths.filter((k, i) => paths.indexOf(k) !== i)).toEqual([]);
+  });
+
+  test("an allow pattern that is also a deny is a catalog defect on both targets", () => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\ntools: Read, Bash\n# opencode-bash-allow: cargo check *, * --fix *\n---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain('reader: opencode-bash-allow pattern "* --fix *" is also a deny rule');
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  test.each([
+    ["a plural key", "# opencode-bash-allows: cargo check"],
+    ["a capitalized key", "# Opencode-bash-allow: cargo check"],
+    ["an indented marker", " # opencode-bash-allow: cargo check"],
+    ["underscores for hyphens", "# opencode_bash_allow: cargo check"],
+    ["a missing colon", "# opencode-bash-allow cargo check"],
+    ["a bare key", "opencode-bash-allow: cargo check"],
+    ["no harness prefix", "# bash-allow: cargo check"],
+    ["no bash infix", "# opencode-allow: cargo check"],
+  ])("an allow marker with %s is a catalog defect on both targets", (_label, line) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\ntools: Read, Bash\n${line}\n---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`reader: opencode-bash-allow marker ${JSON.stringify(line)} must be exactly "# opencode-bash-allow: <pattern>, <pattern>"`);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // a wildcard in the command word matches commands no check names, so the deny-all is void.
+  test.each(["* --help", "*", "cargo* *", "?argo check"])("an allow pattern %p is a catalog defect on both targets", (pattern) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\ntools: Read, Bash\n# opencode-bash-allow: ${pattern}\n---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`reader: opencode-bash-allow pattern ${JSON.stringify(pattern)} has a wildcard in its command word, which matches commands no check names`);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // a wildcard before the last word lets any subcommand or flag in (`cargo run -- --help`); only a
+  // trailing path or argument slot may be open. A command word that runs its arguments (`env`,
+  // `sh -c`) is a residual no shape check sees: the shipped allow lines are pinned by equality below.
+  test.each(["cargo * --help", "git * x", "gh pr * view *"])("an allow pattern %p is a catalog defect on both targets", (pattern) => {
+    for (const target of ["codex", "opencode"]) {
+      const f = fixture([]);
+      writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\ntools: Read, Bash\n# opencode-bash-allow: ${pattern}\n---\n\nbody\n`);
+
+      const r = f.run("--to", target, "--dest", f.dest);
+
+      expect([target, r.status === 0]).toEqual([target, false]);
+      expect(r.stderr).toContain(`reader: opencode-bash-allow pattern ${JSON.stringify(pattern)} has a wildcard before its last word, which matches commands no check names`);
+      expect(existsSync(join(f.dest, target))).toBe(false);
+    }
+  });
+
+  // every key path of the emitted frontmatter, so a repeat anywhere (not only in the bash map) shows.
+  const keyPaths = (file: string) => {
+    const stack: [number, string][] = [];
+    const paths: string[] = [];
+    for (const line of readFileSync(file, "utf8").split("\n---\n")[0].replace(/^---\n/, "").split("\n")) {
+      const m = line.match(/^( *)("(?:[^"\\]|\\.)*"|[^\s:"][^:]*):(?: |$)/);
+      if (!m) continue;
+      while (stack.length && stack[stack.length - 1][0] >= m[1].length) stack.pop();
+      stack.push([m[1].length, m[2]]);
+      paths.push(stack.map(([, k]) => k).join("."));
+    }
+    return paths;
+  };
+
+  test.each([
+    ["a repeated allowlist tool", "tools: Read, Read, Bash\n"],
+    ["a repeated denylist tool", "disallowedTools: Edit, Write, Write, NotebookEdit, Agent, Task\n"],
+  ])("a def with %s emits every frontmatter key once", (_label, lines) => {
+    const f = fixture([]);
+    writeFileSync(join(f.repo, "agents", "reader.md"), `---\nname: reader\ndescription: "fixture reader"\n${lines}---\n\nbody\n`);
+    expect(f.run("--to", "opencode", "--dest", f.dest).status).toBe(0);
+
+    const paths = keyPaths(join(f.dest, "opencode", "reader.md"));
+    expect(paths).toContain("tools.write");
+    expect(paths.filter((k, i) => paths.indexOf(k) !== i)).toEqual([]);
+  });
+
+  test("an empty opencode-bash-allow line adds nothing and leaves the next line alone", () => {
+    const fm = install("tools: Read, Bash\n# opencode-bash-allow:\nmodel: sonnet\n# opencode-bash-allow: cargo check *\n");
+
+    expect(allowsOf(fm.permission?.bash ?? {})).toEqual([...SHARED_READS, "cargo check *"].sort());
   });
 
   test.each([
@@ -1309,5 +1608,82 @@ describe("opencode permission map", () => {
     expect(r.stderr).toContain("reader:");
     expect(r.stderr).toContain(named);
     expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
+  // The shipped read-only defs: each fixed tool check its body names must run on opencode (a
+  // test run or a repo script stays refused, since it runs the reviewed repo's code), and
+  // web-researcher's GitHub reads must stay reads.
+  const shippedMap = (name: string) => {
+    const f = fixture([]);
+    copyFileSync(join(import.meta.dir, "..", "agents", `${name}.md`), join(f.repo, "agents", `${name}.md`));
+    const r = f.run("--to", "opencode", "--dest", f.dest);
+    expect(r.status).toBe(0);
+    return frontmatter(join(f.dest, "opencode", `${name}.md`)).permission?.bash ?? {};
+  };
+
+  // The whole allow set of each shipped map, by equality: a widened allow line reds here.
+  const SHARED_READS = [
+    "rg *", "ls *", "cat *", "git log *", "git show *", "git blame *", "git diff-tree *", "git diff-index *",
+    "git diff-files *", "git ls-files *", "git --no-optional-locks status *", "git merge-base *", "git rev-parse *",
+    "git hash-object -t tree /dev/null",
+  ];
+  const allowsOf = (bash: Record<string, string>) => Object.entries(bash).filter(([, v]) => v === "allow").map(([k]) => k).sort();
+
+  const DECLARED_CHECKS: [string, string[]][] = [
+    ["code-explorer", []],
+    ["flutter-reviewer", []],
+    ["ux-reviewer", []],
+    ["rust-reviewer", ["cargo check", "cargo check --all-targets", "cargo check --workspace --all-targets", "cargo clippy", "cargo clippy --all-targets", "cargo clippy --workspace --all-targets", "cargo clippy --all-targets -- -D warnings", "cargo clippy --workspace --all-targets -- -D warnings"]],
+    ["shell-reviewer", ["shellcheck *", "bash -n -- *"]],
+    ["python-reviewer", ["ruff check --no-fix -- *", "mypy --no-install-types --interactive -- *"]],
+    ["web-reviewer", ["tsc --noEmit", "tsc --noEmit -p .", "tsc --noEmit -p tsconfig.json"]],
+    ["web-researcher", ["gh pr view *", "gh pr diff *", "gh pr list *", "gh pr checks *", "gh issue view *", "gh issue list *", "gh search *"]],
+  ];
+
+  test.each(DECLARED_CHECKS)("the shipped %s map allows the shared reads plus exactly its declared checks", (name, own) => {
+    expect(allowsOf(shippedMap(name))).toEqual([...SHARED_READS, ...own].sort());
+  });
+
+  test("every shipped def the converter gives a bash map is pinned above", () => {
+    const f = fixture([]);
+    const shipped = join(import.meta.dir, "..", "agents");
+    const names = readdirSync(shipped).filter((n) => n.endsWith(".md")).map((n) => n.replace(/\.md$/, ""));
+    for (const name of names) copyFileSync(join(shipped, `${name}.md`), join(f.repo, "agents", `${name}.md`));
+    expect(f.run("--to", "opencode", "--dest", f.dest).status).toBe(0);
+
+    const mapped = names.filter((name) => frontmatter(join(f.dest, "opencode", `${name}.md`)).permission?.bash !== undefined).sort();
+    expect(mapped).toEqual(DECLARED_CHECKS.map(([name]) => name).sort());
+    for (const name of names) {
+      const paths = keyPaths(join(f.dest, "opencode", `${name}.md`));
+      expect([name, paths.filter((k, i) => paths.indexOf(k) !== i)]).toEqual([name, []]);
+    }
+  });
+
+  test.each([
+    // each check allow is an exact command or ends in `--` before its paths, so no flag the agent
+    // adds, in any spelling (glued, abbreviated, `false`, `@file`, quote-split), reaches the check
+    ["rust-reviewer", ["cargo check", "cargo clippy --all-targets", "cargo clippy --workspace --all-targets -- -D warnings"], ["cargo build", "cargo fix", "cargo clippy --fix --allow-dirty", "cargo clippy -- --emit=llvm-ir=src/main.rs", "cargo check --target-dir src/t", "cargo check --config build.rustc-wrapper=./w.sh", "cargo clippy --all-targets -- --emit=llvm-ir=x", "cargo clippy --all-target''s"]],
+    ["shell-reviewer", ["shellcheck install.sh", "bash -n -- install.sh"], ["bash -n +n s.sh", "bash s.sh"]],
+    // a repo config can turn a plain check into a write (`fix = true` for ruff; `install_types` +
+    // `non_interactive` for mypy, which then pip-installs), so only the overriding flags are allowed;
+    // `pytest --collect-only` imports the reviewed tree's conftest.py, and a tox env install runs pip
+    ["python-reviewer", ["ruff check --no-fix -- src", "ruff check --no-fix -- .", "mypy --no-install-types --interactive -- src"], ["ruff check src", "ruff check --no-fix src", "ruff check --fix .", "ruff check --no-fix -oX.txt src", "ruff check --no-fix --output-file r.txt -- src", "ruff check --no-fix -''o q.txt -- src", "mypy src", "mypy --no-install-types --interactive src", "mypy --no-install-types --interactive --junit-x o.xml -- src", "mypy --install-ty --non-inter src", "pytest --collect-only -q", "tox -e py"]],
+    ["web-reviewer", ["tsc --noEmit", "tsc --noEmit -p .", "tsc --noEmit -p tsconfig.json"], ["tsc", "npx tsc --noEmit", "tsc --noEmitOnError a.ts", "tsc --noEmit false", "tsc --noEmit @args.txt", "tsc --noEmit -i", "tsc --noEmit --init", "tsc --noEmit -p web/", "tsc --noEmit fal''se"]],
+    // a write no flag shows stays a residual: a repo config that turns one on (ruff
+    // `output-file`, a tsconfig `incremental`), and each check's own cache (`target/`, `.mypy_cache/`)
+  ])("the shipped %s may run exactly its declared checks and no flag added to them", (name, allowed, denied) => {
+    const bash = shippedMap(name);
+
+    for (const command of allowed) expect([command, decide(bash, command)]).toEqual([command, "allow"]);
+    for (const command of denied) expect([command, decide(bash, command)]).toEqual([command, "deny"]);
+  });
+
+  test("the shipped web-researcher reads GitHub threads and never writes to them", () => {
+    const bash = shippedMap("web-researcher");
+
+    for (const command of ["gh pr view 12 --comments", "gh pr diff 12", "gh issue view 7", "gh pr list --state all", "gh search prs is:open repo:o/r"])
+      expect([command, decide(bash, command)]).toEqual([command, "allow"]);
+    for (const command of ["gh pr comment 12 -b x", "gh pr merge 12", "gh issue close 7", "gh api -X POST repos/o/r/issues", "gh api repos/o/r/issues -f title=x"])
+      expect([command, decide(bash, command)]).toEqual([command, "deny"]);
   });
 });

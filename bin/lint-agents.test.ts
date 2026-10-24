@@ -4,7 +4,7 @@
 
 import { afterEach, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -39,7 +39,7 @@ test("accepts a plain agent name", () => {
 });
 
 const MARKER = "# lint: read-only\n";
-const DENY_WRITES = "disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n";
+const DENY_WRITES = "disallowedTools: Edit, Write, NotebookEdit, Agent, Task, EnterWorktree\n";
 const RULE = "## Hard rules\n\n- **Read-only.** No edits, no git mutations, even when the brief asks.";
 
 test("a marked def that denies every write and spawn tool and states the rule passes", () => {
@@ -61,9 +61,11 @@ test.each([
   ["an allowlist granting Edit", "tools: Read, Bash, Edit\n", "Edit"],
   ["an allowlist granting Agent", "tools: Read, Bash, Agent\n", "Agent"],
   ["an allowlist granting Task", "tools: Read, Bash, Task\n", "Task"],
-  ["a denylist that leaves Write granted", "disallowedTools: Edit, NotebookEdit, Agent, Task\n", "Write"],
-  ["a denylist that leaves NotebookEdit granted", "disallowedTools: Edit, Write, Agent, Task\n", "NotebookEdit"],
-  ["a denylist that leaves Agent granted", "disallowedTools: Edit, Write, NotebookEdit\n", "Agent"],
+  ["an allowlist granting EnterWorktree", "tools: Read, Bash, EnterWorktree\n", "EnterWorktree"],
+  ["a denylist that leaves Write granted", "disallowedTools: Edit, NotebookEdit, Agent, Task, EnterWorktree\n", "Write"],
+  ["a denylist that leaves NotebookEdit granted", "disallowedTools: Edit, Write, Agent, Task, EnterWorktree\n", "NotebookEdit"],
+  ["a denylist that leaves Agent granted", "disallowedTools: Edit, Write, NotebookEdit, EnterWorktree\n", "Agent"],
+  ["a denylist that leaves EnterWorktree granted", "disallowedTools: Edit, Write, NotebookEdit, Agent, Task\n", "EnterWorktree"],
 ])("a marked def with %s is an error naming the tool", (_label, tools, tool) => {
   const r = lintDef(MARKER + tools, RULE);
 
@@ -75,7 +77,7 @@ test("a marked def with no tool restriction names every write and spawn tool it 
   const r = lintDef(MARKER, RULE);
 
   expect(r.status).toBe(1);
-  for (const tool of ["Edit", "Write", "NotebookEdit", "Agent", "Task"]) {
+  for (const tool of ["Edit", "Write", "NotebookEdit", "Agent", "Task", "EnterWorktree"]) {
     expect(r.stdout).toContain(`ERR  reader.md: marked read-only but \`${tool}\` is granted`);
   }
 });
@@ -146,11 +148,77 @@ test.each([
   ["a missing colon", "# lint read-only"],
   ["a plural prefix", "# lints: read-only"],
   ["a trailing comment on a key line", "model: sonnet # lint: read-only"],
+  ["a longer key", "# linter: read-only"],
+  ["a past-tense key", "# linted: read-only"],
+  ["a bare key", "lint: read-only"],
+  ["an indented marker", "  # lint: read-only"],
+  ["a space before the colon", "# lint : read-only"],
 ])("a lint comment with %s is an error naming the line", (_label, line) => {
   const r = lintDef(`${line}\n` + "tools: Read, Bash, Write, ToolSearch\n", RULE);
 
   expect(r.status).toBe(1);
   expect(r.stdout).toContain(`ERR  reader.md: malformed lint comment \`${line}\``);
+});
+
+// the converter refuses these markers, so the lint reports them first, in the converter's words.
+test.each([
+  ["a sandbox lookalike key", "sandbox_profile: strict\n", 'sandbox marker "sandbox_profile: strict" must be exactly "# sandbox: <value>" with nothing after the value'],
+  ["an unknown sandbox value", "# sandbox: bogus\n", 'unknown sandbox marker "bogus" (expected "workspace-write")'],
+  ["an allow-marker lookalike", "# opencode-bash-allows: cargo check\n", 'opencode-bash-allow marker "# opencode-bash-allows: cargo check" must be exactly "# opencode-bash-allow: <pattern>, <pattern>"'],
+])("%s is a lint error in the converter's words", (_label, frontmatter, message) => {
+  const r = lintDef(frontmatter, "body");
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain(`ERR  reader.md: ${message}`);
+});
+
+// every converter refusal the def text can trigger shows in the lint first.
+test.each([
+  ["a numeric model", "model: 4\n", 'frontmatter field "model" is not a string'],
+  ["an allow pattern that is also a deny", "tools: Read, Bash\n# opencode-bash-allow: * --fix *\n", 'opencode-bash-allow pattern "* --fix *" is also a deny rule'],
+  ["a wildcard command word", "tools: Read, Bash\n# opencode-bash-allow: * --help\n", 'opencode-bash-allow pattern "* --help" has a wildcard in its command word, which matches commands no check names'],
+  ["a wildcard before the last word", "tools: Read, Bash\n# opencode-bash-allow: cargo * --help\n", 'opencode-bash-allow pattern "cargo * --help" has a wildcard before its last word, which matches commands no check names'],
+  ["an allow line on a def that writes", "tools: Read, Bash, Write\n# opencode-bash-allow: cargo check\n", "opencode-bash-allow has no bash map to extend (the def writes files or grants no Bash)"],
+  ["a frontmatter YAML cannot read", 'notes: "unterminated\n', "frontmatter is not valid YAML ("],
+])("%s is a lint error in the converter's words", (_label, frontmatter, message) => {
+  const r = lintDef(frontmatter, "body");
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain(`ERR  reader.md: ${message}`);
+});
+
+// the converter stops at a def's first defect, so the lint adds no refusal that defect hides.
+test("a tool list that is not text reports that defect alone", () => {
+  const r = lintDef("tools: [Read, Bash]\n# opencode-bash-allow: cargo check\n", "body");
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain('ERR  reader.md: frontmatter field "tools" is not a string');
+  expect(r.stdout).not.toContain("no bash map to extend");
+});
+
+test("a block-scalar line holding the lint stem is data", () => {
+  const r = lintDef("notes: |\n  run a\n  # lint pass first\n", "body");
+
+  expect(r.status).toBe(0);
+  expect(r.stdout).toContain("0 error(s), 0 warning(s)");
+});
+
+test("a nested key that shares the lint stem is no lint comment", () => {
+  const r = lintDef("mcpServers:\n  linter-mcp:\n    command: x\n", "body");
+
+  expect(r.status).toBe(0);
+  expect(r.stdout).toContain("0 error(s), 0 warning(s)");
+});
+
+// a hash inside a quoted value is data, whatever YAML escape sits before it.
+test.each([
+  ["an escaped quote", 'say \\"hi\\" in a # lint'],
+  ["a plain quoted value", "runs a # lint pass"],
+])("a # lint inside a description with %s is data", (_label, description) => {
+  const r = lintDef("", "body", "reader", description);
+
+  expect(r.status).toBe(0);
+  expect(r.stdout).toContain("0 error(s), 0 warning(s)");
 });
 
 test("prose after the directives' full stop may hold commas", () => {
@@ -215,4 +283,69 @@ test("a comment opener inside one fence and a closer inside a later one leave th
 
   expect(r.status).toBe(0);
   expect(r.stdout).toContain("0 error(s), 0 warning(s)");
+});
+
+// The shipped catalog: a def that can neither Edit nor Write is read-only by its tool
+// grant (prober opts into codex's workspace-write with a marker), so it must carry the
+// marker the lint holds it to.
+const SHIPPED = join(import.meta.dir, "..", "agents");
+const frontmatterOf = (raw: string) => raw.match(/^---\n([\s\S]*?)\n---\n/)?.[1] ?? "";
+const listOf = (fm: string, key: string) => fm.match(new RegExp(`^${key}:\\s*(.*)$`, "m"))?.[1].split(",").map((t) => t.trim()) ?? null;
+const cannotWrite = (fm: string) => {
+  const tools = listOf(fm, "tools");
+  const denied = listOf(fm, "disallowedTools");
+  if (tools) return !tools.includes("Edit") && !tools.includes("Write");
+  return denied !== null && denied.includes("Edit") && denied.includes("Write");
+};
+
+function lintShipped(name: string, edit: (raw: string) => string) {
+  const dir = mkdtempSync(join(tmpdir(), "agenticat-lint-"));
+  scratch.push(dir);
+  const agents = join(dir, "agents");
+  mkdirSync(agents);
+  const raw = readFileSync(join(SHIPPED, `${name}.md`), "utf8");
+  const edited = edit(raw);
+  expect(edited).not.toBe(raw);
+  writeFileSync(join(agents, `${name}.md`), edited);
+  return spawnSync("bun", [LINTER, agents, "--portable"], { encoding: "utf8" });
+}
+
+// The lint itself decides: a shipped def that can neither Edit nor Write, re-granted Write,
+// must be refused, which holds only while its marker is a live directive.
+const READ_ONLY_SHIPPED = readdirSync(SHIPPED)
+  .filter((f) => f.endsWith(".md") && cannotWrite(frontmatterOf(readFileSync(join(SHIPPED, f), "utf8"))))
+  .map((f) => f.replace(/\.md$/, ""));
+
+test("the shipped catalog holds read-only defs to check", () => {
+  expect([...READ_ONLY_SHIPPED].sort()).toEqual([
+    "code-explorer", "flutter-reviewer", "prober", "python-reviewer", "rust-reviewer",
+    "shell-reviewer", "ux-reviewer", "web-researcher", "web-reviewer",
+  ]);
+});
+
+const regrant = (tool: string) => (raw: string) =>
+  /^tools:/m.test(raw)
+    ? raw.replace(/^tools:\s*(.*)$/m, (_line, list: string) => `tools: ${list}, ${tool}`)
+    : raw.replace(/^disallowedTools:\s*(.*)$/m, (_line, list: string) => `disallowedTools: ${list.split(",").map((t) => t.trim()).filter((t) => t !== tool).join(", ")}`);
+const regrantWrite = regrant("Write");
+
+test.each(READ_ONLY_SHIPPED)("the shipped %s granted Write is an error", (name) => {
+  const r = lintShipped(name, regrantWrite);
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain(`ERR  ${name}.md: marked read-only but \`Write\` is granted`);
+});
+
+test.each(READ_ONLY_SHIPPED)("the shipped %s granted EnterWorktree is an error", (name) => {
+  const r = lintShipped(name, regrant("EnterWorktree"));
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain(`ERR  ${name}.md: marked read-only but \`EnterWorktree\` is granted`);
+});
+
+test("the shipped code-explorer without its read-only rule is an error", () => {
+  const r = lintShipped("code-explorer", (raw) => raw.replace(/^- \*\*Read-only\.\*\*.*\n/m, ""));
+
+  expect(r.status).toBe(1);
+  expect(r.stdout).toContain("ERR  code-explorer.md: marked read-only but the body has no `- **Read-only.**` rule");
 });

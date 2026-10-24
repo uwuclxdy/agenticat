@@ -10,7 +10,7 @@ import { join, basename, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { AGENT_NAME } from "./agent-name";
+import { AGENT_NAME, allowDefect, grantsBash, OPENCODE_DENIES, quote, readFrontmatter, readMarkers, stringField, writesFiles } from "./agent-name";
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url))); // repo root (bin/..)
 const AGENTS_DIR = join(REPO, "agents");
@@ -67,7 +67,7 @@ interface AgentDef {
   disallowedTools?: string[];
   model?: string;
   sandbox?: string;
-  bashAllow?: string[];
+  bashAllow: string[];
   body: string;
 }
 
@@ -78,45 +78,35 @@ function parseAgent(path: string): AgentDef {
   const raw = readFileSync(path, "utf8");
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!m) throw new Error(`${path}: no frontmatter block`);
-  const fm: Record<string, string> = {};
-  for (const line of m[1].split("\n")) {
-    const kv = line.match(/^(\w[\w-]*):\s*(.*)$/);
-    if (kv) fm[kv[1]] = kv[2].replace(/^["']|["']$/g, "");
-  }
-  if (!fm.name || !fm.description) throw new Error(`${path}: name + description required`);
-  // a value the reader does not know would silently ship read-only, so it is a defect;
-  // both targets read the marker from here, so both refuse it before any write.
-  const sandbox = m[1].match(/^#\s*sandbox:\s*(\S+)\s*$/m)?.[1];
-  if (sandbox !== undefined && sandbox !== "workspace-write")
-    throw new Error(`${fm.name}: unknown sandbox marker ${JSON.stringify(sandbox)} (expected "workspace-write")`);
+  const frontmatter = readFrontmatter(m[1]);
+  if ("defect" in frontmatter) throw new Error(`${path}: ${frontmatter.defect}`);
+  const field = (key: string): string | undefined => {
+    const reading = stringField(frontmatter.fields, key);
+    if ("defect" in reading) throw new Error(`${path}: ${reading.defect}`);
+    return reading.value;
+  };
+  const name = field("name");
+  const description = field("description");
+  if (!name || !description) throw new Error(`${path}: name + description required`);
+  // both targets read the markers from here, so both refuse a defect before any write.
+  const markers = readMarkers(m[1]);
+  if ("defect" in markers) throw new Error(`${name}: ${markers.defect}`);
   const def: AgentDef = {
-    name: fm.name,
-    description: fm.description,
-    tools: splitList(fm.tools),
-    disallowedTools: splitList(fm.disallowedTools),
-    model: fm.model,
+    name,
+    description,
+    tools: splitList(field("tools")),
+    disallowedTools: splitList(field("disallowedTools")),
+    model: field("model"),
     // YAML comments, so no harness's frontmatter parser reads them as a key; the lint's
     // own exemptions live the same way.
-    sandbox,
-    bashAllow: m[1].match(/^#\s*opencode-bash-allow:\s*(.+)$/m)?.[1].split(",").map((p) => p.trim()).filter(Boolean),
+    sandbox: markers.markers.sandbox,
+    bashAllow: markers.markers.bashAllow,
     body: m[2].trim(),
   };
-  // the marker extends the read-only bash map, so on a def without one it is a catalog
-  // defect rather than a silent no-op; both targets read the catalog, so both refuse.
-  if (def.bashAllow?.length && (writesFiles(def) || !grantsBash(def)))
-    throw new Error(`${def.name}: opencode-bash-allow has no bash map to extend (the def writes files or grants no Bash)`);
+  // the allow checks are shared with the lint, so its gate previews every refusal here.
+  const defect = allowDefect(def);
+  if (defect) throw new Error(`${def.name}: ${defect}`);
   return def;
-}
-
-// a def that writes the filesystem: the codex sandbox rule and the opencode bash
-// allowlist both key on it.
-function writesFiles(a: AgentDef): boolean {
-  const mutates = a.tools
-    ? a.tools.some((t) => ["Write", "Edit"].includes(t))
-    : a.disallowedTools
-      ? !["Write", "Edit"].every((t) => a.disallowedTools!.includes(t))
-      : true;
-  return mutates || a.sandbox === "workspace-write";
 }
 
 // the def grants a way to spawn a subagent, or names neither tool and inherits both.
@@ -148,37 +138,15 @@ const OPENCODE_READS = [
   "git hash-object -t tree /dev/null",
 ];
 
-// anything holding `>` refuses every redirect spelling attached to the matched command
-// (`cat a >b`, `cat a>b`, `git log 2>&1`), and each remaining pattern is a flag spelling
-// that writes or spawns through an allowed read command. opencode sees a redirect only
-// when it is attached to the command node, so a redirect on a group or a loop
-// (`{ cat a; } > out`) and a bare `>out` reach the shell unblocked; `*>*` also refuses a
-// search whose pattern holds `>` (`rg '->'`).
-// `git diff` additionally runs a configured diff.external and textconv driver with no
-// flag, which the two flag denies below cannot stop.
-const OPENCODE_DENIES = [
-  "*>*",
-  "git * --output*",
-  "git * --ext-diff*",
-  "git * --textconv*",
-  "rg *--pre*",
-];
-
-// a def that grants Bash: the allowlist form names it, the denylist form does not deny
-// it, and a def with neither inherits it.
-function grantsBash(a: AgentDef): boolean {
-  if (a.tools) return a.tools.includes("Bash");
-  if (a.disallowedTools) return !a.disallowedTools.includes("Bash");
-  return true;
-}
-
 function toOpencode(a: AgentDef, announce = true): string {
   const lines = [`description: ${JSON.stringify(a.description)}`, "mode: subagent"];
   const model = a.model && MODEL_MAP[a.model];
   if (model) lines.push(`model: ${model}`);
   if (a.tools) {
     lines.push("tools:");
-    const mapped = a.tools.map((t) => TOOL_MAP[t]).filter(Boolean);
+    // a repeated key makes opencode drop the whole frontmatter and grant every tool, so
+    // each emitted key appears once.
+    const mapped = [...new Set(a.tools.map((t) => TOOL_MAP[t]).filter(Boolean))];
     for (const t of mapped) lines.push(`  ${t}: true`);
     for (const t of MUTATING) if (!mapped.includes(t)) lines.push(`  ${t}: false`);
     const unknown = a.tools.filter((t) => !TOOL_MAP[t]);
@@ -186,7 +154,7 @@ function toOpencode(a: AgentDef, announce = true): string {
   } else if (a.disallowedTools) {
     // denylist form: everything else inherits, so only the denials are emitted.
     // an unmapped denial (NotebookEdit) is a no-op in opencode, not a warning.
-    const denied = a.disallowedTools.map((t) => TOOL_MAP[t]).filter(Boolean);
+    const denied = [...new Set(a.disallowedTools.map((t) => TOOL_MAP[t]).filter(Boolean))];
     if (denied.length) {
       lines.push("tools:");
       for (const t of denied) lines.push(`  ${t}: false`);
@@ -204,7 +172,9 @@ function toOpencode(a: AgentDef, announce = true): string {
     if (bashMap) {
       lines.push("  bash:");
       lines.push('    "*": deny');
-      for (const pattern of [...OPENCODE_READS, ...(a.bashAllow ?? [])]) lines.push(`    ${JSON.stringify(pattern)}: allow`);
+      // a repeated key makes opencode drop the whole frontmatter and grant every tool, so
+      // each allow key is emitted once, first occurrence wins.
+      for (const pattern of new Set([...OPENCODE_READS, ...a.bashAllow])) lines.push(`    ${JSON.stringify(pattern)}: allow`);
       for (const pattern of OPENCODE_DENIES) lines.push(`    ${JSON.stringify(pattern)}: deny`);
     }
   }
@@ -218,7 +188,7 @@ const TOML_VALUE_UNSAFE = /\x7f/;
 const TOML_BODY_UNSAFE = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]|\r(?!\n)/;
 
 function toCodex(a: AgentDef): string {
-  if (TOML_VALUE_UNSAFE.test(a.name)) throw new Error(`${JSON.stringify(a.name)}: name holds a character TOML cannot carry`);
+  if (TOML_VALUE_UNSAFE.test(a.name)) throw new Error(`${quote(a.name)}: name holds a character TOML cannot carry`);
   if (TOML_VALUE_UNSAFE.test(a.description)) throw new Error(`${a.name}: description holds a character TOML cannot carry`);
   if (TOML_BODY_UNSAFE.test(a.body)) throw new Error(`${a.name}: body holds a control character TOML cannot carry`);
   // Bash alone stays read-only: our read-only agents carry it for git diff/checks,
@@ -257,11 +227,6 @@ function readCatalog(): AgentDef[] {
     .filter((f: string) => f.endsWith(".md"))
     .map((f: string) => parseAgent(join(AGENTS_DIR, f)));
 }
-
-// one-line quoted form for untrusted text in a refusal: JSON.stringify leaves DEL, the C1
-// controls and the line separators raw, and each would print as itself or split the line.
-const quote = (text: string) =>
-  JSON.stringify(text).replace(/[\x7f-\x9f\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
 
 const cannotCreate = (dest: string, code?: string) =>
   new InputError(`${quote(dest)}: cannot create (${code}); fix that path or pass a --dest that is a writable directory`);
@@ -437,7 +402,7 @@ function apply(plans: Plan[]) {
 function install(targets: string[], names: string[] | null, project: boolean, destOverride?: string, catalog: AgentDef[] = readCatalog()) {
   const defs = names === null ? catalog : catalog.filter((a: AgentDef) => names.includes(a.name));
   const missing = names === null ? [] : names.filter((n: string) => !catalog.some((a: AgentDef) => a.name === n));
-  if (missing.length) throw new InputError(`unknown agents: ${missing.map((n: string) => JSON.stringify(n)).join(", ")} (see --list)`);
+  if (missing.length) throw new InputError(`unknown agents: ${missing.map((n: string) => quote(n)).join(", ")} (see --list)`);
   apply(targets.map((target) => buildPlan(target, defs, names === null, project, destOverride)));
 }
 
@@ -445,7 +410,7 @@ function manifestNames(names: unknown[], announce = true): string[] {
   const valid: string[] = [];
   for (const name of names) {
     if (typeof name === "string" && AGENT_NAME.test(name)) valid.push(name);
-    else if (announce) console.warn(`  warn: manifest name ${JSON.stringify(name)} is not an agent name; skipped`);
+    else if (announce) console.warn(`  warn: manifest name ${quote(name)} is not an agent name; skipped`);
   }
   return valid;
 }
@@ -477,22 +442,23 @@ function reconcile(target: string, names: unknown[], catalog: string[], announce
   return { wanted, stale };
 }
 
-// a newline in a path would split a one-line refusal, so a path holding any control
-// character, DEL and the C1 range included, takes bash ANSI-C quoting; every other path
-// keeps the plain single-quoted form. Each quoted character is emitted as its UTF-8
-// bytes, which is what bash reads back.
+// a newline in a path would split a one-line refusal, so a path holding any character in
+// Unicode categories Cc, Cf, Zl or Zp (controls, format characters such as bidi overrides
+// and zero-width marks, and line or paragraph separators) takes bash ANSI-C quoting; every
+// other path keeps the plain single-quoted form. Each quoted character is emitted as its
+// UTF-8 bytes, which is what bash reads back.
 const ansiCQuote = (p: string) =>
   p
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'")
     .replace(/\n/g, "\\n")
     .replace(/\t/g, "\\t")
-    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029]/g, (c) =>
+    .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, (c) =>
       [...Buffer.from(c, "utf8")].map((b) => `\\x${b.toString(16).padStart(2, "0")}`).join(""),
     );
 
 const shellQuote = (p: string) =>
-  /[\x00-\x1f\x7f-\x9f\u2028\u2029]/.test(p) ? `$'${ansiCQuote(p)}'` : `'${p.replace(/'/g, "'\\''")}'`;
+  /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(p) ? `$'${ansiCQuote(p)}'` : `'${p.replace(/'/g, "'\\''")}'`;
 
 // the fix a malformed manifest's error prints must repair the install it names,
 // from any directory: install.sh is relative to the repo and changes into it, so
@@ -649,14 +615,14 @@ function main(): void {
   if (unknownOptions.length) {
     refuse(
       unknownOptions.length === 1
-        ? `unknown option: ${JSON.stringify(unknownOptions[0])}`
-        : `unknown options: ${unknownOptions.map((n) => JSON.stringify(n)).join(", ")}`,
+        ? `unknown option: ${quote(unknownOptions[0])}`
+        : `unknown options: ${unknownOptions.map((n) => quote(n)).join(", ")}`,
     );
   }
   const names = leftover;
 
   if (to !== undefined && !["opencode", "codex", "all"].includes(to)) {
-    refuse(`--to must be opencode, codex, or all (got: ${JSON.stringify(to)}); claude code and gemini have native installers, cursor reads agents/ as claude format`);
+    refuse(`--to must be opencode, codex, or all (got: ${quote(to)}); claude code and gemini have native installers, cursor reads agents/ as claude format`);
   }
   const targets = to === undefined || to === "all" ? ["opencode", "codex"] : [to];
 
@@ -665,8 +631,8 @@ function main(): void {
   if (doList && project) refuse("--project has no effect with --list");
   if (to !== undefined && doUpdate) refuse("--to has no effect with --update");
   if (to !== undefined && doList) refuse("--to has no effect with --list");
-  if (doUpdate && names.length) refuse(`--update takes no agent names: ${names.map((n) => JSON.stringify(n)).join(", ")}`);
-  if (doList && names.length) refuse(`--list takes no agent names: ${names.map((n) => JSON.stringify(n)).join(", ")}`);
+  if (doUpdate && names.length) refuse(`--update takes no agent names: ${names.map((n) => quote(n)).join(", ")}`);
+  if (doList && names.length) refuse(`--list takes no agent names: ${names.map((n) => quote(n)).join(", ")}`);
 
   if (doList) {
     for (const a of readCatalog()) console.log(`${a.name}: ${a.description.slice(0, 90)}`);

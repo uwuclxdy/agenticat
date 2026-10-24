@@ -13,7 +13,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { AGENT_NAME } from "./agent-name";
+import { AGENT_NAME, allowDefect, markerForm, readFrontmatter, readMarkers, stringField } from "./agent-name";
 
 // Every tool a subagent can be granted. A name outside this set resolves to nothing at
 // spawn time; if ALL of them do, Claude Code refuses to launch the agent.
@@ -30,8 +30,11 @@ const TOOLS = new Set([
 // Tool names a body can reference. Bare "Read"/"Write" are too common as English to match.
 const MENTIONABLE = ["WebFetch", "WebSearch", "NotebookEdit", "TodoWrite", "ToolSearch", "Glob", "Grep", "Bash"];
 
-// A read-only def may neither mutate the tree nor spawn a writer.
-const READ_ONLY_TOOLS = ["Edit", "Write", "NotebookEdit", "Agent", "Task"];
+// A read-only def may neither mutate the tree nor spawn a writer. EnterWorktree creates a
+// worktree, a git write, and is granted by default like the spawn tools. A denylist def
+// still inherits every tool it does not name (MCP tools and built-ins such as SendMessage),
+// which this list cannot enumerate.
+const READ_ONLY_TOOLS = ["Edit", "Write", "NotebookEdit", "Agent", "Task", "EnterWorktree"];
 const LINT_DIRECTIVES = new Set(["sandboxed", "read-only"]);
 
 // Fenced code and HTML comments quote text; only live body text counts as a rule. One
@@ -62,42 +65,76 @@ function lint(path: string, portable: boolean): Finding[] {
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!m) return [{ level: "error", file, msg: "no frontmatter block" }];
 
-  const fm: Record<string, string> = {};
-  for (const line of m[1].split("\n")) {
-    const kv = line.match(/^(\w[\w-]*):\s*(.*)$/);
-    if (kv) fm[kv[1]] = kv[2].replace(/^["']|["']$/g, "");
-  }
+  // The block is what every harness parses, so a block YAML rejects, or a text field that
+  // is not one, is a defect here too.
+  const frontmatter = readFrontmatter(m[1]);
+  if ("defect" in frontmatter) return [{ level: "error", file, msg: frontmatter.defect }];
+  const name = stringField(frontmatter.fields, "name");
+  const description = stringField(frontmatter.fields, "description");
   const body = m[2];
   const list = (v?: string) => (v ? v.split(",").map((t) => t.trim()).filter(Boolean) : []);
-  const tools = list(fm.tools);
-  const denied = list(fm.disallowedTools);
+  // undefined keeps "field absent" distinct from "field empty": the shared allow checks
+  // read an absent tool list as the inherited every-tool grant. A defect read also yields
+  // undefined, so the flag keeps it from earning that same verdict.
+  let toolListDefect = false;
+  const toolList = (key: string): string[] | undefined => {
+    const reading = stringField(frontmatter.fields, key);
+    if ("defect" in reading) {
+      err(reading.defect);
+      toolListDefect = true;
+      return undefined;
+    }
+    return reading.value === undefined ? undefined : list(reading.value);
+  };
+  const declaredTools = toolList("tools");
+  const declaredDenied = toolList("disallowedTools");
+  const tools = declaredTools ?? [];
+  const denied = declaredDenied ?? [];
+  const model = stringField(frontmatter.fields, "model");
+  if ("defect" in model) err(model.defect);
+
+  // The converter refuses these markers and allow patterns on both targets, so the lint
+  // reports the same defect first: one gate previews every refusal.
+  const markers = readMarkers(m[1]);
+  if ("defect" in markers) err(markers.defect);
+  else if (!toolListDefect) {
+    const defect = allowDefect({
+      tools: declaredTools,
+      disallowedTools: declaredDenied,
+      sandbox: markers.markers.sandbox,
+      bashAllow: markers.markers.bashAllow,
+    });
+    if (defect) err(defect);
+  }
 
   // Every `# lint: <directives>` comment line in the frontmatter is one directive source;
   // prose after the first full stop is a note, not more directives. A near-miss spelling
   // would leave the def unchecked with exit 0, so it is an error instead.
   const directives = new Set<string>();
-  for (const line of m[1].split("\n")) {
-    const lm = line.match(/^\s*#\s*lint\s*:\s*(.*)$/);
-    if (lm) {
-      for (const d of lm[1].split(".")[0].split(/[,\s]+/).filter(Boolean)) directives.add(d);
-    } else if (
-      // A hash inside a quoted value is data, not a comment.
-      /(?:^|\s)#\s*lints?\b/i.test(line.replace(/^(\s*[\w-]+:\s*)(["'])(?:(?!\2).)*\2/, "$1"))
-    ) {
-      err(`malformed lint comment \`${line.trim()}\``);
+  const frontmatterLines = m[1].split("\n");
+  for (const [i, line] of frontmatterLines.entries()) {
+    const form = markerForm(frontmatterLines, i, "lint", "lint");
+    if (form === "near-miss") {
+      err(`malformed lint comment \`${line}\``);
+      continue;
     }
+    if (form === "none") continue;
+    for (const d of (line.match(/^#[ \t]*lint:[ \t]*(.*)$/)?.[1] ?? "").split(".")[0].split(/[,\s]+/).filter(Boolean))
+      directives.add(d);
   }
   for (const d of directives) {
     if (!LINT_DIRECTIVES.has(d)) err(`unknown lint directive \`${d}\``);
   }
   const readOnly = directives.has("read-only");
 
-  if (!fm.name) err("missing `name`");
+  if ("defect" in name) err(name.defect);
+  else if (!name.value) err("missing `name`");
   else {
-    if (fm.name !== file.replace(/\.md$/, "")) err(`name \`${fm.name}\` does not match filename`);
-    if (!AGENT_NAME.test(fm.name)) err(`name \`${fm.name}\` is not a plain agent name (${AGENT_NAME})`);
+    if (name.value !== file.replace(/\.md$/, "")) err(`name \`${name.value}\` does not match filename`);
+    if (!AGENT_NAME.test(name.value)) err(`name \`${name.value}\` is not a plain agent name (${AGENT_NAME})`);
   }
-  if (!fm.description) err("missing `description`");
+  if ("defect" in description) err(description.defect);
+  else if (!description.value) err("missing `description`");
 
   // Claude Code ignores disallowedTools whenever tools is set, so a def carrying both
   // reads as a denylist while behaving as a pure allowlist.
