@@ -5,7 +5,7 @@
 //
 // usage: run with --help
 
-import { accessSync, constants, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, existsSync, unlinkSync, writeFileSync } from "node:fs";
+import { accessSync, constants, lstatSync, mkdirSync, type Stats, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, basename, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
@@ -26,7 +26,8 @@ const USAGE = `usage: bun bin/install-agents.ts [--to opencode|codex|all] [--pro
 // unwritable) throws this; the top-level catch prints the message alone, plus the usage
 // for argument errors.
 // a genuine failure rethrows and keeps its trace: a catalog defect, a git failure, or a
-// write-time failure that is not about the path (ENOSPC, EDQUOT, EIO).
+// write-time failure that is not about the path (space, quota or a resource limit, IO, or
+// a missing code).
 class InputError extends Error {
   constructor(message: string, readonly showUsage = false) {
     super(message);
@@ -228,30 +229,71 @@ function readCatalog(): AgentDef[] {
     .map((f: string) => parseAgent(join(AGENTS_DIR, f)));
 }
 
-const cannotCreate = (dest: string, code?: string) =>
-  new InputError(`${quote(dest)}: cannot create (${code}); fix that path or pass a --dest that is a writable directory`);
+const cannotCreate = (dest: string, reason?: string) =>
+  new InputError(`${quote(dest)}: cannot create (${reason}); fix that path or pass a --dest that is a writable directory`);
 
-const cannotWrite = (dest: string, code?: string) =>
-  new InputError(`${quote(dest)}: cannot write (${code}); fix that path or pass a --dest that is a writable directory`);
+const cannotWrite = (dest: string, reason?: string) =>
+  new InputError(`${quote(dest)}: cannot write (${reason}); fix that path or pass a --dest that is a writable directory`);
 
-const cannotRemove = (dest: string, code?: string) =>
-  new InputError(`${quote(dest)}: cannot remove (${code}); fix that path or pass a --dest that is a writable directory`);
+const cannotRemove = (dest: string, reason?: string) =>
+  new InputError(`${quote(dest)}: cannot remove (${reason}); fix that path or pass a --dest that is a writable directory`);
 
-// a failure of the filesystem itself, not of the path: it keeps its own trace.
-const GENUINE_WRITE_CODES = ["ENOSPC", "EDQUOT", "EIO"];
+const cannotRead = (path: string, reason: string | undefined, reinstall: string) =>
+  new InputError(`${quote(path)}: cannot read (${reason}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
 
-// a directory where a file goes, an existing file the user cannot write, and a stat
-// failure other than "not there yet" all refuse the write; finding them in the
-// preflight keeps the failure from landing after another target was written.
+// a failure of the system, not of the path: space, quota, file-size or descriptor limits,
+// buffers, or IO; it keeps its own trace.
+const GENUINE_WRITE_CODES = ["ENOSPC", "EDQUOT", "EFBIG", "EMFILE", "ENFILE", "ENOMEM", "ENOBUFS", "EIO"];
+
+// a write or unlink that fails after the preflight could not foresee it. a genuine system
+// failure (space, quota, a resource limit, IO) or a missing code keeps its own trace;
+// every other code is the path's own and becomes the matching refusal, which names the fix.
+// bun's uncaught-error printer prints the message and the `path` property bare, and a `stack`
+// materialized before the rewrite still says the original message, so all three get the
+// escaped form; they are writable properties, so they are assigned, never deleted.
+function fsError(path: string, err: unknown, verb: "create" | "write" | "remove"): Error {
+  const code = (err as { code?: string }).code;
+  if (code && !GENUINE_WRITE_CODES.includes(code)) {
+    return { create: cannotCreate, write: cannotWrite, remove: cannotRemove }[verb](path, code);
+  }
+  const e = err as Error & { path?: unknown; stack?: unknown };
+  const message = `${quote(path)}: cannot ${verb} (${code ?? "unexpected"})`;
+  if (typeof e.stack === "string" && e.message) e.stack = e.stack.replace(e.message, () => message);
+  e.message = message;
+  if (typeof e.path === "string") e.path = quote(e.path).slice(1, -1);
+  return e;
+}
+
+// a directory where a file goes, a dangling symlink (the write would follow it), a FIFO
+// (the open would block) or a socket (the open would fail), an existing file the user cannot
+// write, and a stat failure other than "not there yet" all refuse the write; finding them
+// in the preflight keeps the failure from landing after another target was written. the
+// stat follows a link, so a link to any of them is caught too; any other non-regular file
+// (a character device such as /dev/full or /dev/null) is written through. a deliberate
+// limit: a write the kernel refuses only when it happens (a device or a /proc file, which
+// stats as a regular file) still lands after an earlier target was written, as the quoted
+// refusal or trace.
 function blockedWrite(p: string): string | undefined {
   let info;
   try {
     info = statSync(p);
   } catch (err) {
     const code = (err as { code?: string }).code;
-    return code === "ENOENT" ? undefined : code;
+    if (code !== "ENOENT") return code;
+    // a dangling symlink stats ENOENT like an absent path, but writeFileSync follows the
+    // link and throws, so the preflight refuses it before any target has been written; a
+    // symlink to an existing file stats normally and falls through to the write check.
+    let isLink = false;
+    try {
+      isLink = lstatSync(p).isSymbolicLink();
+    } catch {
+      // absent: stat and lstat both read ENOENT
+    }
+    return isLink ? "a dangling symlink" : undefined;
   }
   if (info.isDirectory()) return "EISDIR";
+  if (info.isFIFO()) return "a FIFO";
+  if (info.isSocket()) return "a socket";
   try {
     accessSync(p, constants.W_OK);
   } catch (err) {
@@ -260,14 +302,17 @@ function blockedWrite(p: string): string | undefined {
   return undefined;
 }
 
-// unlink refuses a directory with EISDIR, and any other stat failure but "not there
-// yet" is that path's own refusal.
+// unlink refuses a real directory (EISDIR) and a mount point (EBUSY), and any other stat
+// failure but "not there yet" is that path's own refusal; a symlink is removed itself
+// whatever it points at. no preflight check tells a mount point apart reliably: a
+// same-filesystem bind keeps its parent's device, and a mount table entry is hidden by a
+// later mount over its parent, so the kernel's refusal lands at the prune, after the writes.
 function blockedRemove(p: string): string | undefined {
   try {
-    return statSync(p).isDirectory() ? "EISDIR" : undefined;
+    return lstatSync(p).isDirectory() ? "EISDIR" : undefined;
   } catch (err) {
-    const code = (err as { code?: string }).code;
-    return code === "ENOENT" ? undefined : code;
+    const reason = (err as { code?: string }).code;
+    return reason === "ENOENT" ? undefined : reason;
   }
 }
 
@@ -360,12 +405,12 @@ function preflight(plans: Plan[]) {
   preflightDirs(plans.map((plan) => plan.dest));
   for (const plan of plans) {
     for (const path of [...plan.files.map((f) => f.path), plan.manifestPath]) {
-      const code = blockedWrite(path);
-      if (code) throw cannotWrite(path, code);
+      const reason = blockedWrite(path);
+      if (reason) throw cannotWrite(path, reason);
     }
     for (const path of plan.prune) {
-      const code = blockedRemove(path);
-      if (code) throw cannotRemove(path, code);
+      const reason = blockedRemove(path);
+      if (reason) throw cannotRemove(path, reason);
     }
   }
 }
@@ -376,22 +421,34 @@ function apply(plans: Plan[]) {
     try {
       mkdirSync(dest, { recursive: true });
     } catch (err) {
-      const code = (err as { code?: string }).code;
-      if (code && GENUINE_WRITE_CODES.includes(code)) throw err;
-      throw cannotCreate(dest, code);
+      throw fsError(dest, err, "create");
     }
   }
   for (const { target, files, manifestPath, manifest } of plans) {
     for (const file of files) {
-      writeFileSync(file.path, file.content);
+      try {
+        writeFileSync(file.path, file.content);
+      } catch (err) {
+        throw fsError(file.path, err, "write");
+      }
       console.log(`  ${target}: ${quote(file.path)}`);
     }
-    writeFileSync(manifestPath, manifest);
+    try {
+      writeFileSync(manifestPath, manifest);
+    } catch (err) {
+      throw fsError(manifestPath, err, "write");
+    }
   }
   for (const { target, prune } of plans) {
     for (const path of prune) {
-      if (!existsSync(path)) continue;
-      unlinkSync(path);
+      // unlink removes a link itself whatever it points at; only a path that is not there
+      // at all skips the removal, so a stale link is dropped rather than left behind.
+      try {
+        unlinkSync(path);
+      } catch (err) {
+        if ((err as { code?: string }).code === "ENOENT") continue;
+        throw fsError(path, err, "remove");
+      }
       console.log(`  ${target}: removed ${quote(path)}`);
     }
   }
@@ -469,13 +526,17 @@ function reinstallCommand(target: string, project: boolean, destOverride?: strin
   return `${shellQuote(join(REPO, "install.sh"))} --to ${target}`;
 }
 
-// a manifest feeds a path join and a rewrite, so validate it at the boundary before either.
-function readManifest(path: string, reinstall: string): { agents: unknown[]; all: boolean } {
+// a manifest feeds a path join and a rewrite, so validate it at the boundary before either;
+// the caller's stat refuses a FIFO or a device, whose read never ends (it blocks, or runs
+// out of memory), before the open.
+function readManifest(path: string, info: Stats | undefined, reinstall: string): { agents: unknown[]; all: boolean } {
+  if (info?.isFIFO()) throw cannotRead(path, "a FIFO", reinstall);
+  if (info?.isCharacterDevice() || info?.isBlockDevice()) throw cannotRead(path, "a device", reinstall);
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");
   } catch (err) {
-    throw new InputError(`${quote(path)}: cannot read (${(err as { code?: string }).code}); remove or fix the permissions of that path, then reinstall with: ${reinstall}`);
+    throw cannotRead(path, (err as { code?: string }).code, reinstall);
   }
   let m: unknown;
   try {
@@ -500,14 +561,16 @@ function update(project: boolean, destOverride?: string) {
     const dest = destFor(target, project, destOverride);
     const mf = join(dest, MANIFEST);
     // existsSync reads an EACCES as absent; only a manifest the path layout says is not
-    // there may skip its target, and anything else reaches readManifest's read error.
+    // there may skip its target, and anything else reaches readManifest, which refuses a
+    // FIFO from this stat and every other failure with its read error.
+    let info: Stats | undefined;
     try {
-      statSync(mf);
+      info = statSync(mf);
     } catch (err) {
       const code = (err as { code?: string }).code;
       if (code === "ENOENT" || code === "ENOTDIR") continue;
     }
-    pending.push({ target, dest, ...readManifest(mf, reinstallCommand(target, project, destOverride)) });
+    pending.push({ target, dest, ...readManifest(mf, info, reinstallCommand(target, project, destOverride)) });
   }
   if (!pending.length) {
     console.log("no agenticat manifest found; nothing to update (install first)");

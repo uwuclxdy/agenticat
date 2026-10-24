@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -762,6 +762,29 @@ describe("argument parsing", () => {
     expect(r.status).not.toBe(0);
     expect(r.stderr).toContain("ENOSPC");
     expect(r.stderr).not.toContain(HINT);
+  });
+
+  // the runtime prints a failed call's own `path` beside its message, so a genuine failure's
+  // trace must not carry the raw --dest either; 1 inode fails the mkdir, 3 fail the open.
+  test.skipIf(!canUnshare).each([
+    ["the dest mkdir", "1", "codex", "create", ""],
+    ["a file's open", "3", "codex/kept.toml", "write", "/codex/kept.toml"],
+  ])("a full filesystem failing %s prints the path escaped everywhere", (_label, inodes, rel, verb, failedAt) => {
+    const f = fixture(["kept"]);
+    const mnt = join(f.root, "mnt");
+    mkdirSync(mnt);
+
+    const r = spawnSync(
+      "unshare",
+      ["-rm", "sh", "-c", `mount -t tmpfs -o size=1m,nr_inodes=${inodes} none "$1" && exec bun "$2" --to codex --dest "$1/d${String.fromCharCode(0x202e)}x" kept`, "sh", mnt, join(f.repo, "bin", "install-agents.ts")],
+      { cwd: f.root, env: { ...process.env, HOME: f.home }, encoding: "utf8" },
+    );
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain(`error: "${mnt}/d\\u202ex/${rel}": cannot ${verb} (ENOSPC)\n`);
+    expect(r.stderr).toContain(`    path: "${mnt}/d\\\\u202ex${failedAt}",\n`);
+    expect(r.stderr).not.toContain(HINT);
+    for (const line of r.stderr.split("\n")) expect(line).not.toMatch(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u);
   });
 
   test("--update with a --dest that is a file finds no manifest and exits 0", () => {
@@ -1852,5 +1875,249 @@ describe("opencode permission map", () => {
       expect([command, decide(bash, command)]).toEqual([command, "allow"]);
     for (const command of ["gh pr comment 12 -b x", "gh pr merge 12", "gh issue close 7", "gh api -X POST repos/o/r/issues", "gh api repos/o/r/issues -f title=x"])
       expect([command, decide(bash, command)]).toEqual([command, "deny"]);
+  });
+});
+
+describe("a symlink at a planned file", () => {
+  // the write follows the link, so a link whose target is gone fails mid-install; the
+  // preflight refuses it before any target is written.
+  test("a dangling symlink refuses the whole install before any target is written", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync(join(f.root, "gone", "kept.toml"), join(codex, "kept.toml"));
+
+    const r = f.run("--to", "all", "--dest", f.dest, "kept");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (a dangling symlink); fix that path or pass a --dest that is a writable directory\n`);
+    expect(r.stdout).toBe("");
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+    expect(existsSync(join(codex, ".agenticat.json"))).toBe(false);
+  });
+
+  test("a symlink to an existing file is written through and stays a link", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    const target = join(f.root, "dotfiles-kept.toml");
+    writeFileSync(target, "old\n");
+    symlinkSync(target, join(codex, "kept.toml"));
+
+    const r = f.run("--to", "codex", "--dest", f.dest, "kept");
+
+    expect(r.status).toBe(0);
+    expect(lstatSync(join(codex, "kept.toml")).isSymbolicLink()).toBe(true);
+    expect(readFileSync(target, "utf8")).toContain('name = "kept"');
+  });
+
+  test("a stale converted file left as a dangling symlink is pruned on --update", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    writeManifest(codex, "codex", ["kept", "gone"]);
+    symlinkSync(join(f.root, "missing", "gone.toml"), join(codex, "gone.toml"));
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect(r.status).toBe(0);
+    expect(() => lstatSync(join(codex, "gone.toml"))).toThrow();
+    expect(r.stdout).toContain(`  codex: removed "${codex}/gone.toml"\n`);
+  });
+
+  // a write the preflight cannot foresee (here a full device behind the link) still names
+  // its path, escaped like every other printed path.
+  test("a write failing mid-install names its path escaped", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, "a\x1bb");
+    const codex = join(dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync("/dev/full", join(codex, "kept.toml"));
+
+    const r = f.run("--to", "codex", "--dest", dest, "kept");
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain(`error: "${f.root}/a\\u001bb/codex/kept.toml": cannot write (ENOSPC)\n`);
+    for (const line of r.stderr.split("\n")) expect(line).not.toMatch(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u);
+  });
+
+  test("a dangling symlink whose target directory exists is refused too, and its target is never created", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    const target = join(f.root, "dotfiles", "kept.toml");
+    mkdirSync(join(f.root, "dotfiles"));
+    symlinkSync(target, join(codex, "kept.toml"));
+
+    const r = f.run("--to", "all", "--dest", f.dest, "kept");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (a dangling symlink); fix that path or pass a --dest that is a writable directory\n`);
+    expect(existsSync(target)).toBe(false);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
+  test("a manifest write failing mid-install names its path escaped", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, `m${String.fromCharCode(0x202e)}n`);
+    const codex = join(dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync("/dev/full", join(codex, ".agenticat.json"));
+
+    const r = f.run("--to", "codex", "--dest", dest, "kept");
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain(`error: "${f.root}/m\\u202en/codex/.agenticat.json": cannot write (ENOSPC)\n`);
+    for (const line of r.stderr.split("\n")) expect(line).not.toMatch(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u);
+  });
+
+  // a write the preflight passes but the kernel refuses for that path is the user's to fix,
+  // so it is the one-line refusal, never a trace.
+  test("a write refused for its path mid-install is the one-line refusal", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync("/proc/self/uid_map", join(codex, "kept.toml"));
+
+    const r = f.run("--to", "codex", "--dest", f.dest, "kept");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (EPERM); fix that path or pass a --dest that is a writable directory\n`);
+  });
+
+  // opening a FIFO blocks and a socket cannot be opened, so either at a planned file would
+  // stop the install after another target was written; the run is bounded so an open of
+  // the FIFO fails the test instead of hanging it.
+  test.each([
+    ["a FIFO", (at: string) => spawnSync("mkfifo", [at])],
+    ["a socket", (at: string) => spawnSync("python3", ["-I", "-c", "import socket,sys; socket.socket(socket.AF_UNIX).bind(sys.argv[1])", at])],
+  ])("a symlink to %s refuses the whole install before any target is written", (kind, make) => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    const special = join(f.root, "special");
+    expect(make(special).status).toBe(0);
+    symlinkSync(special, join(codex, "kept.toml"));
+
+    const r = spawnSync("bun", [join(f.repo, "bin", "install-agents.ts"), "--to", "all", "--dest", f.dest, "kept"], {
+      cwd: f.root,
+      env: { ...process.env, HOME: f.home },
+      encoding: "utf8",
+      timeout: 10000,
+    });
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (${kind}); fix that path or pass a --dest that is a writable directory\n`);
+    expect(existsSync(join(f.dest, "opencode"))).toBe(false);
+  });
+
+  // unlink cannot remove a mount point, and no preflight check tells one apart reliably (a
+  // same-filesystem bind keeps its device, a mount table entry can be hidden), so this prune
+  // fails after the writes: a deliberate limit, which still names its path escaped.
+  test.skipIf(spawnSync("unshare", ["-rm", "true"]).status !== 0)("a stale converted file that is a mount point fails the prune with its path escaped", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, `d${String.fromCharCode(0x202e)}x`);
+    const codex = join(dest, "codex");
+    writeManifest(codex, "codex", ["kept", "gone"]);
+    writeFileSync(join(codex, "gone.toml"), "stale\n");
+    const over = join(f.root, "over.toml");
+    writeFileSync(over, "mounted\n");
+
+    const r = spawnSync(
+      "unshare",
+      ["-rm", "sh", "-c", 'mount --bind "$1" "$2" && exec bun "$3" --update --dest "$4"', "sh", over, join(codex, "gone.toml"), join(f.repo, "bin", "install-agents.ts"), dest],
+      { cwd: f.root, env: { ...process.env, HOME: f.home }, encoding: "utf8" },
+    );
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${f.root}/d\\u202ex/codex/gone.toml": cannot remove (EBUSY); fix that path or pass a --dest that is a writable directory\n`);
+  });
+
+  // a write the kernel refuses for that path is the user's to fix, whatever its code; EPERM,
+  // EINVAL and EBUSY are pinned, and other codes (ENXIO, ETXTBSY) take the same branch.
+  test("a write refused with EINVAL mid-install is the one-line refusal", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync("/proc/self/oom_score_adj", join(codex, "kept.toml"));
+
+    const r = f.run("--to", "codex", "--dest", f.dest, "kept");
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (EINVAL); fix that path or pass a --dest that is a writable directory\n`);
+  });
+
+  // a file-size limit is the system failing, not the path: it keeps its trace. EDQUOT,
+  // EMFILE, ENFILE, ENOMEM, ENOBUFS and EIO share that branch but no unprivileged fixture
+  // raises them through the converter, so only ENOSPC and EFBIG are pinned.
+  test("a write over the file-size limit keeps its trace, its path escaped", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, `f${String.fromCharCode(0x202e)}z`);
+
+    const r = spawnSync("sh", ["-c", 'trap "" XFSZ; ulimit -f 0; exec bun "$1" --to codex --dest "$2" kept', "sh", join(f.repo, "bin", "install-agents.ts"), dest], {
+      cwd: f.root,
+      env: { ...process.env, HOME: f.home },
+      encoding: "utf8",
+    });
+
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain(`error: "${f.root}/f\\u202ez/codex/kept.toml": cannot write (EFBIG)\n`);
+    expect(r.stderr).not.toContain("fix that path");
+    for (const line of r.stderr.split("\n")) expect(line).not.toMatch(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u);
+  });
+
+  // reading a FIFO blocks, so a manifest that is one is refused before the read; bounded
+  // so a blocking read fails the test instead of hanging it.
+  test("a manifest that is a FIFO refuses --update instead of blocking", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    expect(spawnSync("mkfifo", [join(codex, ".agenticat.json")]).status).toBe(0);
+
+    const r = spawnSync("bun", [join(f.repo, "bin", "install-agents.ts"), "--update", "--dest", f.dest], {
+      cwd: f.root,
+      env: { ...process.env, HOME: f.home },
+      encoding: "utf8",
+      timeout: 10000,
+    });
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/.agenticat.json": cannot read (a FIFO); remove or fix the permissions of that path, then reinstall with: '${join(f.repo, "install.sh")}' --to codex --dest '${f.dest}'\n`);
+  });
+
+  // a device never ends its read (a terminal blocks, /dev/zero runs out of memory), so a
+  // manifest that is one is refused before the read like a FIFO.
+  test("a manifest that is a device refuses --update instead of reading it", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync("/dev/zero", join(codex, ".agenticat.json"));
+
+    const r = spawnSync("bun", [join(f.repo, "bin", "install-agents.ts"), "--update", "--dest", f.dest], {
+      cwd: f.root,
+      env: { ...process.env, HOME: f.home },
+      encoding: "utf8",
+      timeout: 10000,
+    });
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/.agenticat.json": cannot read (a device); remove or fix the permissions of that path, then reinstall with: '${join(f.repo, "install.sh")}' --to codex --dest '${f.dest}'\n`);
+  });
+
+  // unlink removes the link itself, so a stale converted file that is a link to a directory
+  // or a link loop is pruned like any other stale file.
+  test.each([
+    ["a link to a directory", (f: { root: string }, at: string) => (mkdirSync(join(f.root, "somedir")), symlinkSync(join(f.root, "somedir"), at))],
+    ["a link loop", (_f: { root: string }, at: string) => symlinkSync(at, at)],
+  ])("a stale converted file that is %s is pruned on --update", (_label, plant) => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    writeManifest(codex, "codex", ["kept", "gone"]);
+    plant(f, join(codex, "gone.toml"));
+
+    const r = f.run("--update", "--dest", f.dest);
+
+    expect([r.status, r.stderr]).toEqual([0, ""]);
+    expect(() => lstatSync(join(codex, "gone.toml"))).toThrow();
+    expect(r.stdout).toContain(`  codex: removed "${codex}/gone.toml"\n`);
   });
 });
