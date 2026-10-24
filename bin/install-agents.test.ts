@@ -1321,6 +1321,50 @@ describe("untrusted text in a refusal", () => {
   });
 });
 
+describe("untrusted text in a success line", () => {
+  // a --dest reaches every written and removed path, so each success line quotes its path
+  // the way a refusal does; a plain path is quoted too, so the line has one shape.
+  test("a written path under a --dest holding an ESC prints escaped", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, "a\x1bb");
+
+    const r = f.run("--to", "opencode", "--dest", dest, "kept");
+
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe(`  opencode: "${f.root}/a\\u001bb/opencode/kept.md"\ninstalled 1 agent(s) -> opencode\n`);
+    expect(r.stderr).toBe("");
+  });
+
+  test("a written path under a plain --dest prints quoted", () => {
+    const f = fixture(["kept"]);
+
+    const r = f.run("--to", "codex", "--dest", f.dest, "kept");
+
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe(`  codex: "${f.dest}/codex/kept.toml"\ninstalled 1 agent(s) -> codex\n`);
+    expect(r.stderr).toBe("");
+  });
+
+  test("a removed path under a --dest holding a line separator prints escaped", () => {
+    const f = fixture(["kept"]);
+    const dest = join(f.root, `l${String.fromCharCode(0x2028)}s`);
+    const codex = join(dest, "codex");
+    writeManifest(codex, "codex", ["kept", "gone"]);
+    writeFileSync(join(codex, "gone.toml"), "stale\n");
+
+    const r = f.run("--update", "--dest", dest);
+
+    expect(r.status).toBe(0);
+    expect(existsSync(join(codex, "gone.toml"))).toBe(false);
+    expect(r.stdout).toBe(
+      `  codex: "${f.root}/l\\u2028s/codex/kept.toml"\n` +
+        `  codex: removed "${f.root}/l\\u2028s/codex/gone.toml"\n` +
+        "installed 1 agent(s) -> codex\n",
+    );
+    expect(r.stderr).toBe("");
+  });
+});
+
 describe("opencode permission map", () => {
   // opencode's own matcher (packages/core/src/util/wildcard.ts): `*` is any run of characters,
   // `?` one character, a trailing ` *` also matches the bare command, and the LAST matching

@@ -6,7 +6,7 @@
 // linter holds every def's name to it, so no def installs once and is dropped on --update.
 export const AGENT_NAME = /^[a-z0-9][a-z0-9-]*$/;
 
-// one-line quoted form for untrusted text in a refusal: after JSON.stringify (which escapes
+// one-line quoted form for untrusted text in a printed line: after JSON.stringify (which escapes
 // C0), every remaining control, format character (bidi controls, a byte order mark, an
 // Arabic letter mark) and line or paragraph separator is escaped by its Unicode category,
 // since each would print as itself or reorder the line.

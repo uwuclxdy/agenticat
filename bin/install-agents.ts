@@ -384,7 +384,7 @@ function apply(plans: Plan[]) {
   for (const { target, files, manifestPath, manifest } of plans) {
     for (const file of files) {
       writeFileSync(file.path, file.content);
-      console.log(`  ${target}: ${file.path}`);
+      console.log(`  ${target}: ${quote(file.path)}`);
     }
     writeFileSync(manifestPath, manifest);
   }
@@ -392,7 +392,7 @@ function apply(plans: Plan[]) {
     for (const path of prune) {
       if (!existsSync(path)) continue;
       unlinkSync(path);
-      console.log(`  ${target}: removed ${path}`);
+      console.log(`  ${target}: removed ${quote(path)}`);
     }
   }
   for (const { target, files } of plans) console.log(`installed ${files.length} agent(s) -> ${target}`);
