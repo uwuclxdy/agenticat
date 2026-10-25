@@ -4,7 +4,7 @@ description: "Defensive Bash and POSIX shell rules: strict-mode flags, traps, id
 when_to_use: "Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck and bats into CI."
 metadata:
   author: uwuclxdy
-  version: "1.6"
+  version: "1.7"
 ---
 
 # Clean Shell
