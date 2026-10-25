@@ -30,10 +30,10 @@ const TOOLS = new Set([
 // Tool names a body can reference. Bare "Read"/"Write" are too common as English to match.
 const MENTIONABLE = ["WebFetch", "WebSearch", "NotebookEdit", "TodoWrite", "ToolSearch", "Glob", "Grep", "Bash"];
 
-// A read-only def may neither mutate the tree nor spawn a writer. EnterWorktree creates a
-// worktree, a git write, and is granted by default like the spawn tools. A denylist def
-// still inherits every tool it does not name (MCP tools and built-ins such as SendMessage),
-// which this list cannot enumerate.
+// A read-only def holds no edit, spawn or worktree tool; its Bash may still write where its
+// body allows. EnterWorktree creates a worktree, a git write, and is granted by default like
+// the spawn tools. A denylist def still inherits every tool it does not name (MCP tools and
+// built-ins such as SendMessage), which this list cannot enumerate.
 const READ_ONLY_TOOLS = ["Edit", "Write", "NotebookEdit", "Agent", "Task", "EnterWorktree"];
 const LINT_DIRECTIVES = new Set(["sandboxed", "read-only"]);
 
