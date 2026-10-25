@@ -1,10 +1,10 @@
 ---
 name: skill-routing-audit
 description: "Audits a skill for routing gaps: boundary and negative probes that land where the answer is absent."
-when_to_use: "Use after authoring or editing a skill, or to sweep all skills. For description triggering, fix the skill's `description` field."
+when_to_use: "Use after authoring or editing a skill, or to sweep all skills."
 metadata:
   author: uwuclxdy
-  version: "1.7"
+  version: "1.8"
 ---
 
 # Skill Routing Audit
