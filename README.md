@@ -5,8 +5,8 @@
 **Agents & Skills that I use, compatible with most AI coding tools** 
 
 [![license](https://shields.uwuclxdy.dev/badge/license-MIT-blue)](LICENSE)
-[![skills](https://shields.uwuclxdy.dev/badge/skills-19-green)](#skills)
-[![agents](https://shields.uwuclxdy.dev/badge/agents-24-green)](#agents)
+[![skills](https://shields.uwuclxdy.dev/badge/skills-16-green)](#skills)
+[![agents](https://shields.uwuclxdy.dev/badge/agents-23-green)](#agents)
 
 </div>
 
@@ -151,17 +151,14 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 |---|---|---|---|
 | `clean-code` | `s4.codes` | `python-pro`, `python-reviewer`, `web-pro`, `web-reviewer` | language-agnostic readability and naming conventions |
 | `name-check` | original | standalone | proposes project or crate names, checks each for availability on registries and domains (needs `bun`) |
-| `parity-gap` | original | standalone | diffs your project against a reference or spec, writes the gaps as tasks (calls `todo`) |
-| `todo` | original | `parity-gap` | turns findings and loose notes into a clean per-repo backlog file, each task pickup-cold ready |
+| `todo` | original | standalone | turns findings and loose notes into a clean per-repo backlog file, each task pickup-cold ready |
 | `askama` | original | `rust-pro` | conventions and reference for the askama Rust templating crate |
 | `maud` | original | `rust-pro` | conventions and reference for the maud Rust `html!` macro |
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
 | `clean-rust` | original | `rust-pro`, `rust-reviewer` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, observability, testing, perf |
-| `threat-modeling` | original | `threat-modeler` | STRIDE and attack trees, each requirement mapped to a mitigation |
 | `clean-shell` | `wshobson` | `shell-pro`, `shell-reviewer` | defensive live-system idioms, `.shellcheckrc` discipline, bats-core testing; core rules plus a reference for each |
 | `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
-| `skill-routing-audit` | original | `tech-writer` | audits a skill for routing gaps: boundary and negative questions that bury the real answer |
 | `mcp-stateless` | original | standalone | the MCP `2026-07-28` stateless revision: what the handshake removal changed, the wire contract, multi round-trip requests, and how to migrate a server or client off session-era code |
 | `docs-sync` | original | `tech-writer` | reconciles README, wiki, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
 | `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
@@ -194,8 +191,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `python-reviewer` | inherit | `clean-code` | read-only Python diff/PR review with file:line and severity |
 | `web-pro` | inherit | `clean-code`, `terminal-ux`, `webapp-testing` | one TypeScript, JavaScript, Node, HTML or CSS task against the repo's gate, or a standalone single-file page, demo, icon or favicon with pinned vendored libraries |
 | `web-reviewer` | inherit | `clean-code` | read-only TS/JS, Node and HTML/CSS/template diff review: XSS, template escaping, injection, markup accessibility |
-| `tech-writer` | opus | `docs-sync`, `skill-routing-audit` | one agent for every docs job, mode set by the caller: review a docs or instruction-file diff (read-only by instruction, not by tool grants), reconcile docs with the code, draft instruction-file text as a diff, fold a decided spec into a design doc, or digest docs or source into a brief (doc-set sweeps and comparisons, delete-or-merge coverage) |
-| `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
+| `tech-writer` | opus | `docs-sync` | one agent for every docs job, mode set by the caller: review a docs or instruction-file diff (read-only by instruction, not by tool grants), reconcile docs with the code, draft instruction-file text as a diff, fold a decided spec into a design doc, or digest docs or source into a brief (doc-set sweeps and comparisons, delete-or-merge coverage) |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, reads GitHub PR and issue threads with `gh`, returns a cited markdown brief |
 | `code-explorer` | inherit | none | read-only repo research through `rg` on a shell: symbol lookups, cross-file traces, literal searches, source-tree sweeps and comparisons; findings with file:line anchors, never edits, writes only its report to a caller-named path outside the repo (on opencode 1.19.4 it needs `rg` on PATH; Codex 0.163.0's standalone package and Claude Code bring their own) |
