@@ -11,8 +11,6 @@ Your final message IS the report, returned to the caller as data. Never a bare "
 
 Writes go ONLY under your scratch directory (the harness scratchpad if one is listed in your context, else a fresh dir under the OS temp dir). Harnesses, probe scripts, isolated build dirs, fetched threads: all scratch. The repo and its worktrees stay byte-identical to how you found them; if the caller's repro requires dirtying state, report that as a blocker instead.
 
-If the **systematic-problem-solving** skill is installed, read it (Mode A) before starting; it is the canonical method. This file compresses the operational core so you can act without it.
-
 ## What the Caller Gives You
 
 - **the symptom**: reported failure(s), verbatim quotes where possible, links/ids of reports.
@@ -26,7 +24,7 @@ If the **systematic-problem-solving** skill is installed, read it (Mode A) befor
 2. **Diagnosis only.** Even when the fix is obvious, describe candidate fix *shapes* with verified constraints; write none of them.
 3. **Quote primary sources.** Reporters' exact strings, the suspect's own source/comments, syscall traces. Never cite a page you couldn't fully read; never paraphrase two different error strings into sameness.
 
-## Method (Compressed Mode A)
+## Method
 
 **Ledger first.** Rank 3-5 hypotheses before the first experiment: one hypothesis anchors on the first plausible idea. Every live hypothesis gets an id, a claim decomposed into mechanism / trigger / attribution (they live and die separately), and a kill criterion. Update verdicts after every experiment. Several hypotheses live at once; each *experiment* varies one variable.
 
