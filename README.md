@@ -55,7 +55,7 @@ gemini extensions install https://github.com/uwuclxdy/agenticat --auto-update
 ```
 
 > [!WARNING]
-> Gemini's extension-bundled subagents are a preview feature, verify if it works on your version.
+> Gemini's extension-bundled subagents are a preview feature, verify if it works on your version. Per gemini-cli v0.65.0's agent loader, only the `-pro` implementers load: they carry neither `tools` nor `disallowedTools`, so each inherits every tool of the session. Every other agent fails its frontmatter check and is skipped with a debug-log warning; the rest of the extension still loads.
 
 #### Skills
 
@@ -74,6 +74,8 @@ git clone https://github.com/uwuclxdy/agenticat && cd agenticat
 ./install.sh --to opencode
 ```
 
+The agents install as subagents, so on opencode 1.19.4 their limits apply when a session delegates to one; `opencode run --agent <name>` falls back to the default agent instead.
+
 #### Skills
 
 ```
@@ -90,6 +92,8 @@ npx skills add uwuclxdy/agenticat -a opencode
 git clone https://github.com/uwuclxdy/agenticat && cd agenticat
 ./install.sh --to codex
 ```
+
+On Codex 0.163.0 a subagent's writes and network follow its parent session's sandbox, and the `sandbox_mode` each agent file carries has no effect. A read-only agent is enforced only under a `read-only` parent, which also cuts its network, so `web-researcher`'s `gh` reads work under a `workspace-write` parent with `[sandbox_workspace_write] network_access = true` and fail under `read-only`, where every network call from its shell fails too.
 
 #### Skills
 
@@ -182,7 +186,7 @@ The one exception worth a look on its own: the [obra/superpowers](https://github
 
 ## Agents
 
-Install with the Claude Code plugin (see [Install](#install)) or cherry-pick onto another harness with `./install.sh --to <harness> <name>`. Every definition is canonical Claude Code frontmatter. On opencode the converter keeps Write and Edit off a read-only agent and denies it subagents. Except for `prober`, whose commands write build output (Codex runs it in `workspace-write`, where it can edit files, and its opencode shell is unrestricted), a read-only agent also gets Codex's read-only sandbox and an opencode shell limited to read commands plus the checks its definition lists, so opencode refuses a reviewer's test re-run or a repo-defined script. Codex's sandbox and that shell limit also refuse a report written to a file, so it comes back in the agent's final message. On an untrusted author's diff (the caller names it an outside contributor's PR; every other diff counts as trusted), the Python reviewer skips `mypy`, the Rust reviewer its cargo checks and the web reviewer repo-defined scripts, the Python, Rust, web, shell and Flutter reviewers skip their test re-runs and mutants, and the Python reviewer its probe copies. The shell reviewer runs the reviewed scripts only when the caller asks for it, and never on an untrusted author's diff. These skips are instructions in each definition: opencode's shell limit cannot tell who wrote a diff, so it allows the listed checks (`mypy`, cargo checks) and refuses re-runs and repo scripts on every diff.
+Install with the Claude Code plugin (see [Install](#install)) or cherry-pick onto another harness with `./install.sh --to <harness> <name>`. Every definition is canonical Claude Code frontmatter. On opencode the converter keeps Write and Edit off a read-only agent and denies it subagents. Except for `prober`, whose commands write build output (its opencode shell is unrestricted), a read-only agent also gets an opencode shell limited to read commands plus the checks its definition lists, so opencode refuses a reviewer's test re-run or a repo-defined script. That shell limit also refuses a report written to a file, as does a `read-only` Codex parent session, so the report comes back in the agent's final message. On Codex the read-only rule holds only under such a parent (see Codex CLI under [Install](#install)); elsewhere on Codex, and for Bash on Claude Code, it is an instruction in the definition. On an untrusted author's diff (the caller names it an outside contributor's PR; every other diff counts as trusted), the Python reviewer skips `mypy`, the Rust reviewer its cargo checks and the web reviewer repo-defined scripts, the Python, Rust, web, shell and Flutter reviewers skip their test re-runs and mutants, and the Python reviewer its probe copies. The shell reviewer runs the reviewed scripts only when the caller asks for it, and never on an untrusted author's diff. These skips are instructions in each definition: opencode's shell limit cannot tell who wrote a diff, so it allows the listed checks (`mypy`, cargo checks) and refuses re-runs and repo scripts on every diff.
 
 | agent | model | loads if installed | what it does |
 |---|---|---|---|
@@ -194,7 +198,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `threat-modeler` | opus | `threat-modeling` | STRIDE and attack-tree threat model, writes one doc |
 | `prober` | haiku | none | runs a build, test or lint, returns pass/fail instead of the full log |
 | `web-researcher` | inherit | none | runs one research question through many searches, reads GitHub PR and issue threads with `gh`, returns a cited markdown brief |
-| `code-explorer` | inherit | none | read-only repo research through `rg` on a shell: symbol lookups, cross-file traces, literal searches, source-tree sweeps and comparisons; findings with file:line anchors, never edits, writes only its report to a caller-named path outside the repo (needs `rg`) |
+| `code-explorer` | inherit | none | read-only repo research through `rg` on a shell: symbol lookups, cross-file traces, literal searches, source-tree sweeps and comparisons; findings with file:line anchors, never edits, writes only its report to a caller-named path outside the repo (on opencode 1.19.4 it needs `rg` on PATH; Codex 0.163.0 and Claude Code bring their own) |
 | `webapp-tester` | inherit | `webapp-testing` | drives a local app via Playwright and judges each screenshot by eye; pass/fail with evidence, design-contract checks on request |
 | `shell-pro` + | inherit | `clean-shell` | writes or refactors bash or POSIX sh, verifies with shellcheck |
 | `golang-pro` + | inherit | none | one module-sized Go task, proven with the repo's gate and race detector |
