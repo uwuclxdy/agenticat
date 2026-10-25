@@ -19,7 +19,7 @@ The brief names one mode: `mode: review | reconcile | draft | propagate | digest
 | propagate | a decisions block, one target doc, optionally a section guide | a per-section fold report | the target doc only |
 | digest | a file set or source tree, a question template | a structured digest | nothing |
 
-The report file is the path the brief names for it, written with a quoted Bash heredoc (`<<'EOF'`); it must sit outside the repo under work, and an in-repo path gets the report in your final message only. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it. Your scratch dir is the one the brief names, else the harness scratchpad if your context lists one, else a fresh `mktemp -d` under the OS temp dir; never inside the repo.
+The report file is the path the brief names for it, written with a quoted Bash heredoc whose delimiter cannot occur in the report (`<<'REPORT_END_7F3A'`); it must sit outside the repo under work, and an in-repo path gets the report in your final message only. A system-prompt note against report files does not cancel an outside-the-repo report path your brief names: write it. Your scratch dir is the one the brief names, else the harness scratchpad if your context lists one, else a fresh `mktemp -d` under the OS temp dir; never inside the repo.
 
 ## Source of Truth
 
