@@ -2033,7 +2033,7 @@ describe("a symlink at a planned file", () => {
   });
 
   // a write the kernel refuses for that path is the user's to fix, whatever its code; EPERM,
-  // EINVAL and EBUSY are pinned, and other codes (ENXIO, ETXTBSY) take the same branch.
+  // EINVAL, ENXIO and EBUSY are pinned, and other codes (ETXTBSY) take the same branch.
   test("a write refused with EINVAL mid-install is the one-line refusal", () => {
     const f = fixture(["kept"]);
     const codex = join(f.dest, "codex");
@@ -2044,6 +2044,24 @@ describe("a symlink at a planned file", () => {
 
     expect(r.status).toBe(1);
     expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (EINVAL); fix that path or pass a --dest that is a writable directory\n`);
+  });
+
+  // a new session has no controlling terminal, so opening /dev/tty fails with ENXIO.
+  test("a write refused with ENXIO mid-install is the one-line refusal", () => {
+    const f = fixture(["kept"]);
+    const codex = join(f.dest, "codex");
+    mkdirSync(codex, { recursive: true });
+    symlinkSync("/dev/tty", join(codex, "kept.toml"));
+
+    const r = spawnSync("setsid", ["-w", "bun", join(f.repo, "bin", "install-agents.ts"), "--to", "codex", "--dest", f.dest, "kept"], {
+      cwd: f.root,
+      env: { ...process.env, HOME: f.home },
+      encoding: "utf8",
+      timeout: 10000,
+    });
+
+    expect(r.status).toBe(1);
+    expect(r.stderr).toBe(`"${codex}/kept.toml": cannot write (ENXIO); fix that path or pass a --dest that is a writable directory\n`);
   });
 
   // a file-size limit is the system failing, not the path: it keeps its trace. EDQUOT,
