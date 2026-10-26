@@ -4,7 +4,7 @@ description: "Language-agnostic clean-code baseline: naming, functions, error ha
 when_to_use: "Use when writing or reviewing code in a language without a `clean-*` skill."
 metadata:
   author: uwuclxdy
-  version: "1.6"
+  version: "1.7"
 ---
 
 # Clean Code Principles
@@ -203,7 +203,7 @@ Throw exceptions instead of returning error codes. Keep the algorithm and its er
 
 ### 4.3 Don't Repeat Yourself (DRY)
 
-Extract repeated logic (API `fetch` boilerplate, `timeout: 5000`, `if (!res.ok) throw error`) into a single authoritative function; duplicating it guarantees silent bugs when you update one copy and forget the others. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
+Extract repeated logic (API `fetch` boilerplate, `timeout: 5000`, `if (!res.ok) throw error`) into a single authoritative function; duplicating it guarantees silent bugs when you update one copy and forget the others. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body. A helper extracted only to dedupe is justified by two or more true duplicates; exactly one caller means inline it; dedupe alone never excuses a pass-through (§4.6).
 
 **Don't:**
 - Merge two blocks that only look alike today but encode different business rules with different reasons to change (coincidental duplication). Only extract duplication that shares one true reason to change; two validation functions with matching checks today can still diverge tomorrow if they answer different questions.
