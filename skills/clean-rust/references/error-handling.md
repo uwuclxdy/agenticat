@@ -73,7 +73,7 @@ enum OrderError {
 
 - Convert low-level errors into domain errors at module boundaries (`#[from]` impls or `.map_err`), so callers match on meaning, not on plumbing.
 - One god-enum with 50 variants serves nobody: split per subsystem.
-- Log at the point of *handling*, not creation. An error logged when constructed and again when handled shows up twice; one logged only at creation may never surface at all.
+- Log at the point of *handling*, not creation. An error logged when constructed and again when handled shows up twice; one logged only at creation may never surface at all. The eager-log form `inspect_err(|_| error!(...))?` logs the failure at the call site, then propagates the raw error, splitting the path from its cause and reporting it twice; `.wrap_err(...)`/`.wrap_err_with(...)` puts the context on the error chain so the handler reports it once.
 - Give "bad input, retry" failures a distinct type or variant from genuine bugs: callers need to tell them apart programmatically.
 
 ## One Failure Semantics, Cleanup Always Runs
