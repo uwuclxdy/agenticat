@@ -64,6 +64,26 @@ cmd="${argv[*]}"; cmd="${cmd//$'\n'/ }"; cmd="${cmd//$'\t'/ }"
 
 `tr '\0' ' '` alone is the trap: it converts NULs and leaves the newlines, so one record silently becomes two and every later field shifts a column. Test such a guard with an input big enough to reach the code path that formats it, or a clean result only proves the payload never got there.
 
+Whether a path is or lies under a directory is a question of identity: walk physical parents and test each with `-ef`. `-ef` is in POSIX `test` only since POSIX.1-2024, though dash and bash implement it. A non-directory is checked through its parent, and a symlinked file gets 2 (cannot tell), because its link and its target can sit in different trees. The answer holds only until someone who can write the tree renames a directory or swaps in a symlink, and shell has no way to pin it: `is_under` returns a status, not a handle, and even a held cwd can be moved out of the tree. Run the check-then-act only on a tree no one else can write.
+
+```sh
+is_under() (  # PATH DIR -> 0 is or lies under, 1 not, 2 cannot tell
+  p=$1 d=$2
+  case $d in /*) ;; *) d=$PWD/$d ;; esac  # DIR must survive the cd below
+  case $p in /*) ;; *) p=./$p ;; esac     # cd reads a bare "-" as $OLDPWD
+  if [ ! -d "$p" ]; then
+    [ -L "$p" ] && exit 2                 # a symlinked file: check its target separately
+    p=${p%/*}; p=${p:-/}                  # a file or a path not created yet: check its parent
+  fi
+  CDPATH='' cd -P -- "$p" 2>/dev/null || exit 2  # CDPATH can pick another dir
+  while :; do
+    [ . -ef "$d" ] && exit 0
+    [ . -ef / ] && exit 1
+    cd -P .. || exit 2
+  done
+)
+```
+
 ## Cleanup with Trap
 
 Every `mktemp` gets an EXIT trap. Manual per-path `rm` leaks the moment someone adds a new early exit.
