@@ -4,7 +4,7 @@ description: "Defensive Bash and POSIX shell rules: strict-mode flags, traps, id
 when_to_use: "Use when writing, hardening, reviewing, or testing shell scripts, or wiring shellcheck and bats into CI."
 metadata:
   author: uwuclxdy
-  version: "1.10"
+  version: "1.11"
 ---
 
 # Clean Shell
@@ -28,5 +28,6 @@ Shell-specific conventions for writing, hardening, reviewing, and testing script
 - Every `mktemp` gets an EXIT trap right after creation. Traps are best-effort: SIGKILL, OOM-kill, and power loss skip them.
 - Anything that mutates system state is check-then-act idempotent; add `flock` where concurrent runs are possible.
 - Never echo a generated secret; `set -x` tracing and `ps`/`/proc/*/cmdline` argv leak it too.
+- a refusal or hint that prints paths or commands for the user to copy is shell input: print each path `printf %q`-quoted behind `# `, keep only the commands meant to run unprefixed, and test the whole block pasted into `bash -i` and `zsh -f -i` (zsh's `interactive_comments` is off, so a bare `# a > b` still truncates `b`).
 - Every `# shellcheck disable=` carries a same-line reason comment.
 - Non-trivial scripts get bats tests covering the error paths, not just the happy path.
