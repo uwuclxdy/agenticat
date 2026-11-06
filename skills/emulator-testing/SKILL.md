@@ -1,10 +1,10 @@
 ---
 name: emulator-testing
 description: "Boots and drives Android AVDs and iOS simulators from the CLI."
-when_to_use: "Use for headless app tests, screenshot verification, or emulator boot and GPU issues."
+when_to_use: "Use when running headless app tests, verifying screenshots, or debugging emulator boot and GPU issues."
 metadata:
   author: uwuclxdy
-  version: "1.8"
+  version: "1.9"
 ---
 
 # Emulator Testing

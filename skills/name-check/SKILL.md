@@ -1,10 +1,10 @@
 ---
 name: name-check
 description: "Suggests project and crate names and checks availability across crates.io, npm, PyPI, AUR, GitHub, and domains."
-when_to_use: "Use before naming, renaming, or publishing anything."
+when_to_use: "Use when naming, renaming, or publishing anything."
 metadata:
   author: uwuclxdy
-  version: "1.5"
+  version: "1.6"
 ---
 
 # Name Check

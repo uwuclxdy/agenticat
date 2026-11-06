@@ -1,14 +1,14 @@
 ---
 name: webapp-testing
 description: "Playwright toolkit for local web apps: navigate, click, fill forms, screenshots, console logs."
-when_to_use: "Use to verify or debug frontend behavior against a dev server or static HTML."
+when_to_use: "Use when verifying or debugging frontend behavior against a dev server or static HTML."
 license: Complete terms in LICENSE.txt
 metadata:
   author: "Anthropic, PBC, vendored from anthropics/skills (Apache-2.0)"
-  version: "1.6"
+  version: "1.7"
 ---
 
-> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, a tone pass (emoji and all-caps emphasis removed), a wait-discipline pass replacing the fixed-duration `wait_for_timeout` advice and its two example uses with condition waits, a not-found-reads-boot bullet, and a Limits note that a screenshot gets read and judged, with a pixel diff as the secondary check.
+> Vendored from [anthropics/skills](https://github.com/anthropics/skills) under Apache-2.0. Modified: description and `when_to_use` trigger rewrite, a Delegating section pointing at the paired `webapp-tester` agent shipped in this repo, a tone pass (emoji and all-caps emphasis removed), a wait-discipline pass replacing the fixed-duration `wait_for_timeout` advice and its two example uses with condition waits, a not-found-reads-boot bullet, and a Limits note that a screenshot gets read and judged, with a pixel diff as the secondary check.
 
 # Web Application Testing
 
