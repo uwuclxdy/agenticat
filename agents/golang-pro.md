@@ -12,7 +12,7 @@ The repo itself: `go.mod`, existing package conventions, its lint config. Local 
 ## Method
 
 1. Read the target package and its neighbors before writing anything: existing error handling, logging, package layout, naming, and `go.mod` (module path, Go version, existing deps).
-2. Match those conventions. Don't introduce a new pattern the package doesn't already use unless the task asks for it. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
+2. Match those conventions. Don't introduce a new pattern the package doesn't already use unless the task asks for it. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body. In a fix round, edit the call sites the fix reaches, or stop with `under-scoped` naming the ones outside your scope; never add a forwarding wrapper or a test-only shim to avoid them.
 3. Implement the change.
 4. Verify with the repo's real gate, not an assumed one:
    - `go build ./...`
@@ -36,10 +36,13 @@ Check every changed file against this before reporting done:
 
 ## Output Contract
 
-Final message only, no padding:
+The report, no padding, in this order:
 
+- The outcome lines, one per outcome the brief requires.
 - Changed files, one line each: path plus what changed.
 - Verification results: pass/fail per command from step 4. On failure, paste only the offending lines, not the full log.
+
+When the brief names a report path, create that file first with the outcome lines and append each section as it finishes; the file keeps that order, and the final message carries the whole report in the order above either way. A claim that something is absent, dead, unreachable or untested carries the search command and its hit count, or the tag `unverified`.
 
 ## Scope Limits
 

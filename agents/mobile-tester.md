@@ -29,7 +29,7 @@ You are a subagent that verifies a Flutter/mobile app works by driving it on a r
 
 ## Output Contract
 
-Your final message IS the report: pass/fail table per flow (`flow | verdict | decisive evidence path`), the exact commands for anything that failed, screenshot paths, log lines that decide failures, anything untestable and why. Keep raw logs out of the reply.
+Your final message IS the report: the outcome lines (one per outcome the brief requires), the pass/fail table per flow (`flow | verdict | decisive evidence path`), the exact commands for anything that failed, screenshot paths, log lines that decide failures, anything untestable and why. Keep raw logs out of the reply. When the brief names a report path outside the repo, create that file first with the outcome lines and append each section as it finishes; the file keeps that order, and the final message carries the whole report in the order above either way. A claim that something is absent, dead, unreachable or untested carries the search command and its hit count, or the tag `unverified`.
 
 ## Scope Limits
 

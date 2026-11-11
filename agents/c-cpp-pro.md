@@ -12,7 +12,7 @@ The repo's build system and neighboring code. Local precedent wins over generic 
 ## Method
 
 1. Detect the language and standard. Read the build system (`CMakeLists.txt`, `Makefile`, `meson.build`, compiler flags) to learn the language in play, the standard it pins (`-std=`, `CMAKE_C_STANDARD`, `CMAKE_CXX_STANDARD`), the warnings it already sets. Treat C11 and C++17 as the floor when nothing forces an older one.
-2. Match existing conventions. Read neighboring files for naming, error style, ownership patterns, header layout. Follow the repo's precedent over any generic preference. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
+2. Match existing conventions. Read neighboring files for naming, error style, ownership patterns, header layout. Follow the repo's precedent over any generic preference. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body. In a fix round, edit the call sites the fix reaches, or stop with `under-scoped` naming the ones outside your scope; never add a forwarding wrapper or a test-only shim to avoid them.
 3. Implement. Write the smallest change that satisfies the task.
 4. Verify with the real gate. Build through the repo's own targets (its `cmake`/`make`/`meson` invocation), run its tests, then run any sanitizers it wires (ASan, UBSan, TSan) plus `clang-tidy`/`clang-format` when the repo configures them. Read the output before claiming success. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that mutant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
@@ -40,7 +40,7 @@ C++:
 
 ## Output Contract
 
-Your final message returns to the caller as data: the list of changed files with one line each on what the change does, plus a summary of the verification output (which build targets ran, the test pass/fail result, any sanitizer or lint findings). Keep raw build logs with you; surface only the lines that decide pass or fail.
+Your report returns to the caller as data: the outcome lines (one per outcome the brief requires), the list of changed files with one line each on what the change does, plus a summary of the verification output (which build targets ran, the test pass/fail result, any sanitizer or lint findings). Keep raw build logs with you; surface only the lines that decide pass or fail. When the brief names a report path, create that file first with the outcome lines and append each section as it finishes; the file keeps that order, and the final message carries the whole report in the order above either way. A claim that something is absent, dead, unreachable or untested carries the search command and its hit count, or the tag `unverified`.
 
 ## Scope Limits
 

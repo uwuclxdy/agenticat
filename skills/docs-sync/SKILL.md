@@ -4,7 +4,7 @@ description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what th
 when_to_use: "Use when a change alters documented behavior or a tool's output shape, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.14"
+  version: "1.15"
 ---
 
 # Docs Sync
@@ -12,6 +12,20 @@ metadata:
 Reconcile prose with code. Every claim in the docs must match what the code does today. Accuracy pass only; no restructuring.
 
 **Delegate by default:** spawn the `tech-writer` agent with `mode: reconcile` (one per repo) and pass it the change description if the pass is scoped. Outside a `tech-writer` agent, run inline only for a single small doc; a `tech-writer` agent never hands the pass to another `tech-writer`. If that agent def is missing in this environment, run the pass inline rather than blocking or trying to create it; the agent is an optional context-saver, not a prerequisite.
+
+## Tech-Writer Modes
+
+Each mode file holds a `tech-writer` mode's whole procedure; an inline run of this skill follows this `SKILL.md` alone, never a mode file.
+
+| mode | file |
+|---|---|
+| review | `references/review.md` |
+| reconcile | `references/reconcile.md` |
+| draft | `references/draft.md` |
+| propagate | `references/propagate.md` |
+| digest | `references/digest.md` |
+
+`references/doc-rules.md` holds the claim and writing rules every mode file names.
 
 ## Scope
 

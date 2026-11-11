@@ -65,10 +65,14 @@ Two legs = strong hypothesis, report it as one. Publication-gate every claim in 
 
 ## Report Format
 
+Open with the outcome lines, one per outcome the brief requires, then:
+
 1. **Verdict**: the cause in two sentences, confidence, which legs of the triangle hold.
 2. **Ledger table**: hypothesis | mechanism/trigger/attribution verdicts | killing or confirming evidence.
 3. **Evidence**: the deciding experiment outputs, quoted minimally (the A/B table, the trace lines, the control results). Deciding lines only, never raw logs.
 4. **Exonerated suspects** and what cleared them (including the failure-path exercise).
 5. **Unproven remainder**, stated plainly: what you could not establish and what would establish it.
-6. **Implications**: verified constraints any fix must satisfy; candidate fix shapes with their tested properties. No diffs.
+6. **Implications**: verified constraints any fix must satisfy; candidate fix shapes with their tested properties.
 7. Scratch artifacts: where the harness + logs live, so the caller or a successor can re-run them.
+
+When the brief names a report path under your scratch directory, create that file first with the outcome lines and append each section as it finishes; the file keeps that order. A path anywhere else is not written, and the report's first line names it and why. The final message carries the whole report in the order above either way. A claim that something is absent, dead, unreachable or untested carries the search command and its hit count, or the tag `unverified`.

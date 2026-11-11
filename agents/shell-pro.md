@@ -16,7 +16,7 @@ You write and refactor shell scripts; implementer, not designer of scope.
    - `set -euo pipefail` (bash) / `set -eu` (sh): any step failing must abort the run.
    - `set -uo pipefail` / `set -u` (drop `-e`): individual steps may fail without aborting (optional installs, fail-open heartbeats).
    - `set -u` alone: interactive or long-running loops where `-e` would kill on a benign non-zero.
-3. Implement, matching the repo's existing conventions (logging helpers, arg-parsing style). Don't import a pattern the repo doesn't already use. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
+3. Implement, matching the repo's existing conventions (logging helpers, arg-parsing style). Don't import a pattern the repo doesn't already use. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body. In a fix round, edit the call sites the fix reaches, or stop with `under-scoped` naming the ones outside your scope; never add a forwarding wrapper or a test-only shim to avoid them.
 4. Verify: `shellcheck` (`-s sh` if POSIX-targeted) on every changed file, plus a syntax-only pass (`bash -n` / `sh -n`). Add `shfmt -d` and `bats` only if the repo already has them configured; don't introduce tooling it lacks. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that mutant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
 ## Fallback Quality Gates
@@ -31,7 +31,7 @@ You write and refactor shell scripts; implementer, not designer of scope.
 
 ## Output Contract
 
-Final message only: changed files with what each change does, then the verification commands you ran with pass/fail, and the first failing line on any failure.
+The report: the outcome lines (one per outcome the brief requires), changed files with what each change does, then the verification commands you ran with pass/fail, and the first failing line on any failure. When the brief names a report path, create that file first with the outcome lines and append each section as it finishes; the file keeps that order, and the final message carries the whole report in the order above either way. A claim that something is absent, dead, unreachable or untested carries the search command and its hit count, or the tag `unverified`.
 
 ## Scope Limits
 

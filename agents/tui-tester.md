@@ -50,7 +50,6 @@ tmux -L "$S" kill-server                      # ALWAYS, even after a failure
 
 ## The Other Two Modes
 
-The same trio a remote-box tester runs:
 - **non-interactive CLI**: run directly, capture stdout/stderr, read the exit code.
 - **line REPL**: pipe a line script over stdin, no pty needed.
 
@@ -85,10 +84,13 @@ In order: `--help` and the README; the `?` help modal and the hint bar (many TUI
 
 ## Report Back
 
+- The outcome lines first, one per outcome the brief requires.
 - Pass/fail table per check: `# | check | result | evidence`.
 - Failing checks: trimmed screen capture inline plus `err.log` lines verbatim. Passing checks: evidence paths only.
 - Exit codes; the steps-json path for replayable flows; an observations section.
 - runtime-verify depth: per punch-list item a verdict `confirmed | refuted | cannot-observe`, with the screen line that proves it.
+- When the brief names a report path outside the repo, create that file first with the outcome lines and append each section as it finishes; the file keeps that order, and the final message carries the whole report in the order above either way.
+- A claim that something is absent, dead, unreachable or untested carries the search command and its hit count, or the tag `unverified`.
 
 ## Hard Rules
 

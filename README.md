@@ -145,7 +145,7 @@ Install any skill with the same command, swapping the final name (see [Install](
 npx skills add uwuclxdy/agenticat --skill <name>
 ```
 
-The `used by` column is a soft link: when an agent's task touches what a skill covers it loads that skill for the deeper method. Cherry-pick either one alone and the loader falls back to its own built-in checklist.
+The `used by` column is a soft link: when an agent's task touches what a skill covers it loads that skill for the deeper method. Cherry-pick either one alone and the loader falls back to its own built-in checklist. The one hard link is `tech-writer`: each of its modes reads its procedure from `docs-sync`, so without that skill it reports the gap and stops.
 
 | skill | origin | used by | what it does |
 |---|---|---|---|
@@ -211,7 +211,7 @@ Install with the Claude Code plugin (see [Install](#install)) or cherry-pick ont
 | `ux-pro` | sonnet | `ux-patterns`, `terminal-ux` | builds a screen's loading, success, error, empty and partial states with the repo's own components |
 | `ux-reviewer` | opus | `ux-patterns`, `terminal-ux` | read-only audit of what a UI does: missing states, silent failures, error copy, validation gaps |
 
-- `loads if installed` is soft, has the same fallback rule as the skills table. 
+- `loads if installed` is soft, has the same fallback rule as the skills table and the same exception: `tech-writer` needs `docs-sync`. 
 - `+` began as [wshobson/agents](https://github.com/wshobson/agents) personas (MIT), rewritten and debloated.
 
 ## External repos checked

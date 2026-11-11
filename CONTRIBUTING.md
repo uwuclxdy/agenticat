@@ -29,7 +29,7 @@ An agent def is a thin implementer: a method, quality gates, and an output contr
   - Add one terse boundary clause (``Not for reviewing a diff (`rust-reviewer`)``) only between siblings that share trigger vocabulary, where the user's sentence alone cannot split them. In this catalog those are each `-pro`/`-reviewer` pair, plus `web-pro`/`ux-pro` and `web-reviewer`/`ux-reviewer`, which share UI and template vocabulary; the web pair's one clause names both of its siblings.
   - Cut every token that does not help pick the item over a sibling, and never pad toward a length.
   - These rules and the skill rules below cover every field a router reads: an agent's `description`, and a skill's `description` and `when_to_use`. A marketplace, `plugin.json` or `gemini-extension.json` description is browse copy for people.
-- Domain knowledge belongs in a paired skill, referenced conditionally ("load `<skill>` if installed") with an inline fallback checklist. Installs are cherry-picked, so an agent can't assume a sibling skill ships.
+- Domain knowledge belongs in a paired skill, referenced conditionally ("load `<skill>` if installed") with an inline fallback checklist. Installs are cherry-picked, so an agent can't assume a sibling skill ships. The one exception is `tech-writer`, whose mode procedures live in `docs-sync`: without the skill it reports that and stops.
 
 ## Skills
 
