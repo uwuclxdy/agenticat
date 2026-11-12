@@ -1,22 +1,15 @@
 # Rust `cfg(...)` Reference: Cargo Target Configuration
-> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-> Authoritative source for `[target.'cfg(...)'.dependencies]` in `Cargo.toml` > and `[target.'cfg(...)']` in `.cargo/config.toml`. > > **Note:** The Rust Reference marks most value lists as "example values." > Run `rustc --print cfg --target <triple>` for the exact set on any given target.
+Load when writing a `[target.'cfg(...)']` table in `Cargo.toml` or `.cargo/config.toml`, a `#[cfg(...)]` on a target property, or picking a target triple.
+The value lists are examples: run `rustc --print cfg --target <triple>` for the exact set on any given target.
 
----
+> _Captured 2026-07-10 (Rust/Cargo stable), audited against the Rust/Cargo 1.99 docs. To update: re-fetch the source URL(s) below, then diff for changes._
 
-## Source (for Future Changes)
-
-- https://doc.rust-lang.org/reference/conditional-compilation.html
-- https://doc.rust-lang.org/rustc/platform-support.html
-
----
+Sources: https://doc.rust-lang.org/reference/conditional-compilation.html | https://doc.rust-lang.org/rustc/platform-support.html
 
 ## cfg Keys and Values
 
 ### `target_arch`
-
-CPU target ISA.
 
 | value | description |
 |---|---|
@@ -42,13 +35,7 @@ CPU target ISA.
 | `"bpf"` | eBPF |
 | `"csky"` | C-SKY |
 
-Reference documented: x86, x86_64, mips, powerpc, powerpc64, arm, aarch64. Others are active in rustc target definitions.
-
----
-
 ### `target_os`
-
-Target operating system (or `"none"` for bare-metal).
 
 | value | description |
 |---|---|
@@ -69,7 +56,7 @@ Target operating system (or `"none"` for bare-metal).
 | `"fuchsia"` | Google Fuchsia |
 | `"redox"` | Redox OS |
 | `"haiku"` | Haiku OS |
-| `"wasi"` | WebAssembly WASI (Preview 1) |
+| `"wasi"` | WebAssembly WASI (Preview 1 and 2) |
 | `"emscripten"` | Emscripten JS target |
 | `"hermit"` | HermitCore unikernel |
 | `"uefi"` | UEFI firmware |
@@ -80,14 +67,11 @@ Target operating system (or `"none"` for bare-metal).
 | `"cuda"` | NVIDIA CUDA |
 | `"xous"` | Xous (Precursor device OS) |
 | `"none"` | Bare-metal / no OS |
-
-Reference documented: windows, macos, ios, linux, android, freebsd, dragonfly, openbsd, netbsd, none. Others are in active rustc target specs.
-
----
+| `"unknown"` | `wasm32-unknown-unknown`, SGX |
 
 ### `target_family`
 
-Broad family grouping. A single target may belong to multiple families simultaneously (e.g., both `"unix"` and `"wasm"` is theoretically possible).
+Broad family grouping. A single target may belong to multiple families simultaneously (e.g., both `"unix"` and `"wasm"`).
 
 | value | description |
 |---|---|
@@ -108,8 +92,6 @@ Usage in Cargo:
 libc = "0.2"
 ```
 
----
-
 ### `target_env`
 
 Disambiguates the ABI or C library. Empty string when no disambiguation is needed (e.g., macOS, bare-metal).
@@ -121,16 +103,17 @@ Disambiguates the ABI or C library. Empty string when no disambiguation is neede
 | `"musl"` | musl libc Linux |
 | `"msvc"` | Microsoft Visual C++ runtime |
 | `"sgx"` | Intel SGX enclaves (Fortanix) |
-| `"sim"` | iOS/tvOS/watchOS simulator |
-| `"macabi"` | Mac Catalyst: iOS APIs on macOS |
+| `"sim"` | iOS/tvOS/watchOS simulator (1.91+; earlier: `target_abi`) |
+| `"macabi"` | Mac Catalyst: iOS APIs on macOS (1.91+; earlier: `target_abi`) |
 | `"ohos"` | OpenHarmony OS |
 | `"newlib"` | Newlib C library (embedded) |
 | `"uclibc"` | uClibc (embedded Linux) |
 | `"relibc"` | Redox relibc |
 | `"kernel"` | Linux kernel module targets |
 | `"gnullvm"` | MinGW with LLVM ABI (gnullvm) |
+| `"p1"` / `"p2"` | WASI Preview 1 (`wasm32-wasip1`, `-threads`) / Preview 2 (`wasm32-wasip2`); `p1`: 1.80+ |
 
----
+An embedded-ABI triple such as `gnueabihf` sets `target_env = "gnu"`, never `"gnueabihf"`.
 
 ### `target_abi`
 
@@ -145,26 +128,16 @@ Further ABI disambiguation inside `target_env`. Stabilized in Rust 1.78.0 (unsta
 | `"llvm"` | LLVM-specific ABI |
 | `"softfloat"` | Software float ABI |
 | `"hardfloat"` | Hardware float ABI |
-| `"sim"` | Simulator ABI (overlaps with target_env on older targets) |
-| `"macabi"` | Mac Catalyst ABI |
 | `"gnullvm"` | GNU with LLVM ABI |
 
----
-
 ### `target_endian`
-
-CPU byte order.
 
 | value | description |
 |---|---|
 | `"little"` | Little-endian (x86, ARM, RISC-V, WASM) |
 | `"big"` | Big-endian (MIPS (some), PowerPC, s390x, SPARC) |
 
----
-
 ### `target_pointer_width`
-
-Size of a pointer in bits.
 
 | value | typical targets |
 |---|---|
@@ -172,11 +145,7 @@ Size of a pointer in bits.
 | `"32"` | x86, arm, wasm32, riscv32, MIPS32 |
 | `"64"` | x86_64, aarch64, wasm64, riscv64 |
 
----
-
 ### `target_vendor`
-
-Vendor component of the target triple.
 
 | value | description |
 |---|---|
@@ -191,8 +160,6 @@ Vendor component of the target triple.
 | `"mti"` | MIPS Technologies |
 | `"sun"` | Oracle/Sun Solaris |
 | `"uwp"` | Windows UWP targets |
-
----
 
 ### `target_feature`
 
@@ -251,7 +218,7 @@ Target features that can be enabled at compile time; the list below covers commo
 | feature | description |
 |---|---|
 | `"simd128"` | 128-bit SIMD |
-| `"atomics"` | Shared memory atomics |
+| `"atomics"` | Shared memory atomics (nightly-only cfg) |
 | `"bulk-memory"` | Bulk memory operations |
 | `"multivalue"` | Multi-value returns |
 | `"mutable-globals"` | Mutable globals |
@@ -264,8 +231,6 @@ Target features that can be enabled at compile time; the list below covers commo
 | feature | description |
 |---|---|
 | `"crt-static"` | Links the C runtime statically into the binary. Set/unset via `-C target-feature=+crt-static`. Common for musl and MSVC static builds. |
-
----
 
 ### `target_has_atomic`
 
@@ -285,11 +250,9 @@ Usage: `#[cfg(target_has_atomic = "64")]` or in Cargo:
 [target.'cfg(target_has_atomic = "ptr")'.dependencies]
 ```
 
----
+`target_has_atomic_primitive_alignment` (1.97+), same widths: the atomic type is aligned like its integer type.
 
 ### `panic`
-
-How panics behave in this build.
 
 | value | description |
 |---|---|
@@ -298,25 +261,17 @@ How panics behave in this build.
 
 Set via `Cargo.toml` profile: `panic = "abort"` or `-C panic=abort` rustc flag.
 
----
-
 ### `test`
 
 Boolean (no value). Set when compiled with `cargo test` or `rustc --test`. Use `#[cfg(test)]` for test-only code.
-
----
 
 ### `debug_assertions`
 
 Boolean (no value). Enabled by default in debug builds (`opt-level = 0`). Disabled in release builds. Controls `debug_assert!`, `debug_assert_eq!`, `debug_assert_ne!`. Can be forced with `-C debug-assertions=yes/no`.
 
----
-
 ### `proc_macro`
 
 Boolean (no value). Set when the current crate is being compiled as a `proc-macro` crate type.
-
----
 
 ### `feature`
 
@@ -330,9 +285,31 @@ async = ["tokio"]
 
 Usage in code: `#[cfg(feature = "serde")]`
 
-Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported**: Cargo warns "Found `feature = ...` in `target.'cfg(...)'.dependencies`. This key is not supported for selecting dependencies and will not work as expected," and the entry silently never matches. Use `[dependencies] serde = { optional = true }` + `[features]` instead.
+Usage in Cargo deps: `[target.'cfg(feature = "serde")'.dependencies]` is **not supported**: Cargo warns "Found `feature = ...` in `target.'cfg(...)'.dependencies`. This key is not supported for selecting dependencies and will not work as expected," and the entry never matches. `cfg(test)`, `cfg(debug_assertions)` and `cfg(proc_macro)` fail the same way. Use an optional dependency plus `[features]`:
 
----
+```toml
+# wrong: never matches
+[target.'cfg(feature = "fancy-feature")'.dependencies]
+foo = "1.0"
+
+# right
+[dependencies]
+foo = { version = "1.0", optional = true }
+
+[features]
+fancy-feature = ["dep:foo"]
+```
+
+### Custom `cfg` Names
+
+A cfg name rustc does not expect triggers the `unexpected_cfgs` lint. Declare it from `build.rs` with `cargo::rustc-check-cfg=cfg(has_foo)` (Cargo 1.80+), or statically:
+
+```toml
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(has_foo)'] }
+```
+
+Cargo declares every `[features]` cfg itself: never re-declare those.
 
 ## cfg Expression Operators
 
@@ -358,6 +335,13 @@ unix-only = "0.1"
 apple-crate = "0.1"
 ```
 
+Rules for `[target]` tables:
+
+- Gate on target properties only. `feature`, `test`, `debug_assertions`, `proc_macro` and build-script cfgs never match in a `[target.'cfg(...)']` table (`Cargo.toml` or `.cargo/config.toml`): the entry never applies.
+- An exact triple works too: `[target.<triple>.dependencies]`.
+- `[target.'cfg(...)'.build-dependencies]` matches the HOST platform; `dependencies` match the target.
+- In `build.rs`, read `CARGO_CFG_TARGET_OS` and friends: `cfg!` there describes the host (`how-cargo-works.md`).
+
 **In `.cargo/config.toml`:**
 
 ```toml
@@ -367,11 +351,9 @@ runner = "qemu-system-arm"
 rustflags = ["-C", "target-cpu=cortex-m4"]
 ```
 
----
-
 ## Common Target Triples
 
-Triple format: `<arch>-<vendor>-<os>[-<env>]`
+Triple format: `<arch><sub>-<vendor>-<sys>-<abi>` (`sub` is the sub-architecture, e.g. `v7` in `armv7`); parts may be omitted.
 
 ### Tier 1: Guaranteed to Work (Full std, Tested on Every PR)
 
@@ -402,11 +384,17 @@ Triple format: `<arch>-<vendor>-<os>[-<env>]`
 | `i686-pc-windows-gnu` | x86 | windows | gnu | MinGW 32-bit |
 | `x86_64-pc-windows-gnullvm` | x86_64 | windows | gnullvm | MinGW + LLVM ABI |
 | `aarch64-pc-windows-gnullvm` | aarch64 | windows | gnullvm | ARM64 MinGW + LLVM |
-| `wasm32-unknown-unknown` | wasm32 | none | | Browser/JS WASM, no OS |
-| `wasm32-wasip1` | wasm32 | wasi | | WASI Preview 1 (was wasm32-wasi) |
-| `wasm32-wasip2` | wasm32 | wasi | | WASI Preview 2 (component model) |
+| `riscv64gc-unknown-linux-musl` | riscv64 | linux | musl | musl 1.2.5 |
+| `loongarch64-unknown-linux-gnu` | loongarch64 | linux | gnu | LoongArch 64 |
+| `x86_64-unknown-illumos` | x86_64 | illumos | | illumos |
+| `x86_64-unknown-netbsd` | x86_64 | netbsd | | NetBSD |
+| `x86_64-pc-solaris` | x86_64 | solaris | | Solaris 11.4 |
 
-### Tier 2 Without Host Tools: std Available, Limited Testing
+Also in this tier: `aarch64-unknown-freebsd`, `sparcv9-sun-solaris`, `*-unknown-linux-ohos` (aarch64, armv7, x86_64), `*-unknown-linux-musl` (loongarch64, powerpc64, powerpc64le).
+
+### Tier 2 Without Host Tools: Limited Testing
+
+No `std` on the bare-metal rows (`*-none*`) and `nvptx64-nvidia-cuda`: `no_std` only.
 
 | triple | arch | os | env | notes |
 |---|---|---|---|---|
@@ -420,49 +408,45 @@ Triple format: `<arch>-<vendor>-<os>[-<env>]`
 | `i686-linux-android` | x86 | android | | Android x86 (emulator) |
 | `x86_64-linux-android` | x86_64 | android | | Android x86_64 (emulator) |
 | `aarch64-unknown-none` | aarch64 | none | | Bare-metal AArch64, hardfloat |
-| `riscv64gc-unknown-linux-musl` | riscv64 | linux | musl | musl 1.2.5 |
-| `loongarch64-unknown-linux-gnu` | loongarch64 | linux | gnu | LoongArch 64 |
 | `x86_64-unknown-none` | x86_64 | none | | Bare-metal x86_64, softfloat |
-| `x86_64-unknown-illumos` | x86_64 | illumos | | illumos |
-| `x86_64-unknown-netbsd` | x86_64 | netbsd | | NetBSD |
-| `x86_64-unknown-openbsd` | x86_64 | openbsd | | OpenBSD |
-| `x86_64-unknown-dragonfly` | x86_64 | dragonfly | | DragonFly BSD |
-| `x86_64-sun-solaris` | x86_64 | solaris | | Oracle Solaris |
-| `x86_64-pc-solaris` | x86_64 | solaris | | |
 | `riscv32imac-unknown-none-elf` | riscv32 | none | | Bare-metal RISC-V 32 |
 | `aarch64-unknown-fuchsia` | aarch64 | fuchsia | | Google Fuchsia |
 | `x86_64-unknown-fuchsia` | x86_64 | fuchsia | | Google Fuchsia |
-| `x86_64-fortanix-unknown-sgx` | x86_64 | none | sgx | Intel SGX enclaves |
+| `x86_64-fortanix-unknown-sgx` | x86_64 | unknown | sgx | Intel SGX enclaves |
+| `wasm32-unknown-unknown` | wasm32 | unknown | | Browser/JS WASM, no OS |
+| `wasm32-wasip1` | wasm32 | wasi | p1 | WASI Preview 1 (was wasm32-wasi) |
+| `wasm32-wasip2` | wasm32 | wasi | p2 | WASI Preview 2 (component model) |
+| `thumbv6m-none-eabi` | arm | none | | Cortex-M0/M0+ (no_std only) |
+| `thumbv7m-none-eabi` | arm | none | | Cortex-M3 (no_std only) |
+| `thumbv7em-none-eabi` | arm | none | | Cortex-M4/M7, no FPU |
+| `thumbv7em-none-eabihf` | arm | none | | Cortex-M4F/M7F, hardware FPU |
+| `thumbv8m.base-none-eabi` | arm | none | | Cortex-M23 |
+| `thumbv8m.main-none-eabi` | arm | none | | Cortex-M33 |
+| `thumbv8m.main-none-eabihf` | arm | none | | Cortex-M33 with FPU |
+| `riscv32i-unknown-none-elf` | riscv32 | none | | Bare RV32I |
+| `riscv32im-unknown-none-elf` | riscv32 | none | | Bare RV32IM |
+| `riscv32imafc-unknown-none-elf` | riscv32 | none | | Bare RV32IMAFC |
+| `riscv64gc-unknown-none-elf` | riscv64 | none | | Bare RV64IMAFDC |
+| `armv7a-none-eabi` | arm | none | | Cortex-A bare-metal |
+| `armv7a-none-eabihf` | arm | none | | Cortex-A bare-metal, hardfloat |
+| `x86_64-unknown-redox` | x86_64 | redox | relibc | Redox OS |
+| `nvptx64-nvidia-cuda` | nvptx64 | cuda | | NVIDIA CUDA GPU (no_std) |
 
-### Tier 3 Notable: Embedded / Special Purpose
+Also in this tier: `wasm32-wasip1-threads` (env `p1`), `wasm32-unknown-emscripten`, Mac Catalyst (`*-apple-ios-macabi`), visionOS (`aarch64-apple-visionos`, `-sim`), `arm64ec-pc-windows-msvc`.
+
+### Tier 3 Notable: Not Built or Tested by the Rust Project
 
 | triple | arch | os | env | notes |
 |---|---|---|---|---|
-| `thumbv6m-none-eabi` | arm | none | eabi | Cortex-M0/M0+ (no_std only) |
-| `thumbv7m-none-eabi` | arm | none | eabi | Cortex-M3 (no_std only) |
-| `thumbv7em-none-eabi` | arm | none | eabi | Cortex-M4/M7, no FPU |
-| `thumbv7em-none-eabihf` | arm | none | eabihf | Cortex-M4F/M7F, hardware FPU |
-| `thumbv8m.base-none-eabi` | arm | none | eabi | Cortex-M23 |
-| `thumbv8m.main-none-eabi` | arm | none | eabi | Cortex-M33 |
-| `thumbv8m.main-none-eabihf` | arm | none | eabihf | Cortex-M33 with FPU |
-| `riscv32i-unknown-none-elf` | riscv32 | none | | Bare RV32I |
-| `riscv32im-unknown-none-elf` | riscv32 | none | | Bare RV32IM |
-| `riscv32imac-unknown-none-elf` | riscv32 | none | | Bare RV32IMAC |
-| `riscv32imafc-unknown-none-elf` | riscv32 | none | | Bare RV32IMAFC |
-| `riscv64gc-unknown-none-elf` | riscv64 | none | | Bare RV64IMAFDC |
-| `armv7a-none-eabi` | arm | none | eabi | Cortex-A bare-metal |
-| `armv7a-none-eabihf` | arm | none | eabihf | Cortex-A bare-metal, hardfloat |
 | `xtensa-esp32-none-elf` | xtensa | none | | ESP32 (requires esp-rs toolchain) |
 | `xtensa-esp32s3-none-elf` | xtensa | none | | ESP32-S3 |
-| `riscv32imc-esp-espidf` | riscv32 | espidf | | ESP32-C3/C6 with ESP-IDF |
+| `riscv32imc-esp-espidf` | riscv32 | espidf | newlib | ESP32-C2/C3 with ESP-IDF (ESP32-C6: `riscv32imac-esp-espidf`) |
 | `aarch64-unknown-redox` | aarch64 | redox | relibc | Redox OS |
-| `x86_64-unknown-redox` | x86_64 | redox | relibc | Redox OS |
 | `mips-unknown-linux-gnu` | mips | linux | gnu | Big-endian MIPS32 |
 | `mipsel-unknown-linux-gnu` | mips | linux | gnu | Little-endian MIPS32 |
 | `mips64-unknown-linux-gnuabi64` | mips64 | linux | gnu | MIPS64 N64 ABI |
-| `nvptx64-nvidia-cuda` | nvptx64 | cuda | | NVIDIA CUDA GPU |
-
----
+| `x86_64-unknown-openbsd` | x86_64 | openbsd | | OpenBSD |
+| `x86_64-unknown-dragonfly` | x86_64 | dragonfly | | DragonFly BSD |
 
 ## Listing Them Yourself
 
@@ -479,10 +463,17 @@ rustc --print target-cpus --target x86_64-unknown-linux-gnu
 
 # All target features for a target (with + enabled, - disabled defaults)
 rustc --print target-features --target x86_64-unknown-linux-gnu
-rustc --print target-features --target aarch64-unknown-linux-gnu
 
 # Check what cfg a specific target+feature combo reports
 rustc --print cfg --target x86_64-unknown-linux-gnu -C target-feature=+avx2
 ```
 
 These commands reflect the exact rustc version installed, making them the canonical source of truth for any given toolchain.
+
+## Checklist
+
+- [ ] `[target.'cfg(...)']` keys use target properties only: no `feature`, `test`, `debug_assertions`.
+- [ ] Each cfg value was confirmed with `rustc --print cfg --target <triple>`.
+- [ ] A custom cfg is declared (`rustc-check-cfg` or `[lints.rust] unexpected_cfgs`).
+- [ ] The triple's tier was checked; bare-metal triples are `no_std`.
+- [ ] `build.rs` branches on `CARGO_CFG_*`, not `cfg!`.

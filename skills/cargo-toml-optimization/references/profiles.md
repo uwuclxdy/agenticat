@@ -1,9 +1,13 @@
-# cargo Profiles Reference
+# Cargo Profiles Reference
+
+Load when setting or reviewing a `[profile.*]` key, a default, a custom profile or a per-package override.
+Starting templates: `SKILL.md`. This file: every value and its rules.
+
 > _Captured 2026-06-28 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-> Source: https://doc.rust-lang.org/cargo/reference/profiles.html > Profiles alter compiler settings per build mode. Only the workspace root `Cargo.toml` is read; profile settings in dependency manifests are ignored.
+> Source: https://doc.rust-lang.org/cargo/reference/profiles.html
 
----
+Profiles alter compiler settings per build mode. Only the workspace root `Cargo.toml` is read; profile settings in member and dependency manifests are ignored. `[profile.*]` in `.cargo/config.toml` and `CARGO_PROFILE_<NAME>_<KEY>` env vars override the manifest.
 
 ## Settings Reference
 
@@ -13,16 +17,14 @@ Controls `-C opt-level`. Trades compile speed for runtime performance and binary
 
 | Value | Effect |
 |-------|--------|
-| `0` | No compiler passes (default: `dev`) |
+| `0` | No optimizations (default: `dev`) |
 | `1` | Basic inlining + constant folding |
 | `2` | Most compiler passes |
 | `3` | All passes including vectorization (default: `release`) |
 | `"s"` | Shrink binary; may not always beat `2`/`3`, benchmark to verify |
-| `"z"` | Shrink binary, disable loop vectorization; often smallest, but benchmark to verify |
+| `"z"` | Shrink binary, disable loop vectorization; often larger than `"s"`, benchmark to verify |
 
 Note: level `3` can be slower than `2` in some cases. Benchmarking required.
-
----
 
 ### debug
 
@@ -36,9 +38,7 @@ Controls `-C debuginfo`. Higher values = more debug info = larger binaries.
 | `1` / `"limited"` | Debug info without type/variable detail |
 | `2` / `true` / `"full"` | Full debug info (default: `dev`) |
 
-Named values require Rust 1.71+.
-
----
+Named values require Rust 1.71+; on an older `rust-version` keep the numeric forms.
 
 ### split-debuginfo
 
@@ -51,8 +51,6 @@ Controls `-C split-debuginfo`. Determines whether debug info lives inside the bi
 
 Valid values are target-dependent; see rustc docs. Setting only takes effect when `debug` is non-zero.
 
----
-
 ### strip
 
 Controls `-C strip`. Removes symbols or debug info from the final binary.
@@ -63,29 +61,15 @@ Controls `-C strip`. Removes symbols or debug info from the final binary.
 | `"debuginfo"` | Strip debug info, keep symbol names |
 | `"symbols"` / `true` | Strip all symbols + debug info |
 
----
+`"symbols"` makes backtraces unreadable: keep `"debuginfo"` for CLI tools, libraries and anything that reports crashes. Stripping is not a security or obfuscation measure. Unset `strip` with `debug` off (release) acts as `"debuginfo"` since Cargo 1.77; write `strip = "none"` to keep std's debuginfo.
 
 ### debug-assertions
 
-Controls `-C debug-assertions`. Enables `cfg(debug_assertions)` and `debug_assert!`.
-
-| Value | Default (dev) | Default (release) |
-|-------|--------------|------------------|
-| `true` | yes | |
-| `false` | | yes |
-
----
+Controls `-C debug-assertions`. Enables `cfg(debug_assertions)` and `debug_assert!`. Default: `true` in `dev`, `false` in `release`.
 
 ### overflow-checks
 
-Controls `-C overflow-checks`. Panics on integer overflow when enabled.
-
-| Value | Default (dev) | Default (release) |
-|-------|--------------|------------------|
-| `true` | yes | |
-| `false` | | yes |
-
----
+Controls `-C overflow-checks`. Panics on integer overflow when enabled. Default: `true` in `dev`, `false` in `release`: release arithmetic wraps silently. Set `overflow-checks = true` in `[profile.release]` when overflow must panic there.
 
 ### lto
 
@@ -95,14 +79,12 @@ Controls `-C lto`, `-C linker-plugin-lto`, `-C embed-bitcode`. LTO trades link t
 |-------|--------|-----------|-----------------|
 | `"off"` | LTO completely disabled | fastest | none |
 | `false` | Thin-local LTO on codegen units only, no inter-crate LTO | fast | low |
-| `"thin"` | Thin LTO, all crates | moderate | good |
-| `true` / `"fat"` | Fat LTO, all crates | slow | best |
+| `"thin"` | Thin LTO, all crates | moderate | similar to fat; can beat it on large projects |
+| `true` / `"fat"` | Fat LTO, all crates | slow | best on some projects, not always |
 
-When `codegen-units = 1` or `opt-level = 0`, `false` behaves the same as `"off"`. Cross-language LTO (C/C++ + Rust) requires manual `RUSTFLAGS`.
+Default to `"thin"`; choose `"fat"` only when a benchmark shows it wins. When `codegen-units = 1` or `opt-level = 0`, `false` behaves the same as `"off"`. Cross-language LTO (C/C++ + Rust) requires manual `RUSTFLAGS`.
 
 Cannot be set in `[profile.*.package.*]` overrides.
-
----
 
 ### panic
 
@@ -115,26 +97,19 @@ Controls `-C panic`. Affects unwind table generation and binary size.
 
 Restrictions:
 - Tests, benchmarks, build scripts, and proc macros ignore the `panic` setting (the `rustc` test harness currently requires `unwind` behavior).
-- With `"abort"`, all test dependencies are still built with `"unwind"`.
+- With `"abort"`, building a test still builds its dependencies with `"unwind"`.
 - Unstable `panic-abort-tests` flag exists to override test behavior.
 - Some targets (e.g. nvptx) force `"abort"` unconditionally.
+- If any crate in the graph is built with `"abort"`, the final binary (`bin`, `dylib`, `cdylib`, `staticlib`) must use `"abort"` too.
+- Use `"abort"` only when nothing needs to unwind: no `catch_unwind`, no `Drop` cleanup that must run on panic.
 
 Cannot be set in `[profile.*.package.*]` overrides.
 
----
-
 ### incremental
 
-Controls `-C incremental`. Saves compilation state to disk for faster rebuilds.
-
-| Value | Default (dev) | Default (release) |
-|-------|--------------|------------------|
-| `true` | yes | |
-| `false` | | yes |
+Controls `-C incremental`. Saves compilation state to disk for faster rebuilds. Default: `true` in `dev`, `false` in `release`. Keep it off in release profiles: it inhibits optimizations.
 
 Only applies to workspace members and `path` dependencies. Overridable via `CARGO_INCREMENTAL` env var or `build.incremental` in `.cargo/config.toml`.
-
----
 
 ### codegen-units
 
@@ -148,20 +123,11 @@ Controls `-C codegen-units`. Splits a crate into N parallel chunks. More units =
 
 Must be integer > 0.
 
----
-
 ### rpath
 
-Controls `-C rpath`. Embeds runtime library search path in binary. Target-specific; only set when your target requires it.
-
-| Value | Default |
-|-------|---------|
-| `false` | yes (all profiles) |
-| `true` | |
+Controls `-C rpath`. Embeds runtime library search path in binary. Target-specific; only set when your target requires it. Default: `false` in all profiles.
 
 Cannot be set in `[profile.*.package.*]` overrides.
-
----
 
 ## Built-in Profile Defaults
 
@@ -169,7 +135,7 @@ Cannot be set in `[profile.*.package.*]` overrides.
 |---------|-------|-----------|--------|---------|
 | `opt-level` | `0` | `3` | `0` (from dev) | `3` (from release) |
 | `debug` | `true` (2) | `false` (0) | `true` | `false` |
-| `split-debuginfo` | rustc target default | rustc target default | rustc target default | rustc target default |
+| `split-debuginfo` | rustc target default; macOS `"unpacked"` | rustc target default | as `dev` | as `release` |
 | `strip` | `"none"` | `"none"` | `"none"` | `"none"` |
 | `debug-assertions` | `true` | `false` | `true` | `false` |
 | `overflow-checks` | `true` | `false` | `true` | `false` |
@@ -180,8 +146,6 @@ Cannot be set in `[profile.*.package.*]` overrides.
 | `rpath` | `false` | `false` | `false` | `false` |
 
 `test` inherits from `dev`; `bench` inherits from `release`.
-
----
 
 ## Custom Profiles
 
@@ -199,10 +163,7 @@ opt-level = 1
 
 ```sh
 cargo build --profile release-lto
-cargo build --profile dev-opt
 ```
-
----
 
 ## Profile Selection by Command
 
@@ -213,12 +174,10 @@ cargo build --profile dev-opt
 | `cargo test` | `test` |
 | `cargo bench` | `bench` |
 | `cargo install` | `release` |
-| `cargo install --debug` | `dev` |
+| `cargo install --debug` | `debug` (built in, inherits `dev`, shares `target/debug/`) |
 | `--profile NAME` | custom/named |
 
 Selected profile applies to all targets (lib, bin, example, test, bench).
-
----
 
 ## Per-Package Overrides
 
@@ -248,16 +207,7 @@ opt-level = 3            # they run faster but compile slower
 codegen-units = 1
 ```
 
-Default `build-override` behavior (implicit):
-```toml
-[profile.dev.build-override]
-opt-level = 0
-codegen-units = 256
-
-[profile.release.build-override]
-opt-level = 0
-codegen-units = 256
-```
+Implicit default `build-override` in `dev` and `release`: `opt-level = 0`, `codegen-units = 256`.
 
 Warning: a crate used as both a normal dep and a build dep may compile twice when `build-override` is set.
 
@@ -271,71 +221,44 @@ Warning: a crate used as both a normal dep and a build dep may compile twice whe
 
 ### Generics Caveat
 
-Generic functions instantiate in the crate that uses them. Raising `opt-level` on a dep won't improve how those monomorphized generics compile in your crate. Use `opt-level = 1` on all deps for a practical dev speedup without losing monomorphization sharing:
-
-```toml
-[profile.dev.package."*"]
-opt-level = 1
-```
-
----
+Generic functions instantiate in the crate that uses them. Raising `opt-level` on a dep won't improve how those monomorphized generics compile in your crate. Use `opt-level = 1` on all deps (`[profile.dev.package."*"]`) for a practical dev speedup without losing monomorphization sharing.
 
 ## Cheat-Sheet
 
-Fuller variants of SKILL.md's inline profiles: these add `debug-assertions = false` + `overflow-checks = false`, which SKILL omits. Benchmark size choices; `"z"` is not always smallest.
+The max-speed, min-size and balanced release templates are in `SKILL.md`. Adding `debug-assertions = false`, `overflow-checks = false` or `incremental = false` to them only restates release defaults.
 
-### (a) Max Runtime Speed
-
-```toml
-[profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = "symbols"
-debug-assertions = false
-overflow-checks = false
-```
-
-### (b) Min Binary Size
-
-```toml
-[profile.release]
-opt-level = "z"
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = "symbols"
-debug-assertions = false
-overflow-checks = false
-```
-
-### (c) Fast Compile / Iteration
+### Fast Compile / Iteration
 
 ```toml
 [profile.dev]
 opt-level = 0
-debug = 1               # line tables only, faster, still usable backtraces
+debug = "line-tables-only"  # Rust 1.71+: faster, still usable backtraces
 incremental = true
 codegen-units = 256
 
 [profile.dev.package."*"]
 opt-level = 1           # deps get light passes; helps generics perf
+debug = false           # no debuginfo for deps
 
 [profile.dev.build-override]
 opt-level = 3           # build scripts + proc macros run faster; they take longer to compile
+
+[profile.debugging]     # opt-in full debuginfo: cargo build --profile debugging
+inherits = "dev"
+debug = true
 ```
 
-### (d) Good Release Default (Balanced)
+Cranelift (nightly, dev only): `[unstable] codegen-backend = true` + `[profile.dev] codegen-backend = "cranelift"` in `.cargo/config.toml`.
 
-```toml
-[profile.release]
-opt-level = 3
-lto = "thin"
-codegen-units = 4
-panic = "abort"
-strip = "debuginfo"
-debug-assertions = false
-overflow-checks = false
-incremental = false
-```
+## Checklist
+
+Run over your own diff:
+
+- [ ] Every `[profile.*]` table is in the workspace-root `Cargo.toml`.
+- [ ] Every custom profile has `inherits`.
+- [ ] No `lto`, `panic` or `rpath` in a `[profile.*.package.*]` override.
+- [ ] Line tables are written `debug = "line-tables-only"`, not `debug = 1`; no `debug = 0` to speed up dev builds.
+- [ ] `strip = "symbols"` only where nothing needs a readable backtrace.
+- [ ] `panic = "abort"` only where nothing needs to unwind.
+- [ ] `opt-level = "s"`/`"z"` and `lto = "fat"` come from a measurement.
+- [ ] No `incremental = true` in a release profile.

@@ -1,9 +1,11 @@
 # .cargo/config.toml Reference
-> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
+
+Load when editing `.cargo/config.toml` or a `CARGO_*` variable: linker, `rustflags`, wrappers, registries, `[env]`, aliases.
+Profile fields: `profiles.md`. rustc flags: `rustc-flags.md`.
+
+> _Captured 2026-07-10 (Rust/Cargo stable), audited against the Rust/Cargo 1.99 docs. To update: re-fetch the source URL(s) below, then diff for changes._
 
 **Official source:** https://doc.rust-lang.org/cargo/reference/config.html
-
----
 
 ## Disambiguation: config.toml vs Cargo.toml
 
@@ -13,8 +15,6 @@
 | `.cargo/config.toml` | any ancestor dir or `$CARGO_HOME` | **toolchain/environment config**: compiler flags, linkers, source overrides, env vars |
 
 `Cargo.toml` defines what to build. `.cargo/config.toml` defines how to build it. Profile definitions live in `Cargo.toml`; profile overrides can appear in both.
-
----
 
 ## File Hierarchy & Precedence
 
@@ -28,28 +28,24 @@ $HOME/.cargo/config.toml          ← $CARGO_HOME, lowest priority
 ```
 
 **Full precedence stack (high -> low):**
-1. `--config KEY=VALUE` CLI flags (left-to-right, rightmost wins per key)
-2. `CARGO_*` environment variables
+1. `--config KEY=VALUE` CLI flags, or `--config <path>` to an extra config file (merged left-to-right like config files: the last scalar wins, arrays are joined)
+2. `CARGO_*` environment variables: key `net.git-fetch-with-cli` -> `CARGO_NET_GIT_FETCH_WITH_CLI` (uppercase; dots and dashes become underscores). Only keys with an env name in their table accept one
 3. Config files (deeper dir overrides ancestor)
 4. `$CARGO_HOME/config.toml` (global user default)
 
 **Format notes:**
-- `.cargo/config` (no `.toml`) still accepted for backward compat, but deprecated
+- `.cargo/config` (no `.toml`) is still read for backward compat; `config.toml` is the preferred form, and if both exist the extension-less file wins
 - TOML format only; no JSON or YAML
-- Arrays are concatenated, not replaced, with higher-precedence items appended later
-- Discovery is **cwd-based, not workspace-anchored**: invoking cargo from inside a workspace member directory DOES read that member's `.cargo/config.toml` (it's an ancestor of cwd); invoking the same command from the workspace root does NOT (the member dir is never an ancestor of the root). Workspace membership itself adds nothing to config discovery. Only cwd's own ancestor chain matters.
+- Arrays are concatenated, with higher-precedence items appended later; a program path with arguments (`runner`) is replaced instead (Cargo 1.86+)
+- Discovery is **cwd-based, not workspace-anchored**: cargo run inside a member directory reads that member's `.cargo/config.toml`; run from the workspace root it does NOT. Only cwd's ancestor chain matters, so put shared config in the workspace-root `.cargo/config.toml`.
 
 **`[include]`**: load additional config files inline:
 ```toml
 include = ["shared.toml", { path = "optional.toml", optional = true }]
 ```
-Included files load first; the including file wins on conflict.
-
----
+Included files load first; the including file wins on conflict. Only paths ending in `.toml` are accepted.
 
 ## [build]
-
-**Governs compiler selection, parallelism, flags, output dirs.**
 
 | Key | Type | Default | Env | Purpose |
 |-----|------|---------|-----|---------|
@@ -62,24 +58,38 @@ Included files load first; the including file wins on conflict.
 | `target-dir` | path | `"target"` | `CARGO_TARGET_DIR` / `CARGO_BUILD_TARGET_DIR` | output dir for all compiler artifacts |
 | `build-dir` | path | = `target-dir` | `CARGO_BUILD_BUILD_DIR` | intermediate artifact dir; accepts `{workspace-root}`, `{cargo-cache-home}`, `{workspace-path-hash}` templates |
 | `rustflags` | string or array | none | `RUSTFLAGS` / `CARGO_BUILD_RUSTFLAGS` / `CARGO_ENCODED_RUSTFLAGS` | extra flags for every rustc invocation |
-| `rustdocflags` | string or array | none | `RUSTDOCFLAGS` / `CARGO_BUILD_RUSTDOCFLAGS` | extra flags for rustdoc |
-| `incremental` | bool | from profile | `CARGO_INCREMENTAL` / `CARGO_BUILD_INCREMENTAL` | override profile incremental setting globally |
+| `rustdocflags` | string or array | none | `CARGO_ENCODED_RUSTDOCFLAGS` / `RUSTDOCFLAGS` / `CARGO_BUILD_RUSTDOCFLAGS` | extra flags for rustdoc; same four-source precedence as `rustflags` |
+| `incremental` | bool | from profile; `false` when `CI` is set (1.99+) | `CARGO_INCREMENTAL` / `CARGO_BUILD_INCREMENTAL` | override profile incremental setting globally |
 | `dep-info-basedir` | path | none | `CARGO_BUILD_DEP_INFO_BASEDIR` | strip path prefix from dep-info files (for build systems that watch deps) |
 
 **rustflags precedence: four mutually exclusive sources, first match wins (they do not merge across tiers):**
 1. `CARGO_ENCODED_RUSTFLAGS` env
 2. `RUSTFLAGS` env
-3. Target tier: all matching `[target.<triple>].rustflags` **and** `[target.'cfg(...)'].rustflags` entries, joined into one list (triple entry first, then each matching cfg entry in config-file order; multiple matching cfg entries also merge with each other)
+3. Target tier: all matching `[target.<triple>].rustflags` **and** `[target.'cfg(...)'].rustflags` entries, joined into one list (the order inside the tier is undocumented: never rely on it)
 4. `[build].rustflags`: fallback only, used when no target-tier entry matches; dropped entirely the moment one does
 
-**Note on `--target`:** when cross-compiling, target-tier rustflags only reach the target compiler. Build scripts and proc-macros (host artifacts) are not affected.
+An exported `RUSTFLAGS` therefore switches off every `rustflags` key in config. Use one source.
+
+**Note on `--target`:** when cross-compiling, target-tier rustflags only reach the target compiler. Build scripts and proc-macros (host artifacts) are not affected. Without `--target` the flags reach every rustc invocation, build scripts and proc-macros included: pass `--target` whenever the flags are target-only.
 
 **`rustc-wrapper` vs `rustc-workspace-wrapper`:** both active at once nest as:
 ```
 $RUSTC_WRAPPER $RUSTC_WORKSPACE_WRAPPER $RUSTC <args>
 ```
 
----
+## CI Warning Gate: `build.warnings`
+
+Cargo 1.97+: turn warnings from local packages into errors with config.
+
+```toml
+# .cargo/config.toml, or CARGO_BUILD_WARNINGS=deny in the CI job's env
+[build]
+warnings = "deny"   # "warn" (default) | "allow" | "deny"
+```
+
+- CI command: `cargo clippy --all-targets --all-features`. A bare `cargo clippy` exits 0 on warnings.
+- Wrong: `RUSTFLAGS="-Dwarnings"`. It reaches dependencies too and invalidates the build cache.
+- Cargo before 1.97 ignores the key (the gate never fires): use `cargo clippy -- -Dwarnings`.
 
 ## High-Impact Build Speed Levers
 
@@ -97,32 +107,15 @@ rustc-wrapper = "sccache"
 
 ### 2. Faster Linkers (mold / lld)
 
-Linking is often the biggest incremental build bottleneck. Two approaches:
+Linking is often the biggest incremental build bottleneck. Set the linker per target (the same flags under `[build].rustflags` apply to all targets):
 
-**Via `[target.<triple>].linker`** (cleaner, per-target):
 ```toml
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
-
-# or with lld directly:
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 ```
 
-**Via `[build].rustflags`** (applies to all targets):
-```toml
-[build]
-rustflags = ["-C", "linker=clang", "-C", "link-arg=-fuse-ld=mold"]
-```
-
-mold (fastest on Linux, MIT license):
-```toml
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
-```
+mold is the fastest on Linux (MIT license). If `mold` is not on `PATH`, give the full path: `link-arg=-fuse-ld=/usr/bin/mold`.
 
 lld (LLVM linker; Linux/macOS/Windows; bundled in the rustup toolchain as `rust-lld` for years; default linker on x86_64-linux since 1.90):
 
@@ -133,7 +126,9 @@ lld (LLVM linker; Linux/macOS/Windows; bundled in the rustup toolchain as `rust-
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+```
 
+```toml
 # (b) default cc/gcc driver + rustup's bundled lld (no extra deps)
 [target.x86_64-unknown-linux-gnu]
 rustflags = [
@@ -142,7 +137,7 @@ rustflags = [
 ]
 ```
 
-(`-C linker-features=+lld -C link-self-contained=+linker` looks like a modern stable replacement but is not: on current stable it still requires `-Z unstable-options`, i.e. nightly.)
+(`-C linker-features=+lld -C link-self-contained=+linker` is not a stable opt-in: on `x86_64-unknown-linux-gnu` only the opt-outs `-lld` / `-linker` are stable, lld being the default there since 1.90; on other targets the flags need nightly `-Z unstable-options`.)
 
 ### 3. Shared target-dir
 
@@ -165,14 +160,11 @@ build-dir = "{cargo-cache-home}/build/{workspace-path-hash}"
 
 ```toml
 [build]
-jobs = -1  # all CPUs
-# or explicit:
-jobs = 8
+jobs = -1  # logical CPUs minus one (negative = CPUs + value); leave unset for all CPUs
+# or explicit: jobs = 8
 ```
 
 Useful to reduce jobs on machines with low RAM (each rustc invocation peaks ~1GB).
-
----
 
 ## Runtime-Speed Lever: `target-cpu=native`
 
@@ -183,19 +175,9 @@ Not a build-speed lever. If anything it slows compilation (deeper codegen passes
 rustflags = ["-C", "target-cpu=native"]
 ```
 
-Or scoped to a specific target triple:
-```toml
-[target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "target-cpu=native"]
-```
-
 **Warning:** binaries are non-portable. Do not use for distributed builds or cross-compilation. CI artifacts built with `native` will crash on older CPUs.
 
----
-
 ## [target.\<triple\>] and [target.'cfg(...)']
-
-Per-target and per-cfg-expression configuration.
 
 | Key | Type | Env var | Purpose |
 |-----|------|---------|---------|
@@ -214,6 +196,8 @@ linker = "arm-none-eabi-gcc"
 runner = ["qemu-arm", "-cpu", "cortex-m4"]
 ```
 
+Never match on `debug_assertions`, `test`, a Cargo `feature`, or a cfg set by a build script in these keys: such a table silently never applies.
+
 **Precedence when both a triple and a cfg() table match** differs by key:
 - `linker` / `runner`: `[target.<triple>]` wins over `[target.'cfg(...)']` (it's an error if more than one `cfg()` table's `linker` matches).
 - `rustflags` / `rustdocflags`: entries from every matching triple + cfg table are **joined together** (see the rustflags precedence note under `[build]` above); neither one "wins".
@@ -224,8 +208,6 @@ runner = ["qemu-arm", "-cpu", "cortex-m4"]
 rustc-link-lib = ["ssl", "crypto"]
 rustc-link-search = ["/usr/lib"]
 ```
-
----
 
 ## [profile.\<name\>] Overrides in config.toml
 
@@ -249,9 +231,7 @@ opt-level = 0
 codegen-units = 256
 ```
 
-Every profile field, with values and build impact, lives in `references/profiles.md`.
-
----
+A `package` override cannot set `panic`, `lto` or `rpath`. Every profile field, with values and build impact, lives in `references/profiles.md`.
 
 ## [registries] / [registry] / [source]
 
@@ -262,6 +242,8 @@ Every profile field, with values and build impact, lives in `references/profiles
 default = "crates-io"
 global-credential-providers = ["cargo:token"]
 ```
+
+Never write `registry.index`: Cargo no longer accepts it.
 
 ### [registries.\<name\>] (Named Registry)
 
@@ -289,31 +271,27 @@ directory = "vendor"
 
 Generate vendor dir with `cargo vendor`. Then builds are fully offline.
 
-**Source types:**
+**Source keys:** `replace-with` (redirect this source to another named source), `directory` (vendored crates), `registry` (index URL), `local-registry` (path on disk), `git` (URL) with `branch`/`tag`/`rev`.
 
-| Key | Type | Purpose |
-|-----|------|---------|
-| `replace-with` | string | redirect this source to another named source |
-| `directory` | path | local directory source (vendored crates) |
-| `registry` | URL | registry index URL |
-| `local-registry` | path | local registry on disk |
-| `git` | URL | git repository source |
-| `branch`/`tag`/`rev` | string | git ref for git source |
+**Tokens** never go in `config.toml`: a committed token is a leaked credential.
 
-**Tokens** go in `$CARGO_HOME/credentials.toml` (managed by `cargo login`), not in `config.toml`.
+```toml
+# wrong: .cargo/config.toml (committed)
+[registry]
+token = "cio_secret_token_here"
+```
 
----
+```bash
+cargo login                        # right: paste at the prompt; saved to $CARGO_HOME/credentials.toml
+export CARGO_REGISTRY_TOKEN="..."  # right in CI (CARGO_REGISTRIES_<NAME>_TOKEN for a named registry)
+```
+
+`cargo login <token>` is deprecated since 1.86: the argument lands in shell history.
 
 ## [alias]
 
-Custom cargo subcommand aliases.
-
 ```toml
 [alias]
-b = "build"
-c = "check"
-t = "test"
-r = "run"
 rr = "run --release"
 br = ["build", "--release", "--workspace"]
 clippy-strict = ["clippy", "--", "-D", "warnings"]
@@ -321,10 +299,8 @@ clippy-strict = ["clippy", "--", "-D", "warnings"]
 
 - Values: space-separated string or array of strings
 - Aliases are recursive (aliases can reference other aliases)
-- Cannot override built-in cargo commands
+- Cannot override built-in cargo commands. `b`, `c`, `d`, `t`, `r`, `rm` are built-in aliases already: do not redefine them
 - Env: `CARGO_ALIAS_<NAME>`
-
----
 
 ## [net]
 
@@ -334,13 +310,6 @@ clippy-strict = ["clippy", "--", "-D", "warnings"]
 | `git-fetch-with-cli` | bool | false | `CARGO_NET_GIT_FETCH_WITH_CLI` | use system `git` binary instead of libgit2 (auth agents, custom git configs) |
 | `offline` | bool | false | `CARGO_NET_OFFLINE` | disable all network access, fail on missing local cache |
 
-```toml
-[net]
-retry = 5
-offline = false
-git-fetch-with-cli = true  # needed for SSH agents or .gitconfig auth helpers
-```
-
 **`net.ssh.known-hosts`**: pinned SSH host keys, merged with system known_hosts:
 ```toml
 [net.ssh]
@@ -348,8 +317,6 @@ known-hosts = [
     "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFO4Q5T0UV0SQevair9PFwoxY9dl4pQl3u5phoqJH3cF"
 ]
 ```
-
----
 
 ## [http]
 
@@ -362,10 +329,8 @@ known-hosts = [
 | `cainfo` | path | system certs | `CARGO_HTTP_CAINFO` | custom CA bundle for TLS |
 | `check-revoke` | bool | true (Win) | `CARGO_HTTP_CHECK_REVOKE` | TLS cert revocation check |
 | `ssl-version` | string or {min,max} | tlsv1.0+ | `CARGO_HTTP_SSL_VERSION` | TLS version constraint |
-| `debug` | bool | false | `CARGO_HTTP_DEBUG` | log all HTTP activity (use with `CARGO_LOG=network=debug`) |
+| `debug` | bool | false | `CARGO_HTTP_DEBUG` | log all HTTP activity (use with `CARGO_LOG=network=debug`); the log can hold auth tokens: redact before sharing |
 | `user-agent` | string | Cargo version | `CARGO_HTTP_USER_AGENT` | custom user-agent |
-
----
 
 ## [env]
 
@@ -380,47 +345,32 @@ OPENSSL_DIR = "/opt/openssl"
 TMPDIR = { value = "/fast/ramdisk", force = true }
 
 # Config-relative path (resolved to absolute automatically):
-OPENSSL_DIR = { value = "vendor/openssl", relative = true }
+OPENSSL_INCLUDE_DIR = { value = "vendor/openssl/include", relative = true }
 ```
 
 - `relative = true` paths are resolved relative to the parent dir of `.cargo/` (i.e., the project root)
 - Default behavior: skip if var already exists in environment
 - `force = true`: overwrite existing env var
 
-Useful for: vendored library paths, tool version pins, reproducible CI env.
-
----
+Useful for: vendored library paths, tool version pins, reproducible CI env. Commit variables every build needs here (workspace-root config), not in each developer's shell profile.
 
 ## [term]
 
-| Key | Type | Default | Env | CLI override |
-|-----|------|---------|-----|-------------|
-| `quiet` | bool | false | `CARGO_TERM_QUIET` | `--quiet` / `--verbose` |
-| `verbose` | bool | false | `CARGO_TERM_VERBOSE` | `--quiet` / `--verbose` |
-| `color` | `"auto"` / `"always"` / `"never"` | `"auto"` | `CARGO_TERM_COLOR` | `--color` |
-| `hyperlinks` | bool | auto | `CARGO_TERM_HYPERLINKS` | n/a |
-| `unicode` | bool | auto | `CARGO_TERM_UNICODE` | n/a |
-| `progress.when` | `"auto"` / `"always"` / `"never"` | `"auto"` | `CARGO_TERM_PROGRESS_WHEN` | n/a |
-| `progress.width` | int | none | `CARGO_TERM_PROGRESS_WIDTH` | n/a |
-| `progress.term-integration` | bool | auto | `CARGO_TERM_PROGRESS_TERM_INTEGRATION` | n/a |
-
----
+Keys: `quiet`, `verbose` (bool, default false; CLI `--quiet` / `--verbose`), `color` (`"auto"` / `"always"` / `"never"`, default `"auto"`; CLI `--color`), `hyperlinks`, `unicode` (bool, auto-detected), `progress.when` (`"auto"` / `"always"` / `"never"`), `progress.width` (int), `progress.term-integration` (bool). Env: `CARGO_TERM_<KEY>`, e.g. `CARGO_TERM_PROGRESS_WHEN`.
 
 ## Other Sections (Complete)
 
 | Section | Key purpose |
 |---------|-------------|
 | `[paths]` | array of local package paths used as dependency overrides (like `[patch]` but path-based). Crates-io crates only; cannot add deps or change graph structure; cannot target an unpublished local crate. Full restrictions: `references/dependencies.md` (paths Override section) |
-| `[patch]` | override deps for all builds from this config; same format as `Cargo.toml [patch]` |
+| `[patch]` | override deps for all builds from this config; same format as `Cargo.toml [patch]`. Prefer the root `Cargo.toml`: config files are rarely committed, so teammates and CI never see a config patch |
 | `[install]` | `root`: override `cargo install` output dir |
 | `[doc]` | `browser`: browser to use for `cargo doc --open` |
 | `[cargo-new]` | `vcs`: default VCS for new crates (`"git"`, `"none"`, etc.) |
 | `[future-incompat-report]` | `frequency`: `"always"` or `"never"` |
-| `[cache]` | `auto-clean-frequency`: `"1 day"`, `"never"`; triggers global cache cleanup |
-| `[resolver]` | `incompatible-rust-versions`: `"allow"` or `"fallback"` (Cargo 1.84+) |
+| `[cache]` | `auto-clean-frequency`: `"never"`, `"always"`, or `"<N> seconds\|minutes\|hours\|days\|weeks\|months"` (default `"1 day"`): how often the global cache is swept |
+| `[resolver]` | `incompatible-rust-versions`: `"allow"` (any Cargo) or `"fallback"` (1.84+); `lockfile-path` (1.97+) moves `Cargo.lock`. Local development only: `cargo install` ignores this table |
 | `[credential-alias]` | aliases for credential provider programs |
-
----
 
 ## Canonical .cargo/config.toml Templates
 
@@ -429,17 +379,13 @@ Useful for: vendored library paths, tool version pins, reproducible CI env.
 ```toml
 [build]
 rustc-wrapper = "sccache"
-jobs = -1            # all CPUs
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
-
-[profile.dev]
-incremental = true
 ```
 
-### Release / CI (Fast Linker + Native CPU)
+### Release Build for the Build Machine Only (Fast Linker + Native CPU)
 
 ```toml
 [build]
@@ -457,15 +403,12 @@ lto = "thin"
 codegen-units = 1
 ```
 
-### Offline Vendored CI
+## Checklist
 
-```toml
-[source.crates-io]
-replace-with = "vendored-sources"
-
-[source.vendored-sources]
-directory = "vendor"
-
-[net]
-offline = true
-```
+- [ ] No token in any `config.toml`.
+- [ ] Shared settings sit in the workspace-root `.cargo/config.toml`.
+- [ ] One `rustflags` source: no exported `RUSTFLAGS` beside config `rustflags`.
+- [ ] Target-only flags are built with `--target`.
+- [ ] `target-cpu=native` only in builds that run on the build machine.
+- [ ] No `[target.'cfg(...)']` key matches `feature`, `test` or `debug_assertions`.
+- [ ] CI fails on warnings through `build.warnings` (Cargo 1.97+).

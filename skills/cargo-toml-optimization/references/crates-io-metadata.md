@@ -1,18 +1,15 @@
 # crates.io Cargo.toml Metadata Reference
-> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-## Source (for Future Changes)
+Load before publishing a crate, or when filling `categories`, `keywords`, `description`, `publish` or `[badges]` in `[package]`.
+License fields: `licenses.md`. Every other `[package]` field: `manifest.md`.
 
-- https://crates.io/category_slugs (authoritative slug list, rendered from categories.toml)
-- https://doc.rust-lang.org/cargo/reference/manifest.html (Cargo manifest field rules)
+> _Captured 2026-07-10 (Rust/Cargo stable); manifest rules audited against the Cargo 1.99 docs, the category list not re-fetched. To update: re-fetch the source URL(s) below, then diff for changes._
 
-The canonical source-of-truth for categories is: https://github.com/rust-lang/crates.io/blob/main/src/boot/categories.toml
-
----
+Sources: https://crates.io/category_slugs (rendered from the canonical https://github.com/rust-lang/crates.io/blob/main/src/boot/categories.toml) | https://doc.rust-lang.org/cargo/reference/manifest.html
 
 ## Valid crates.io Categories
 
-All slugs below are sourced from `src/boot/categories.toml` in the rust-lang/crates.io repository. Use the exact `slug` string in `Cargo.toml`. Nested slugs use `::` as separator (e.g. `development-tools::testing`).
+Use the exact `slug` string in `Cargo.toml`. Nested slugs use `::` as separator (e.g. `development-tools::testing`).
 
 ### Top-Level Categories
 
@@ -128,11 +125,7 @@ All slugs below are sourced from `src/boot/categories.toml` in the rust-lang/cra
 | `web-programming::http-server` | HTTP server | Crates to serve data over HTTP |
 | `web-programming::websocket` | WebSocket | Crates to communicate over the WebSocket protocol |
 
----
-
 ## keywords Rules
-
-Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
 | constraint | value |
 |-----------|-------|
@@ -147,11 +140,7 @@ Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 keywords = ["gamedev", "graphics", "opengl"]
 ```
 
----
-
 ## categories Rules
-
-Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
 | constraint | value |
 |-----------|-------|
@@ -164,23 +153,15 @@ Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 ```
 
-Categories that don't exactly match a known slug must be corrected before publishing. The manifest docs state slugs "must match exactly"; behavior for mismatches (warning vs. hard error) has changed between crates.io versions, so use only exact slugs from this list.
-
----
+A category that does not exactly match a known slug must be corrected before publishing (the mismatch behavior, warning vs. hard error, has changed between crates.io versions): use only exact slugs from this list.
 
 ## badges
 
-Source: https://doc.rust-lang.org/cargo/reference/manifest.html
+Do not add `[badges]` to a new manifest: put badges in the README. crates.io no longer renders badges from `[badges]` on its website, and the `maintenance` status is currently not used by crates.io either. Cargo still parses the field without a warning, and the manifest reference does not call it deprecated.
 
-crates.io no longer renders badges from `[badges]` on its website. Cargo still parses the field with no warning; it is not labeled deprecated anywhere in the manifest reference (only the `status = "deprecated"` maintenance value below uses that word).
+Only one badge type remains documented: `maintenance`, with a required `status` field.
 
-Only one badge type remains documented:
-
-| badge type | required field | allowed values |
-|-----------|---------------|----------------|
-| `maintenance` | `status` | see below |
-
-### maintenance status Values
+### Maintenance Status Values
 
 | value | meaning |
 |-------|---------|
@@ -193,40 +174,31 @@ Only one badge type remains documented:
 | `none` | Displays no badge on crates.io |
 
 ```toml
+# legacy form: never add to a new manifest
 [badges]
 maintenance = { status = "actively-developed" }
 ```
 
----
-
 ## publish Field
-
-Source: https://doc.rust-lang.org/cargo/reference/manifest.html
 
 | value | behavior |
 |-------|---------|
 | omitted | package may be published to any registry (default) |
 | `publish = false` | package cannot be published to any registry |
 | `publish = ["registry-name"]` | package may only be published to the listed registry/registries |
+| `version` omitted | package cannot be published: publishing requires a version |
 
-When the array contains a single registry, `cargo publish` uses it automatically without requiring `--registry`.
+When the array contains a single registry, `cargo publish` uses it automatically without requiring `--registry`. Mark every internal package `publish = false`.
 
 ```toml
 # Prevent publishing entirely:
 publish = false
 
 # Restrict to crates.io only:
-publish = ["crates-io"]
-
-# Restrict to a private registry:
-publish = ["my-private-registry"]
+# publish = ["crates-io"]
 ```
 
----
-
-## crates.io publish Requirements
-
-Source: https://doc.rust-lang.org/cargo/reference/manifest.html
+## crates.io Publish Requirements
 
 All fields below are required or enforced by crates.io at publish time.
 
@@ -234,11 +206,53 @@ All fields below are required or enforced by crates.io at publish time.
 
 | field | constraint |
 |-------|-----------|
-| `name` | alphanumeric, `-`, or `_` only; ASCII only; max 64 characters; must not be empty; must not use reserved names or Windows special names (e.g. `nul`) |
+| `name` | alphanumeric, `-`, or `_` only; ASCII only; first character alphabetic; max 64 characters; must not be empty; must not use reserved names or Windows special names (e.g. `nul`) |
 | `version` | SemVer format with three numeric parts (e.g. `1.0.0`); pre-release and build metadata allowed |
 | `description` | plain text (not Markdown); must be set; no character limit documented |
-| `license` OR `license-file` | one of the two must be present; `license` must be a valid SPDX 2.3 expression (e.g. `"MIT OR Apache-2.0"`); `license-file` is a path to a license text file |
+| `license` OR `license-file` | one of the two must be present; `license` must be a valid SPDX 2.3 expression (e.g. `"MIT OR Apache-2.0"`) whose names are on SPDX license list 3.20; `license-file` is a path to a license text file |
 
 ### Optional Fields (with crates.io-Specific Limits when Present)
 
 `keywords` and `categories` also enforce publish-time limits; see the keywords Rules and categories Rules tables above.
+
+- `documentation`: when unset, crates.io links the crate to its docs.rs page automatically.
+- `readme`: interpreted as Markdown and rendered on the crate page.
+- `authors`: deprecated. Do not add it to a new manifest.
+- A workspace member may inherit these fields (`license.workspace = true`): the value lives in the root `[workspace.package]`.
+
+### Dependencies of a Published Crate
+
+Every `[dependencies]` entry must resolve from crates.io. A `path` or `git` dependency needs a `version` as well; a git-only or other-registry dependency is rejected. `[dev-dependencies]` are exempt.
+
+```toml
+# wrong: rejected at publish
+[dependencies]
+hello_utils = { path = "hello_utils" }
+other-crate = { version = "1.0", registry = "my-registry" }
+```
+
+```toml
+# right: the path copy builds locally, the registry version is what dependents get
+[dependencies]
+hello_utils = { path = "hello_utils", version = "0.1.0" }
+```
+
+### Before and After Publishing
+
+- `cargo package --list` shows the files that will ship. An `include` list replaces the gitignore rules entirely: check the list after adding one.
+- A published version is permanent. `cargo yank` only stops new resolutions: it deletes nothing, and existing lockfiles keep building.
+
+```bash
+cargo yank --version 1.0.1   # blocks new dependents only; the upload stays public
+# a leaked secret: revoke and rotate it now, yanking does not remove it
+```
+
+## Checklist
+
+- [ ] `description` and `license` (or `license-file`) are set.
+- [ ] `name` passes the crates.io rules; `version` has three numeric parts.
+- [ ] At most 5 `keywords` and 5 `categories`; each category is an exact slug.
+- [ ] No `authors`, no `[badges]`.
+- [ ] Every `path` or `git` dependency also has a `version`.
+- [ ] Internal packages set `publish = false`.
+- [ ] `cargo package --list` shows only intended files.

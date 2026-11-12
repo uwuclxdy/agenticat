@@ -1,25 +1,22 @@
 # Rust Cargo.toml: License Fields Reference
-> _Captured 2026-07-10 (Rust/Cargo stable). To update: re-fetch the source URL(s) below, then diff for changes._
 
-## Source (for Future Changes)
+Load when setting `license` or `license-file` in `[package]`, or when writing or checking an SPDX expression.
+Other publish metadata: `crates-io-metadata.md`. Auditing dependency licenses: `dep-hygiene.md`.
 
-- https://doc.rust-lang.org/cargo/reference/manifest.html (Cargo manifest spec: license / license-file fields, SPDX 2.3 requirement)
-- https://spdx.org/licenses/ (canonical SPDX license list, v3.28.0 at time of writing)
-- https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/ (SPDX 2.3 expression grammar spec)
-- https://rust-lang.github.io/api-guidelines/necessities.html (Rust API guidelines, licensing section)
+> _Captured 2026-07-10 (Rust/Cargo stable), audited against the Rust/Cargo 1.99 docs. To update: re-fetch the source URL(s) below, then diff for changes._
 
----
+Sources: [manifest: license fields](https://doc.rust-lang.org/cargo/reference/manifest.html) | [SPDX license list](https://spdx.org/licenses/) | [SPDX 2.3 expression grammar](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) | [Rust API guidelines: licensing](https://rust-lang.github.io/api-guidelines/necessities.html)
 
 ## SPDX Expression Syntax
 
-Cargo requires the `license` field to be a valid **SPDX 2.3 license expression**. The grammar covers:
+crates.io interprets the `license` field as an **SPDX 2.3 license expression** and validates it at publish time; every license name must be on SPDX license list 3.20. The grammar covers:
 
 ### Atoms
 
 | Form | Meaning | Example |
 |------|---------|---------|
 | `<id>` | Single SPDX identifier | `MIT` |
-| `<id>+` | This version or any later version | `GPL-2.0-or-later` is preferred; `+` is the raw SPDX suffix |
+| `<id>+` | This version or any later version | `GPL-2.0+`: deprecated spelling, write `GPL-2.0-or-later` |
 | `LicenseRef-<string>` | Custom / non-SPDX license reference | `LicenseRef-MyLicense` |
 
 > Note: no whitespace between the identifier and `+`.
@@ -45,25 +42,23 @@ Parentheses override precedence: `MIT AND (LGPL-2.1-or-later OR BSD-3-Clause)`
 
 ```toml
 license = "MIT"
-license = "MIT OR Apache-2.0"
-license = "MIT OR Apache-2.0 WITH LLVM-exception"
-license = "LGPL-2.1-only AND MIT AND BSD-2-Clause"
-license = "GPL-2.0-or-later WITH Bison-exception-2.2"
-license = "MIT AND (LGPL-2.1-or-later OR BSD-3-Clause)"
-license = "LicenseRef-Proprietary"
+# license = "MIT OR Apache-2.0"
+# license = "MIT OR Apache-2.0 WITH LLVM-exception"
+# license = "LGPL-2.1-only AND MIT AND BSD-2-Clause"
+# license = "GPL-2.0-or-later WITH Bison-exception-2.2"
+# license = "MIT AND (LGPL-2.1-or-later OR BSD-3-Clause)"
+# license = "LicenseRef-Proprietary"
 ```
-
----
 
 ## Common Identifiers in Rust
 
-Identifiers as they appear on crates.io (SPDX list v3.28.0).
+Identifiers as they appear on crates.io, which validates names against SPDX license list 3.20.
 
 | SPDX id | Category | Notes |
 |---------|----------|-------|
 | `MIT` | permissive | Most common single license; no patent grant; GPLv2-compatible |
 | `Apache-2.0` | permissive | Explicit patent grant; GPLv2-incompatible on its own |
-| `Apache-2.0 WITH LLVM-exception` | permissive | Adds GPLv2 compat + compiler-output exception; used by Rust stdlib |
+| `Apache-2.0 WITH LLVM-exception` | permissive | Adds GPLv2 compat + compiler-output exception; LLVM's license, not Rust's |
 | `BSD-2-Clause` | permissive | Simplified BSD; no advertising clause |
 | `BSD-3-Clause` | permissive | Adds non-endorsement clause over 2-Clause |
 | `ISC` | permissive | MIT-equivalent terms; shorter text |
@@ -87,8 +82,6 @@ Identifiers as they appear on crates.io (SPDX list v3.28.0).
 
 > `LGPL-2.1` (without `-only` / `-or-later`) is deprecated on the SPDX list. crates.io accepts it but the canonical split forms are preferred.
 
----
-
 ## The Rust Convention
 
 ### Why `MIT OR Apache-2.0`
@@ -97,7 +90,7 @@ Apache-2.0 adds an explicit patent grant MIT lacks but breaks GPLv2 compatibilit
 
 ### `Apache-2.0 WITH LLVM-exception` Variant
 
-Used by the Rust standard library (`rustc`, `std`). The LLVM exception does two things:
+Used by LLVM, not by Rust: `rustc` and `std` are `MIT OR Apache-2.0`. The LLVM exception does two things:
 
 - Restores GPLv2 compatibility (the gap Apache-2.0 has that MIT fills in the dual-license approach).
 - Adds an exception permitting compiler-generated output to be distributed under any license.
@@ -118,9 +111,7 @@ LICENSE-MIT
 LICENSE-APACHE
 ```
 
-The `include` key in `[package]` should list both (or rely on the default glob that includes `LICENSE*`). crates.io will bundle whichever files match.
-
----
+With no `include` key both license texts ship unless git ignores or `exclude` matches them. Once `include` is set, list `LICENSE-*` in it: only a `license-file` is always included. Verify with `cargo package --list`.
 
 ## `license` vs `license-file`
 
@@ -132,6 +123,7 @@ The `include` key in `[package]` should list both (or rely on the default glob t
 | Use case | any OSI / SPDX-listed license | proprietary, custom, or non-SPDX licenses |
 | Path base | n/a | relative to the `Cargo.toml` (package root) |
 | Behaviour | metadata only; you still ship the text | the named file is automatically included in the published crate |
+| In a workspace member | `license.workspace = true` | `license-file.workspace = true`; the path is then relative to the workspace root |
 
 > Setting both is technically allowed, but Cargo warns `only one of license or license-file is necessary`. crates.io keys its displayed licensing off the `license` SPDX field (a crate with only `license-file` shows as "non-standard"), so `license` is the authoritative one when both are set, not `license-file`. Pick one; prefer `license`.
 
@@ -143,17 +135,24 @@ license = "MIT OR Apache-2.0"
 license-file = "LICENSE.txt"
 ```
 
----
-
 ## Gotchas
 
 | Issue | Details |
 |-------|---------|
 | **Legacy `/` separator** | `MIT / Apache-2.0` is the old Cargo convention. crates.io still accepts `/` as an alias for `OR` (`allow_slash_as_or_operator` in its validator, with a passing unit test for `MIT/Apache-2.0`); it is legacy/discouraged, not rejected. Prefer `OR` for clarity: `MIT OR Apache-2.0`. |
-| **Non-SPDX strings rejected** | Strings like `"MIT & Apache-2.0"` (`&` is not an SPDX operator) or any free-form text are rejected by crates.io when the `license` field is used (`/` is the exception, accepted as an `OR` alias). Use `license-file` for non-standard licenses instead. |
+| **Non-SPDX strings rejected** | Strings like `"MIT & Apache-2.0"` (`&` is not an SPDX operator), a prose name like `"Apache License 2.0"`, or any free-form text are rejected by crates.io when the `license` field is used (`/` is the exception, accepted as an `OR` alias). Use `license-file` for non-standard licenses instead. |
 | **`LicenseRef-` for custom licenses** | SPDX allows `LicenseRef-<alphanumeric-and-hyphens>` for licenses not on the list. crates.io accepts this in the `license` field but provides no link or text; combine with `license-file` for the actual text. Example: `LicenseRef-Proprietary`. |
 | **`-only` vs `-or-later` vs bare** | `LGPL-2.1`, `GPL-2.0`, etc. (without suffix) are deprecated SPDX identifiers. Prefer `LGPL-2.1-only` or `LGPL-2.1-or-later` explicitly. The bare forms still parse but trigger deprecation warnings in some tooling. |
-| **`+` suffix vs `-or-later`** | SPDX 2.3 allows `GPL-2.0+` as equivalent to `GPL-2.0-or-later`. Both are valid but the `-or-later` form is more readable. Do not add `+` to permissive licenses (`MIT+` is not meaningful). |
+| **`+` suffix vs `-or-later`** | `GPL-2.0+` is the deprecated spelling of `GPL-2.0-or-later`: write `-or-later`. Do not add `+` to permissive licenses (`MIT+` is not meaningful). |
 | **Identifier case** | `mit or apache-2.0` is rejected because the identifiers `mit`/`apache-2.0` are not canonical case, not because of the operator (operators are case-insensitive). Type identifiers exactly: `MIT OR Apache-2.0`. |
 | **`WITH` requires a valid exception id** | The token after `WITH` must be a recognised SPDX exception identifier (e.g. `LLVM-exception`, `Bison-exception-2.2`). Arbitrary strings are invalid. Full list: https://spdx.org/licenses/exceptions-index.html |
 | **ASCII only** | The `license` field must be pure ASCII. Unicode characters (even in author attribution placed in the field) cause a parse error. |
+
+With neither `license` nor `license-file`, `cargo package` warns and crates.io rejects the publish.
+
+## Checklist
+
+- [ ] `license` is an SPDX expression: exact-case identifiers, `OR` / `AND` / `WITH`, no `/`, no prose name.
+- [ ] GNU licenses carry `-only` or `-or-later`.
+- [ ] `license-file` only for a license with no SPDX identifier; never both fields.
+- [ ] The license texts ship: `cargo package --list` shows `LICENSE-*`.
