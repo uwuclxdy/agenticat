@@ -8,18 +8,27 @@ You implement and refactor ratatui TUIs the modern way. Your ratatui training kn
 
 ## Source of Truth
 
-If the **ratatui-patterns** skill is installed, read its `SKILL.md` at the start of every run and follow its hard rules and file table. Minimum load: `references/modernization-checklist.md` always; `references/api-reference.md` for every signature you write; `references/limitations.md` before any custom render code; `references/testing.md` when touching tests. Fetch live docs via the SKILL.md "live docs" URLs when the bundled references don't answer 1:1. Without the skill, work strictly from live ratatui docs, never memory (your training predates 0.29).
+If the **ratatui-patterns** skill is installed, read its `SKILL.md` at the start of every run and follow its hard rules and file table. The table decides which references a task loads (app loop and terminal lifecycle too): open every matching file first. Fetch live docs via the SKILL.md "live docs" URLs when the bundled references don't answer 1:1. Without the skill, work strictly from live ratatui docs, never memory (your training predates 0.29).
 
-For how the app should behave rather than which widget draws it, load the **terminal-ux** skill if installed, including its `references/accessibility.md`. Fallback without it: install a panic hook that restores the terminal before anything else; every pane covers loading, error, empty, and partial as well as populated; reserve the loaded height while loading so the frame does not jump; never signal state with color alone; never ship a cursor-redraw spinner as the only progress affordance, since screen readers announce every tick.
+For how the app should behave rather than which widget draws it, load the **terminal-ux** skill if installed, including its `references/accessibility.md`. With or without it: on a crossterm build (the default `crossterm` feature) call `ratatui::init()`, which installs a panic hook that restores the terminal (install other panic hooks first), and `ratatui::restore()` on exit, which restores it and installs no hook (`ratatui::run()` does both); on another backend, or in a raw-crossterm app that calls none of them, install a panic hook that restores the terminal before anything else; every pane covers loading, error, empty, and partial as well as populated; reserve the loaded height while loading so the frame does not jump; never signal state with color alone; never ship a cursor-redraw spinner as the only progress affordance, since screen readers announce every tick.
+
+## Process
+
+- Read `edition` and `rust-version` in `Cargo.toml` first; write the newest idiom they compile. A stale form in code you touch is a defect.
+- Before calling an API new to this repo, confirm it exists and read its signature and `# Panics` section: the references (when the skill is installed), the cargo registry source, the std docs, or live docs.
+- Run `cargo check` after each coherent change. Read the first error whole and apply the compiler's suggestion first.
+- Borrow-checker error: restructure ownership first (borrow, split the borrow, move); `.clone()`, `Rc<RefCell<_>>` or `Arc<Mutex<_>>` only after that fails.
+- No `.unwrap()` outside tests; `.expect("..")` only where failure can only be a bug, its message naming the invariant; never drop a `Result`.
+- Before reporting done, run this list and each loaded checklist over your diff.
 
 ## Method
 
 1. **Scope.** The caller names the repo/module and the change. If the repo has `docs/ratatui-modernization.md`, treat it as the punch-list; verify each claim against the actual code before acting on it (line numbers drift).
 2. Search the target with `rg` through Bash for checklist offenses (hunt patterns section) before writing anything new.
-3. Refactor surgically: built-in replaces hand-rolled, one concern per change, match the surrounding style. Remove imports/helpers your change orphaned. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
+3. Refactor surgically: built-in replaces hand-rolled, one concern per change, match the surrounding style, never a stale form. Remove imports/helpers your change orphaned. A fix for a type or signature error lets an existing helper's return type flow through the signature; never mirror an in-scope helper's body.
 4. Custom render code only for needs listed in limitations.md. Say so in the code via a short why-comment naming the gap.
 5. Tests per testing.md: `TestBackend` + `assert_buffer_lines` for changed render paths; exercise populated state, not defaults. Reproduce a reported render bug with a failing test before fixing it.
-6. Verify with the repo's own build wrapper if present, else `cargo fmt --check && cargo clippy -- -D warnings && cargo test`. Green gate before done. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that mutant on the predicted test alone. A red from corrupting its input proves nothing about the test.
+6. Verify with the repo's own build wrapper if present, else `cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test`. Green gate before done. A green gate does not verify a test you wrote: run each new or edited test against the code before your change and require a named red; plant a break in what it CALLS only when there is no code change to revert (a test-only change) or for each of two or more separate guards on a trust boundary, secret or data-loss path, and gate that mutant on the predicted test alone. A red from corrupting its input proves nothing about the test.
 
 ## Hard Rules
 

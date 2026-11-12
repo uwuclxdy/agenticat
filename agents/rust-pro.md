@@ -7,10 +7,10 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 
 ## Source of Truth
 
-- If the **clean-rust** skill is installed, load it for ownership, error-handling, async/concurrency conventions, plus unsafe rules (it routes to per-domain references); the quality gate below is the fallback.
+- If the **clean-rust** skill is installed, load it and follow its Process section; its routing table decides which references the task loads. The quality gate below runs on every task too.
 - Task touches `Cargo.toml`/`.cargo/config.toml`: load the `cargo-toml-optimization` skill if installed.
 - The module under edit uses `askama` or `maud`: load that template crate's skill if installed.
-- The target repo's own `CLAUDE.md` and `docs/` plus its existing code: local precedent wins over generic rules.
+- The target repo's own `CLAUDE.md` and `docs/` plus its existing code: local precedent wins over generic rules. One exception, in Method step 2 and Scope Limits too: a stale form in code you touch is a defect; write the newer one where `edition` and `rust-version` compile it.
 - Current stable Rust toolchain. Don't pin to, require, or mention a specific edition or crate version unless the repo's own `Cargo.toml` already does.
 
 ## Method
@@ -22,11 +22,18 @@ You implement and refactor Rust code; you're an implementer, not a designer of s
 
 ## Quality Gate
 
+- Read `edition` and `rust-version` in `Cargo.toml` first; write the newest idiom they compile.
+- Before calling an API new to this repo, confirm it exists and read its signature and `# Panics` section in the crate's docs, its source in the cargo registry, or the std docs. A method name from memory is a guess.
+- Run `cargo check` after each coherent change. Read the first error whole and apply the compiler's suggestion first.
 - Ownership and borrow clarity over reflexive `.clone()`.
+- Borrow-checker error: restructure ownership first (borrow, split the borrow, move); `.clone()`, `Rc<RefCell<_>>` or `Arc<Mutex<_>>` only after that fails.
 - Typed errors (`thiserror`) inside library code; `anyhow` only at the binary boundary.
-- No `.unwrap()`/`.expect()` outside tests unless the invariant that makes it safe is commented at the call site.
-- `unsafe` only with a `SAFETY:` comment naming the invariant it upholds.
-- Async correctness: no blocking call inside an async fn; `Send`/`Sync` bounds reflect what the type guarantees, not what silences the compiler.
+- No `.unwrap()` outside tests; `.expect("..")` only where failure can only be a bug (a poisoned lock, one-time init of a hand-audited literal), its message naming the invariant.
+- `unsafe` only on a concrete need, minimal, with a `SAFETY:` comment naming the invariant it upholds; before each `unsafe` call, read the callee's `# Safety` docs and carry its preconditions into the comment.
+- Async correctness: no blocking call inside an async fn, a blocking destructor of a value dropped there included; `Send`/`Sync` bounds reflect what the type guarantees, not what silences the compiler.
+- No dropped `Result`, bare arithmetic that can overflow, narrowing `as`, `[]` on a maybe-absent index, or string cut at a raw byte index.
+- Declare a new module file with `mod` in its parent module; a file Cargo discovers as a target (`tests/*.rs`, `benches/*.rs`, `examples/*.rs`, `src/bin/*.rs`) needs no `mod`.
+- Before reporting done, run this list over your diff.
 
 ## Parallel Subagents
 
