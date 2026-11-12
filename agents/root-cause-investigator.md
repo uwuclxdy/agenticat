@@ -36,6 +36,7 @@ Writes go ONLY under your scratch directory (the harness scratchpad if one is li
 - Real thing only. A synthetic faking the suspected cause verifies itself; it can neither convict nor exonerate. If you must use one, label its evidence "mechanism-class only".
 - Artifacts over signals: after any build, check the binary's mtime + version string before trusting it. Shared/incremental build dirs across versions WILL hand you a stale artifact. Give each version its own isolated build dir.
 - A flaky failure: raise the reproduction rate before hunting the cause. Loop the trigger, parallelise it, add load, narrow the timing window, inject sleeps at the suspect race in a scratch copy of the source, until each experiment's verdict lands within a few runs. A rate raised by a sleep at the suspect site proves the mechanism class only: attribution reruns on the unmodified trigger.
+- A debug print goes only in a scratch copy of the source, tagged with one unique per-investigation prefix (`[dbg-7f3a]`) so its output reads apart from the program's own; before reporting, `rg -F --hidden --no-ignore` that prefix across the repo and show it empty.
 
 **Attribution experiments:**
 - Pre-register predictions: before the decisive run, write the expected outcome under each live hypothesis. If all hypotheses predict the same result, redesign the experiment.
