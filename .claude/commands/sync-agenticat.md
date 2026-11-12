@@ -25,7 +25,7 @@ License gate: a derived agent or first-party skill needs a permissive source lic
 
 ## Pipeline
 
-1. **Resolve the source** (`$1`): local path in place; `owner/repo` → github URL; git URL → shallow clone to a temp dir (remove at the end); raw URL → fetch. A trailing free-text arg (`agents only`, `just shell stuff`) narrows the harvest; honor it.
+1. **Resolve the source** (`$1`): local path in place; `owner/repo` → github URL; git URL → shallow clone to a temp dir outside every reading agent's cwd, never a reader's start dir or `--add-dir` (remove at the end): any of these loads the clone's `CLAUDE.md`, `CLAUDE.local.md` or `.claude/skills` into that agent as instructions, and a global gitignore can hide `.claude/` and `CLAUDE.md`, so sweep it with `rg --hidden --no-ignore`; raw URL → fetch. A trailing free-text arg (`agents only`, `just shell stuff`) narrows the harvest; honor it.
 
 2. **Harvest.** Agent defs in any harness format (`agents/*.md`, `.claude/agents/`, opencode / codex / gemini dirs; same content is usually duplicated, read one canonical copy), skills (`SKILL.md`), commands. Prefer a reader that returns only the slices you ask for, if one is installed, so raw bytes stay out of the session. A def copied from another harness's folder can pass both the lint and the converter while its foreign keys are silently dropped: keep only claude frontmatter and relative paths.
 
