@@ -155,13 +155,13 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 | `askama` | original | `rust-pro` | conventions and reference for the askama Rust templating crate |
 | `maud` | original | `rust-pro` | conventions and reference for the maud Rust `html!` macro |
 | `cargo-toml-optimization` | original | `rust-pro` | tunes `Cargo.toml` and `.cargo` build profiles and features for faster compiles |
-| `clean-rust` | original | `rust-pro`, `rust-reviewer` | idiomatic Rust conventions, modular: core rules plus per-domain references for errors, async, concurrency, unsafe, security, observability, testing, perf |
+| `clean-rust` | original | `rust-pro`, `rust-reviewer` | idiomatic Rust 2024 conventions, modular: core rules plus per-domain references for ownership, types and traits, API design, errors, the std toolbox, I/O and processes, async, concurrency, unsafe and FFI, macros, serde, CLIs, docs, lints, testing, perf, security, observability, edition 2024 and modern-Rust migration |
 | `clean-shell` | `wshobson` | `shell-pro`, `shell-reviewer` | defensive live-system idioms, `.shellcheckrc` discipline, bats-core testing; core rules plus a reference for each |
 | `clean-flutter` | original | `flutter-pro`, `flutter-reviewer` | idiomatic Flutter/Dart conventions, modular: core rules plus per-domain references for architecture, state management, navigation, models/serialization, testing, pitfalls, packages |
 | `emulator-testing` | original | `mobile-tester` | drives Android emulators and iOS simulators from the CLI: headless boot, adb/simctl primitives, Flutter test layers, screenshot verification |
 | `mcp-stateless` | original | standalone | the MCP `2026-07-28` stateless revision: what the handshake removal changed, the wire contract, multi round-trip requests, and how to migrate a server or client off session-era code |
 | `docs-sync` | original | `tech-writer` | reconciles README, wiki, docs, and CLAUDE.md (plus agent/skill prompt files) with what the code actually does |
-| `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, TestBackend render tests, a version-upgrade reference pack |
+| `ratatui-patterns` | original | `ratatui-pro` | modern ratatui built-ins, the app loop and terminal lifecycle (events, async input, child processes), TestBackend render tests, a version-upgrade reference pack |
 | `webapp-testing` | `anthropics` | `webapp-tester`, `web-pro` | Playwright toolkit for testing local web apps, screenshots and console logs |
 | `ux-patterns` | `synsation_` | `ux-pro`, `ux-reviewer`, `flutter-pro` | how a UI behaves: the five screen states, loading and error patterns, form validation and submission, undo versus confirmation, cognitive-load laws, with WCAG wiring and a mobile reference |
 | `terminal-ux` | original | `ratatui-pro`, `ux-pro`, `ux-reviewer`, `web-pro` | how a CLI or TUI behaves: exit codes, stdout vs stderr, TTY detection, `NO_COLOR`, help and destructive-action conventions, panic-safe terminal restore, terminal screen-reader practice |
@@ -173,7 +173,7 @@ The `used by` column is a soft link: when an agent's task touches what a skill c
 - `synsation_`: **content from [@synsation\_](https://www.tiktok.com/@synsation_) (TikTok) as a Claude Skill**, the `Build for Good UX` series, parts 1 to 16; same pipeline as `s4.codes`. Its accessibility reference is authored here from W3C sources instead, since the series does not cover accessibility.
 - `original`: self-authored
 - `anthropics`: [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), vendored with its LICENSE and a modification note
-- `clean-rust` distills the author's own Rust conventions; a dozen standout rules were re-authored after studying [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT)
+- `clean-rust`, `cargo-toml-optimization`, `ratatui-patterns`, `askama` and `maud` are built from the official Rust documentation (the Book, the Reference, the std, cargo and Edition Guide docs, the Rustonomicon, the API Guidelines, the async book, the clippy and rustc lint references), each crate's own docs and source at its release tag, and these guides: [ANSSI's Secure Rust Guidelines](https://github.com/ANSSI-FR/rust-guide) (Licence Ouverte 2.0), [Microsoft's Pragmatic Rust Guidelines](https://github.com/microsoft/rust-guidelines) (MIT), [Rust Design Patterns](https://github.com/rust-unofficial/patterns) (MPL-2.0), [The Rust Performance Book](https://github.com/nnethercote/perf-book) (MIT/Apache-2.0) and [The Little Book of Rust Macros](https://github.com/veykril/tlborm) (MIT); a dozen earlier `clean-rust` rules were re-authored after studying [leonardomso/rust-skills](https://github.com/leonardomso/rust-skills) (MIT)
 
 ## External skills
 
