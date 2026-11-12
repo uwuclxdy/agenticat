@@ -23,7 +23,7 @@ workspace = true
 ## The Block
 
 Each comment names the form the line catches.
-A clippy older than a lint reports its line as `unknown_lints` and the gate fails: delete each line that warning names.
+A clippy older than a lint warns `unknown_lints` naming it: delete each named lint's line.
 
 ```toml
 [lints.rust]
