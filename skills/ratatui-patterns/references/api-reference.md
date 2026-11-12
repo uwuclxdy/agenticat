@@ -1,102 +1,56 @@
 # Ratatui 0.30.x: Public API Reference
 
-> Documented from source tag `ratatui-v0.30.1`; current stable is **0.30.2** (2026-06-19), a > bug-fix patch with no API changes vs this document (shadow `CellEffect`s now require > `Send + Sync`; wide-cell diffing and scrollbar-thumb clamp fixes).
+Load this file before typing any ratatui type, method, import path, feature flag or macro: it lists what ratatui 0.30.2 ships.
+A name that is not in this file is not written from memory: check the live docs first.
+
+> Documented against release tag `ratatui-v0.30.2` (current stable, 2026-06-19); later API is not listed. **0.30.2** is a patch release that adds the Termina backend (`termina` feature, `TerminaBackend`, `ratatui::termina` re-export), requires shadow `CellEffect`s to be `Send + Sync`, and fixes wide-cell diffing and a scrollbar-thumb clamp. ratatui 0.30.1+ requires Rust 1.88 (0.30.0 required 1.86).
 > Single source of truth for "what does ratatui give you out of the box". Grep-friendly.
 
-Ratatui 0.30 is a **workspace split into crates**. The `ratatui` umbrella crate re-exports everything; each item below notes its origin crate. You almost always `use ratatui::...` and never depend on the sub-crates directly.
+Reading the lists: a block opening with `// fragment` is a signature list or partial snippet, not a program. A line starting with `.` is a builder setter (takes `self`, returns `Self`: chain it). `(..)` elides an argument: `impl Into<Style>` on a `*style` setter, otherwise the type shown on the setter before it. `WRONG` marks the stale or broken form, `RIGHT` the one to write.
+
+Ratatui 0.30 is a **workspace split into crates**. The `ratatui` umbrella crate re-exports everything; each item below notes its origin crate.
 
 | Crate | Role |
 |---|---|
-| `ratatui` | Umbrella: re-exports + `init`/`restore` helpers + `DefaultTerminal` + `WidgetRef`/`FrameExt` |
+| `ratatui` | Umbrella: re-exports + `init`/`restore` helpers + `DefaultTerminal` + `WidgetRef`/`FrameExt` (feature `unstable-widget-ref`) |
 | `ratatui-core` | `Terminal`, `Frame`, `Buffer`, `Cell`, `layout`, `style`, `text`, `symbols`, `Widget`/`StatefulWidget`, `Backend` trait, `TestBackend` |
 | `ratatui-widgets` | All built-in widgets (`Block`, `Paragraph`, `List`, `Table`, `Chart`, `Canvas`, …) |
-| `ratatui-crossterm` | `CrosstermBackend` + crossterm re-export + conversions |
-| `ratatui-termion` | `TermionBackend` (feature `termion`) |
-| `ratatui-termwiz` | `TermwizBackend` (feature `termwiz`) |
-| `ratatui-macros` | `line!`, `span!`, `text!`, `row!`, `constraints!`, `vertical!`, `horizontal!`, `constraint!` (feature `macros`) |
-
----
-
-## Table of Contents
-
-1. [Top-Level Re-Exports & Prelude](#1-top-level-re-exports--prelude)
-2. [Feature Flags](#2-feature-flags)
-3. [Terminal Initialization (`ratatui::init` / `DefaultTerminal`)](#3-terminal-initialization)
-4. [Terminal & Frame](#4-terminal--frame)
-5. [Backend Trait & Backends](#5-backend-trait--backends)
-6. [Layout (`Constraint`, `Layout`, `Flex`, `Rect`, …)](#6-layout)
-7. [Style (`Style`, `Color`, `Modifier`, `Stylize`)](#7-style)
-8. [Text (`Text`, `Line`, `Span`, `Masked`)](#8-text)
-9. [Buffer & Cell](#9-buffer--cell)
-10. [Symbols](#10-symbols)
-11. [Widget Traits (`Widget`, `StatefulWidget`, `WidgetRef`)](#11-widget-traits)
-12. [Widgets](#12-widgets)
-    - [Block](#block) · [Paragraph](#paragraph) · [List](#list) · [Table](#table) · [Tabs](#tabs)
-    - [Gauge / LineGauge](#gauge--linegauge) · [BarChart](#barchart) · [Chart](#chart) · [Sparkline](#sparkline)
-    - [Scrollbar](#scrollbar) · [Canvas + Shapes](#canvas--shapes) · [Clear](#clear) · [Fill](#fill)
-    - [Calendar](#calendar) · [RatatuiLogo / RatatuiMascot](#ratatuilogo--ratatuimascot)
-13. [Macros](#13-macros)
-14. [Events / crossterm Re-Export](#14-events--crossterm-re-export)
-15. [0.30-Specific Notes (crate split, migrations)](#15-030-specific-notes)
-16. [Cheat-Sheet: Commonly Hand-Rolled Things ratatui Already Provides](#16-cheat-sheet-commonly-hand-rolled-things-ratatui-already-provides)
-
----
+| `ratatui-crossterm` / `-termion` / `-termwiz` / `-termina` | `CrosstermBackend` (+ crossterm re-export + conversions), `TermionBackend`, `TermwizBackend`, `TerminaBackend` (0.30.2), each behind its feature |
+| `ratatui-macros` | the macros of §13 (feature `macros`) |
 
 ## 1. Top-Level Re-Exports & Prelude
 
 `use ratatui::...` exposes (umbrella `lib.rs`):
 
 ```rust
+// fragment
 // types at crate root
 ratatui::{Frame, Terminal, TerminalOptions, Viewport, CompletedFrame};
-ratatui::{buffer, layout, style, symbols, text, widgets, backend, init, border, prelude, macros};
-ratatui::palette;          // the `palette` crate, re-exported (feature `palette`)
-ratatui::crossterm;        // the `crossterm` crate, re-exported (feature `crossterm`)
+ratatui::{buffer, layout, style, symbols, text, widgets, backend, prelude};
+ratatui::{init, macros};  // modules behind features `crossterm` / `macros`
+ratatui::border;  // macro: border!(TOP, LEFT) -> Borders
+ratatui::palette;  // the `palette` crate, re-exported (feature `palette`)
+ratatui::crossterm;  // the `crossterm` crate, re-exported (feature `crossterm`)
 // init helpers at root (feature `crossterm`):
 ratatui::{init, try_init, init_with_options, try_init_with_options, restore, try_restore, run, DefaultTerminal};
 ```
 
-**Prelude**: `use ratatui::prelude::*;`. Officially de-emphasized (see Issue #1150) but kept for back-compat. It re-exports the common types + modules:
+- Import the terminal types from the crate root. `ratatui::terminal` is private (0.28) and the type is `Viewport`, never `ViewPort`.
 
 ```rust
-use ratatui::prelude::*;
-// brings: Backend, backend; CrosstermBackend (feat); Buffer, buffer;
-//   layout::{Alignment, Constraint, Direction, HorizontalAlignment, Layout, Margin,
-//            Position, Rect, Size, VerticalAlignment};
-//   style::{Color, Modifier, Style, Stylize};
-//   text::{Line, Masked, Span, Text};
-//   widgets::{BlockExt, StatefulWidget, Widget};
-//   Frame, Terminal, symbols
+// fragment
+use ratatui::terminal::{Frame, Terminal, ViewPort}; // WRONG: does not compile
+use ratatui::{Frame, Terminal, Viewport};  // RIGHT
 ```
+
+- An application depends on `ratatui` only: never `ratatui_core::..` or `ratatui_widgets::..` paths, never the `tui` crate.
+- A widget library depends on `ratatui-core = "0.1"` (plus `ratatui-widgets = "0.3"` for built-in widgets): there is no `0.30` of either.
+
+**Prelude**: `use ratatui::prelude::*;`. Officially de-emphasized (see Issue #1150) but kept for back-compat. It brings `Frame`, `Terminal`, `symbols`, `Backend` + `backend`, the enabled backend + its `From*`/`Into*` traits, `Buffer` + `buffer`, `layout::{Alignment, Constraint, Direction, HorizontalAlignment, Layout, Margin, Position, Rect, Size, VerticalAlignment}`, `style::{Color, Modifier, Style, Stylize}`, `text::{Line, Masked, Span, Text}`, `widgets::{BlockExt, StatefulWidget, Widget}`. Not in it: `Styled`, `Marker` (write `symbols::Marker`), `CompletedFrame`, `TerminalOptions`, `Viewport`.
 
 > The modern idiom (0.30) is to import explicitly (`use ratatui::widgets::Paragraph;`) rather than glob the prelude.
 
-`use ratatui::widgets::*;` exposes every widget type plus traits:
-
-```rust
-widgets::{
-  Widget, StatefulWidget, BlockExt, FrameExt,
-  Bar, BarChart, BarGroup,
-  Block, CellEffect, Dimmed, Padding, Shadow, TitlePosition, dimmed,
-  BorderType, Borders,
-  calendar, canvas,                            // submodules
-  Axis, Chart, Dataset, GraphType, LegendPosition,
-  Clear, Fill,
-  Gauge, LineGauge,
-  List, ListDirection, ListItem, ListState,
-  RatatuiLogo, RatatuiLogoSize,                // Size re-exported as RatatuiLogoSize
-  MascotEyeColor, RatatuiMascot,
-  Paragraph, Wrap,
-  Scrollbar, ScrollbarOrientation, ScrollbarState, ScrollDirection,
-  RenderDirection, Sparkline, SparklineBar,
-  Cell, HighlightSpacing, Row, Table, TableState,
-  Tabs,
-  // feature `unstable-widget-ref`:
-  WidgetRef, StatefulWidgetRef,
-};
-```
-
----
+`ratatui::widgets` exports every widget of §12 with its state and option types, the traits `Widget`, `StatefulWidget`, `BlockExt`, `FrameExt` (feature `unstable-widget-ref`), and the submodules `calendar` (feature `widget-calendar`) and `canvas`.
 
 ## 2. Feature Flags
 
@@ -105,64 +59,75 @@ Umbrella `default = ["all-widgets", "crossterm", "layout-cache", "macros", "unde
 | Feature | Effect |
 |---|---|
 | `crossterm` (default) | `CrosstermBackend` + crossterm dep + `std` |
-| `crossterm_0_28` / `crossterm_0_29` | pick crossterm minor (0.29 is the default) |
-| `termion` / `termwiz` | alternate backends |
-| `std` | enable std (implied by any backend) |
+| `crossterm_0_28` / `crossterm_0_29` | pick the crossterm 0.28.x or 0.29.x backend (0.29 is the default) |
+| `termion` / `termwiz` / `termina` | alternate backends; `termina` (new in 0.30.2) also adds the `ratatui::termina` re-export |
+| `std` | enable std (implied by any backend); a `no_std` build (0.30) sets `default-features = false` and enables no backend |
 | `serde` | (de)serialize style/color types: save themes to file |
 | `layout-cache` (default) | cache layout solver results |
 | `palette` | `From<palette::*>` conversions into `Color`; re-exports `palette` crate |
 | `portable-atomic` | atomics on targets lacking native atomic types |
 | `scrolling-regions` | use terminal scroll regions (less flicker in `insert_before`) |
 | `macros` (default) | the `ratatui::macros` module (`line!`, `span!`, …) |
-| `all-widgets` (default) | = `widget-calendar` |
-| `widget-calendar` | `widgets::calendar` (the `Monthly` widget) |
-| `underline-color` (default) | backend code for underline color (Crossterm/Termwiz only; not Win7) |
-| `unstable` | = all three below |
-| `unstable-rendered-line-info` | `Paragraph::line_count` / `line_width` |
-| `unstable-widget-ref` | `WidgetRef` / `StatefulWidgetRef` traits + `FrameExt::render_widget_ref` |
-| `unstable-backend-writer` | access backend writers |
+| `all-widgets` (default) = `widget-calendar` | `widgets::calendar` (the `Monthly` widget); named `calendar` on `ratatui-widgets` itself |
+| `underline-color` (default) | backend code for underline color (Crossterm/Termina/Termwiz only; not Win7) |
+| `unstable` | = all three: `unstable-rendered-line-info` (`Paragraph::line_count` / `line_width`), `unstable-widget-ref` (`WidgetRef` / `StatefulWidgetRef` + `FrameExt::render_widget_ref`), `unstable-backend-writer` (access backend writers) |
 
----
+- `default-features = false` drops all five defaults (the backend, `layout-cache`, `macros`, the calendar, underline color): list every feature you still need.
+- Enable the one `unstable-*` flag you need, never the aggregate `unstable`.
+- Keep one crossterm in the dependency graph: ratatui 0.30 pairs with crossterm 0.29 (`cargo tree -p crossterm`).
 
 ## 3. Terminal Initialization
 
-From `ratatui` umbrella `init` module (feature `crossterm`), all re-exported at crate root. These handle raw mode + alternate screen + a **panic hook** that restores the terminal automatically.
+From `ratatui` umbrella `init` module (feature `crossterm`), all re-exported at crate root. `init()`/`try_init()`/`run()` enable raw mode, enter the alternate screen and install a **panic hook** that restores the terminal; `init_with_options()`/`try_init_with_options()` enable raw mode and install the hook but do not enter the alternate screen.
 
 ```rust
+// fragment
 pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
 
 pub fn run<F, R>(f: F) -> R where F: FnOnce(&mut DefaultTerminal) -> R;  // owns setup+teardown
-pub fn init() -> DefaultTerminal;                                       // panics on failure
-pub fn try_init() -> io::Result<DefaultTerminal>;
+pub fn init() -> DefaultTerminal;  // panics on failure
 pub fn init_with_options(options: TerminalOptions) -> DefaultTerminal;
-pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerminal>;
-pub fn restore();                                                       // best-effort teardown
-pub fn try_restore() -> io::Result<()>;
+pub fn restore();  // best-effort teardown
+// fallible twins: try_init() / try_init_with_options(options) -> io::Result<DefaultTerminal>, try_restore() -> io::Result<()>
 ```
 
 **USE THIS instead of hand-rolling** enable_raw_mode + EnterAlternateScreen + a panic hook:
 
 ```rust
 // Simplest: ratatui owns the lifecycle.
-let result = ratatui::run(|terminal| {
-    loop {
-        terminal.draw(|frame| frame.render_widget("hello", frame.area()))?;
-        // ... handle events, break ...
-    }
-    Ok::<(), std::io::Error>(())
-});
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+
+fn main() -> std::io::Result<()> {
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| frame.render_widget("hello", frame.area()))?;
+            if let Event::Key(key) = event::read()? {
+                let ctrl_c = key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL);
+                if key.kind == KeyEventKind::Press && (key.code == KeyCode::Char('q') || ctrl_c) {
+                    break Ok(());
+                }
+            }
+        }
+    })
+}
 ```
+
+- Raw mode delivers Ctrl-C as a key event, not a signal: quit on it yourself, as above.
+
+Manual lifecycle (still gets the panic hook + raw mode + alt screen). Capture the result, call `restore()`, then return it: a `?` before `restore()` skips teardown on every error path.
 
 ```rust
-// Manual lifecycle (still gets the panic hook + raw mode + alt screen):
+// fragment
 let mut terminal = ratatui::init();
-// draw loop ...
+run_app(&mut terminal)?;  // WRONG: an error returns here and restore() never runs
+let result = run_app(&mut terminal);  // RIGHT
 ratatui::restore();
+result
 ```
 
-`init()` installs a panic hook that calls `restore()` before the default hook, so a panic mid-draw won't leave the end user's terminal corrupted.
-
----
+- `init()` installs a panic hook that calls `restore()` before the default hook, so a panic mid-draw won't leave the end user's terminal corrupted. Install your own panic hook before `init`/`run`: one set afterwards replaces the restoring hook.
+- `Terminal::new(CrosstermBackend::new(..))` enables no raw mode, enters no alternate screen and installs no hook: without `run`/`init` you do all three yourself.
+- Inline or fixed viewport: `ratatui::init_with_options(TerminalOptions { viewport: Viewport::Inline(8) })`.
 
 ## 4. Terminal & Frame
 
@@ -171,284 +136,291 @@ From `ratatui-core::terminal` (re-exported as `ratatui::{Terminal, Frame, Termin
 ### `Terminal<B: Backend>`
 
 ```rust
-pub fn new(backend: B) -> Result<Self, B::Error>;
-pub fn with_options(backend: B, options: TerminalOptions) -> Result<Self, B::Error>;
-
-// Drawing
-pub fn draw<F: FnOnce(&mut Frame)>(&mut self, f: F) -> Result<CompletedFrame, B::Error>;
-pub fn try_draw<F, E>(&mut self, f: F) -> Result<CompletedFrame, B::Error>
-    where F: FnOnce(&mut Frame) -> Result<(), E>, E: Into<B::Error>;
-pub fn get_frame(&mut self) -> Frame<'_>;
-pub fn current_buffer_mut(&mut self) -> &mut Buffer;
-pub fn flush(&mut self) -> Result<(), B::Error>;
-pub fn swap_buffers(&mut self);
-pub fn clear(&mut self) -> Result<(), B::Error>;
-pub fn apply_buffer(&mut self) -> Result<CompletedFrame, B::Error>;
-pub fn apply_buffer_with_cursor(&mut self, pos: Option<Position>) -> Result<CompletedFrame, B::Error>;
-
-// Inline (scrollback) rendering
-pub fn insert_before<F: FnOnce(&mut Buffer)>(&mut self, height: u16, draw_fn: F) -> Result<(), B::Error>;
-
-// Backend / size
-pub fn backend(&self) -> &B;
-pub fn backend_mut(&mut self) -> &mut B;
-pub fn size(&self) -> Result<Size, B::Error>;
-pub fn resize(&mut self, area: Rect) -> Result<(), B::Error>;
-pub fn autoresize(&mut self) -> Result<(), B::Error>;
-
-// Cursor
-pub fn hide_cursor(&mut self) -> Result<(), B::Error>;
-pub fn show_cursor(&mut self) -> Result<(), B::Error>;
-pub fn get_cursor_position(&mut self) -> Result<Position, B::Error>;
-pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), B::Error>;
-// (get_cursor/set_cursor (u16,u16) variants exist, prefer the Position ones)
+// fragment
+// every fallible method returns Result<_, B::Error>
+Terminal::new(backend)  // fullscreen; takes ONLY the backend
+Terminal::with_options(backend, TerminalOptions { viewport })
+terminal.draw(|frame: &mut Frame| { .. })  // -> Result<CompletedFrame, B::Error>
+terminal.try_draw(|frame| -> Result<(), E> { .. })  // E: Into<B::Error>; for a render that can fail
+terminal.clear()
+terminal.insert_before(height: u16, |buf: &mut Buffer| { .. })  // inline viewports only; a no-op elsewhere
+terminal.backend() -> &B;  terminal.backend_mut() -> &mut B
+terminal.size() -> Result<Size, B::Error>;  terminal.resize(area: Rect);  terminal.autoresize()
+terminal.hide_cursor();  terminal.show_cursor()
+terminal.get_cursor_position() -> Result<Position, B::Error>;  terminal.set_cursor_position(impl Into<Position>)
+// (get_cursor/set_cursor (u16,u16) are deprecated: use the Position ones)
+// manual render path, tests and integrations only (it skips autoresize and the cursor): get_frame(), drop the
+//   frame, then flush() (applies the diff), swap_buffers(), backend_mut().flush(); also current_buffer_mut(),
+//   apply_buffer() / apply_buffer_with_cursor(Option<Position>)
 ```
+
+- Render every widget on every pass, inside one `terminal.draw` call per loop iteration. Each pass starts from an empty buffer: a widget you skip is erased, and a second `draw` wipes the first.
+
+```rust
+// fragment
+terminal.draw(|f| f.render_widget(&header, top))?;  // WRONG: two draws, the first frame is wiped
+terminal.draw(|f| f.render_widget(&body, rest))?;
+terminal.draw(|f| {  // RIGHT: one draw renders everything
+    f.render_widget(&header, top);
+    f.render_widget(&body, rest);
+})?;
+```
+
+- A later render overwrites the cells of an earlier one: draw order is the z-order.
+- After a `draw`/`try_draw` error the terminal and buffers may be out of sync: return the error, never swallow it or keep drawing.
+- Render only through `Terminal::draw` / `try_draw`. A direct backend write bypasses the diff: follow it with `terminal.clear()?` or a full draw.
+- No `terminal.flush()` after leaving raw mode or the alternate screen: it replays the old screen's diff. Run a full `draw`.
 
 ### `TerminalOptions` / `Viewport`
 
 ```rust
+// fragment
 pub struct TerminalOptions { pub viewport: Viewport }
 
 pub enum Viewport {
-    Fullscreen,   // default; alternate-screen full-window
-    Inline(u16),  // N lines below the cursor, scrolls with output
-    Fixed(Rect),  // a fixed rectangle
+    Fullscreen,  // default; alternate-screen full-window
+    Inline(u16),  // N rows starting AT the cursor row, full width, scrolls with output; clamped to the terminal height
+    Fixed(Rect),  // a fixed rectangle; never resizes itself: call terminal.resize(area)
 }
 ```
 
-```rust
-let term = ratatui::init_with_options(TerminalOptions { viewport: Viewport::Inline(8) });
-```
+`Fullscreen` and `Inline` pick up a new terminal size on the next `draw`: do nothing on `Event::Resize`.
 
 ### `Frame<'a>`: The Per-Draw Render Handle
 
 ```rust
-pub fn area(&self) -> Rect;                                  // full drawable area: USE THIS for root layout
-pub fn render_widget<W: Widget>(&mut self, widget: W, area: Rect);
-pub fn render_stateful_widget<W: StatefulWidget>(&mut self, widget: W, area: Rect, state: &mut W::State);
-pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P);  // show a cursor at a cell
-pub fn buffer_mut(&mut self) -> &mut Buffer;                 // raw buffer access
-pub fn count(&self) -> usize;                               // frame number
+// fragment
+frame.area() -> Rect  // full drawable area: USE THIS for root layout
+frame.render_widget(widget, area)  // W: Widget
+frame.render_stateful_widget(widget, area, &mut state)  // W: StatefulWidget, state: &mut W::State
+frame.set_cursor_position(impl Into<Position>)  // show a cursor at a cell
+frame.buffer_mut() -> &mut Buffer  // raw buffer access
+frame.count() -> usize  // frame number
 ```
+
+- Take the area from `frame.area()`. `frame.size()` is deprecated (0.28); `terminal.size()` and `Event::Resize(w, h)` are not the render area. `Frame` has no backend type parameter (0.24).
+
+```rust
+// fragment
+fn ui<B: Backend>(frame: &mut Frame<B>) { let area = frame.size(); }  // WRONG: does not compile
+fn ui(frame: &mut Frame) { let area = frame.area(); }  // RIGHT
+```
+
+- One cursor path per app: `frame.set_cursor_position(..)` inside `draw` (a frame that skips it hides the cursor), or the `Terminal` cursor methods outside it. The next draw may overwrite the other path.
 
 `CompletedFrame<'a>` is returned by `draw`; carries the rendered `buffer`, `area`, `count`.
 
-> `FrameExt` (feature `unstable-widget-ref`) adds `render_widget_ref` / `render_stateful_widget_ref`.
-
----
-
 ## 5. Backend Trait & Backends
 
-`ratatui::backend` re-exports: `Backend`, `ClearType`, `TestBackend`, `WindowSize`, and (per feature) `CrosstermBackend`/`TermionBackend`/`TermwizBackend` + their `From*`/`Into*` conversion traits.
+`ratatui::backend` re-exports: `Backend`, `ClearType`, `TestBackend`, `WindowSize`, and (per feature) `CrosstermBackend`/`TerminaBackend`/`TermionBackend`/`TermwizBackend` + their `From*`/`Into*` conversion traits.
 
 ### `Backend` Trait (`ratatui-core`)
 
-You rarely implement this; use a provided backend.
-
-```rust
-pub trait Backend {
-    type Error;
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
-        where I: Iterator<Item = (u16, u16, &'a Cell)>;
-    fn hide_cursor(&mut self) -> Result<(), Self::Error>;
-    fn show_cursor(&mut self) -> Result<(), Self::Error>;
-    fn get_cursor_position(&mut self) -> Result<Position, Self::Error>;
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error>;
-    fn clear(&mut self) -> Result<(), Self::Error>;
-    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error>;
-    fn size(&self) -> Result<Size, Self::Error>;
-    fn window_size(&mut self) -> Result<WindowSize, Self::Error>;
-    fn flush(&mut self) -> Result<(), Self::Error>;
-    // provided/default: append_lines, get_cursor, set_cursor, scroll_region_up/down
-}
-
-pub enum ClearType { All, AfterCursor, BeforeCursor, CurrentLine, UntilNewLine }
-pub struct WindowSize { /* columns_rows: Size, pixels: Size */ }
-```
+You rarely implement this; use a provided backend. A custom backend sets `type Error` and implements, each returning `Result<_, Self::Error>`: `draw(content)` (an `Iterator<Item = (u16, u16, &Cell)>`), `hide_cursor`, `show_cursor`, `get_cursor_position` (-> `Position`), `set_cursor_position`, `clear`, `clear_region(ClearType)` (no default), `size` (-> `Size`), `window_size` (-> `WindowSize`), `flush`, plus `scroll_region_up`/`scroll_region_down` under feature `scrolling-regions`. Only `append_lines` (a no-op) and the deprecated `get_cursor`/`set_cursor` have defaults. `ClearType { All, AfterCursor, BeforeCursor, CurrentLine, UntilNewLine }`. `WindowSize { columns_rows, pixels }` (both `Size`): `pixels` may be `0,0`, so check it before dividing by it. `clear()` (the whole visible screen) and `clear_region(..)` blank cells ratatui may not have drawn, and leave the cursor where it was.
 
 ### `CrosstermBackend<W: Write>` (`ratatui-crossterm`)
 
-```rust
-pub fn new(writer: W) -> Self;
-pub fn writer(&self) -> &W;
-pub fn writer_mut(&mut self) -> &mut W;
-```
+`CrosstermBackend::new(writer)`, as in `Terminal::new(CrosstermBackend::new(std::io::stdout()))?`. `writer()` / `writer_mut()` need feature `unstable-backend-writer`; writing through them can corrupt later output.
 
-```rust
-use ratatui::{Terminal, backend::CrosstermBackend};
-let backend = CrosstermBackend::new(std::io::stdout());
-let mut terminal = Terminal::new(backend)?;
-```
-
-Conversion traits `IntoCrossterm<C>` / `FromCrossterm<C>` bridge ratatui `Color`/`Style`/`Modifier` to crossterm types (used internally; available if you mix raw crossterm styling).
+Conversion traits `IntoCrossterm<C>` / `FromCrossterm<C>` (in `ratatui::backend`) bridge ratatui `Color`/`Style` to crossterm types; `Modifier` converts from crossterm only. They replace the plain `From`/`Into` impls (0.30): call `Color::from_crossterm(c)` / `color.into_crossterm()` with the trait imported, never `Color::from(c)` or `.into()`.
 
 ### `TestBackend` (`ratatui-core`): For Unit Tests
 
 ```rust
-pub fn new(width: u16, height: u16) -> Self;
-pub fn with_lines<'l, L: IntoIterator<Item: Into<Line<'l>>>>(lines: L) -> Self;
-pub fn buffer(&self) -> &Buffer;
-pub fn resize(&mut self, width: u16, height: u16);
-pub fn assert_buffer(&self, expected: &Buffer);
-pub fn assert_buffer_lines<'l, L>(&self, expected: L);   // compare to `Line`s
-pub fn assert_cursor_position<P: Into<Position>>(&mut self, position: P);
-pub fn cursor_visible(&self) -> bool;
-pub fn cursor_position(&self) -> Position;
-pub fn scrollback(&self) -> &Buffer;                     // captured insert_before output
+// fragment
+TestBackend::new(width: u16, height: u16)
+TestBackend::with_lines(lines)  // the size comes from the lines
+backend.buffer() -> &Buffer;  backend.resize(width, height)
+backend.assert_buffer(&Buffer);  backend.assert_buffer_lines(lines)  // compare to `Line`s
+backend.assert_cursor_position(impl Into<Position>);  backend.cursor_visible() -> bool;  backend.cursor_position() -> Position
+backend.scrollback() -> &Buffer  // captured insert_before output
+backend.assert_scrollback(&Buffer) / assert_scrollback_empty() / assert_scrollback_lines(lines)
 ```
 
 ```rust
-let backend = TestBackend::new(10, 3);
-let mut terminal = Terminal::new(backend)?;
-terminal.draw(|f| f.render_widget("hi", f.area()))?;
-terminal.backend().assert_buffer_lines(["hi        ", "          ", "          "]);
+use ratatui::{Terminal, backend::TestBackend};
+
+#[test]
+fn renders_hi() {
+    let mut terminal = Terminal::new(TestBackend::new(10, 3)).unwrap();
+    terminal.draw(|f| f.render_widget("hi", f.area())).unwrap();
+    terminal.backend().assert_buffer_lines(["hi        ", "          ", "          "]);
+}
 ```
 
----
+- `TestBackend`'s error type is `core::convert::Infallible` (0.30), not `std::io::Error`.
 
 ## 6. Layout
 
-From `ratatui-core::layout` (`ratatui::layout`).
+From `ratatui-core::layout` (`ratatui::layout`). Snippets assume `use ratatui::layout::Constraint::{Fill, Length, Min, Percentage};`.
 
 ### `Constraint`
 
 ```rust
+// fragment
 pub enum Constraint {
-    Min(u16),         // at least N cells
-    Max(u16),         // at most N cells
-    Length(u16),      // exactly N cells (yields if no room)
-    Percentage(u16),  // % of available space
-    Ratio(u32, u32),  // numerator/denominator of available space
-    Fill(u16),        // grow to fill leftover, weighted by the factor
+    Min(u16),  // at least N cells
+    Max(u16),  // at most N cells
+    Length(u16),  // exactly N cells (yields if no room)
+    Percentage(u16),  // % of the WHOLE area, not of what is left
+    Ratio(u32, u32),  // numerator/denominator of the whole area; thirds are Ratio(1, 3), never Percentage(33)
+    Fill(u16),  // grow to fill leftover, weighted by the factor
 }
-impl Constraint {
-    pub fn apply(&self, length: u16) -> u16;
-    // bulk builders (return Vec<Constraint>):
-    pub fn from_lengths<T: IntoIterator<Item=u16>>(lengths: T) -> Vec<Self>;
-    pub fn from_mins<T: IntoIterator<Item=u16>>(mins: T) -> Vec<Self>;
-    pub fn from_maxes<T: IntoIterator<Item=u16>>(maxes: T) -> Vec<Self>;
-    pub fn from_fills<T: IntoIterator<Item=u16>>(factors: T) -> Vec<Self>;
-    pub fn from_percentages<T: IntoIterator<Item=u16>>(pcts: T) -> Vec<Self>;
-    pub fn from_ratios<T: IntoIterator<Item=(u32,u32)>>(ratios: T) -> Vec<Self>;
-}
-// From<u16> -> Constraint::Length
+// bulk builders -> Vec<Constraint>: from_lengths / from_mins / from_maxes / from_fills / from_percentages (u16 items), from_ratios ((u32, u32) items)
+// From<u16> -> Constraint::Length, so Layout::vertical([1, 2, 3]) works
+// Constraint::apply is deprecated (0.26): do not call it
+```
+
+- Conflicts are settled by constraint type, never by array order: `Min` > `Max` > `Length` > `Percentage` > `Ratio` > `Fill`.
+
+```rust
+// fragment
+Layout::horizontal([Fill(1), Min(20)])  // WRONG to expect the first to win: 10 wide, Min takes all 10 and Fill gets 0
+Layout::horizontal([Length(20), Fill(1)]) // RIGHT: 100 wide, Length gets its 20 and Fill the remaining 80
+```
+
+- `Percentage` and `Ratio` measure the whole area. For a share of what is left, use `Fill`.
+
+```rust
+// fragment
+// the area is 100 wide
+Layout::horizontal([Length(20), Percentage(50)])  // WRONG for "half of the rest": gives 20 + 50
+Layout::horizontal([Length(20), Fill(1), Fill(1)])  // RIGHT: 20 + 40 + 40
+```
+
+- The region that takes the rest is `Fill(1)`; `Fill(1)` beside `Fill(2)` share the leftover 1:2. `Min(n)` also grows (equally with `Fill(1)` under the default flex) but keeps its floor. There is no `Constraint::Proportional`.
+
+```rust
+// fragment
+Layout::vertical([Length(3), Min(0)])  // works, but reads as a hack
+Layout::vertical([Length(3), Fill(1)])  // RIGHT: header, then a body that takes the rest
 ```
 
 ### `Direction` / `Flex` / `Spacing`
 
 ```rust
-pub enum Direction { Horizontal, Vertical }
-impl Direction { pub const fn perpendicular(self) -> Self; }
+// fragment
+pub enum Direction { Horizontal, Vertical }  // + const fn perpendicular(self)
 
-pub enum Flex {           // how leftover space is distributed
-    Legacy,               // pre-0.26 behaviour (stretch last)
-    Start, End, Center,   // pack at an edge / center
-    SpaceBetween,         // gaps between items only
-    SpaceEvenly,          // equal gaps incl. edges
-    SpaceAround,          // half-gaps at edges
+pub enum Flex {  // how leftover space is distributed
+    Legacy,  // pre-0.26 behaviour: the last segment stretches
+    Start,  // DEFAULT: segments packed at the start; space no Fill/Min segment takes stays empty
+    End, Center,  // pack at the end / center
+    SpaceBetween,  // gaps between items only
+    SpaceEvenly,  // equal gaps incl. edges
+    SpaceAround,  // inner gaps are twice the edge gaps (flexbox; changed in 0.30)
 }
 
-pub enum Spacing { Space(u16), Overlap(u16) }   // gap or overlap between segments
+pub enum Spacing { Space(u16), Overlap(u16) }  // gap or overlap between segments
 // From<u16>/From<i16>/From<i32> for Spacing (negative -> Overlap)
 ```
+
+- `horizontal` places segments side by side (columns); `vertical` stacks them top to bottom (rows).
+
+```rust
+// fragment
+Layout::horizontal([Length(1), Fill(1)])  // WRONG for a title row above a body: this makes two columns
+Layout::vertical([Length(1), Fill(1)])  // RIGHT
+```
+
+- The default flex is `Flex::Start`: fixed segments keep their size, and with no `Fill`/`Min` segment the leftover stays empty at the end. Pre-0.26 code expects the last segment to stretch: give one segment `Fill(1)`, or set `.flex(Flex::Legacy)`.
+
+```rust
+// fragment
+// the area is 100 wide
+Layout::horizontal([Length(20), Length(20)])  // WRONG if the 2nd should stretch: 60 columns stay empty
+Layout::horizontal([Length(20), Fill(1)])  // RIGHT
+```
+
+- Gaps come from `.spacing(n)` or a `Flex::Space*` mode, never from a spacer `Length(1)` constraint. `.spacing(n)` is ignored under `Flex::Space*` and on a single segment; `.spacing(-1)` overlaps neighbours by one cell so their borders can merge (with `Block::merge_borders`).
 
 ### `Layout`
 
 ```rust
-// constructors
-pub fn new<I: IntoIterator<Item: Into<Constraint>>>(dir: Direction, c: I) -> Self;
-pub fn vertical<I: IntoIterator<Item: Into<Constraint>>>(c: I) -> Self;     // USE THIS
-pub fn horizontal<I: IntoIterator<Item: Into<Constraint>>>(c: I) -> Self;   // USE THIS
-// builder (all const where possible)
-pub const fn direction(self, d: Direction) -> Self;
-pub fn constraints<I>(self, c: I) -> Self;
-pub const fn margin(self, m: u16) -> Self;
-pub const fn horizontal_margin(self, h: u16) -> Self;
-pub const fn vertical_margin(self, v: u16) -> Self;
-pub const fn flex(self, flex: Flex) -> Self;                    // centering etc.
-pub fn spacing<T: Into<Spacing>>(self, s: T) -> Self;
-// split (apply to an area)
-pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N];   // USE THIS (fixed count, no Vec)
-pub fn try_areas<const N: usize>(&self, area: Rect) -> Result<[Rect; N], _>;
-pub fn spacers<const N: usize>(&self, area: Rect) -> [Rect; N]; // the gap rects
-pub fn split(&self, area: Rect) -> Rc<[Rect]>;                  // Vec-like (Rects)
-pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers);
-pub fn init_cache(cache_size: NonZeroUsize);                   // optional, defaults to 500
+// fragment
+Layout::vertical(constraints)  Layout::horizontal(constraints)  // USE THESE; IntoIterator<Item: Into<Constraint>>
+Layout::new(direction, constraints)  // long form: Layout::default().direction(d).constraints(c)
+.margin(u16)  .horizontal_margin(u16)  .vertical_margin(u16)  // a plain u16, never a Margin value
+.flex(Flex)  // centering etc.
+.spacing(impl Into<Spacing>)
+layout.areas::<N>(area) -> [Rect; N]  // USE THIS (fixed count, no Vec). PANICS unless there are exactly N constraints
+layout.try_areas::<N>(area) -> Result<[Rect; N], TryFromSliceError>
+layout.split(area) -> Rc<[Rect]>  // runtime-known count
+layout.spacers::<N>(area) -> [Rect; N]  // the gap rects (constraints + 1); split_with_spacers(area) -> (segments, spacers)
+Layout::init_cache(cache_size: NonZeroUsize)  // feature `layout-cache`; optional, the size defaults to 500
 ```
 
-**USE THIS instead of hand-rolling** split + index juggling: destructure `areas`:
+**USE THIS instead of hand-rolling** split + index juggling: destructure `areas`. **Centering**: don't compute offsets manually, use `Flex::Center` or `Rect::centered`:
 
 ```rust
-use ratatui::layout::{Layout, Constraint};
+use ratatui::layout::{Constraint, Flex, Layout, Rect};
+
+let area = Rect::new(0, 0, 80, 24);
 let [header, body, footer] = Layout::vertical([
     Constraint::Length(3),
-    Constraint::Fill(1),     // grows to fill
+    Constraint::Fill(1),  // grows to fill
     Constraint::Length(1),
-]).areas(frame.area());
-```
-
-**Centering**: don't compute offsets manually, use `Flex::Center`:
-
-```rust
-let [area] = Layout::horizontal([Constraint::Length(40)])
-    .flex(ratatui::layout::Flex::Center)
-    .areas(parent);
+])
+.areas(area);
+let [dialog] = Layout::horizontal([Constraint::Length(40)]).flex(Flex::Center).areas(body);
+assert_eq!((header.height, footer.height, dialog.width), (3, 1, 40));
+let popup = area.centered(Constraint::Percentage(60), Constraint::Percentage(40));
+assert!(popup.width <= area.width);
 ```
 
 ### `Rect`
 
 ```rust
-pub const fn new(x: u16, y: u16, width: u16, height: u16) -> Self;
-pub const ZERO: Self; pub const MAX: Self;
-// geometry
-pub const fn area(self) -> u32;
-pub const fn is_empty(self) -> bool;
-pub const fn left/right/top/bottom(self) -> u16;
-pub const fn inner(self, margin: Margin) -> Self;       // shrink by margin: USE THIS for padding
-pub const fn outer(self, margin: Margin) -> Self;       // grow
-pub fn offset(self, offset: Offset) -> Self;
-pub const fn resize(self, size: Size) -> Self;
-pub fn union(self, other: Self) -> Self;
-pub fn intersection(self, other: Self) -> Self;
-pub const fn intersects(self, other: Self) -> bool;
-pub const fn contains(self, position: Position) -> bool;
-pub fn clamp(self, other: Self) -> Self;
-// iteration
-pub const fn rows(self) -> Rows;          // iterator of 1-high Rects
-pub const fn columns(self) -> Columns;    // iterator of 1-wide Rects
-pub const fn positions(self) -> Positions;// iterator of every Position
-// conversions
-pub const fn as_position(self) -> Position;
-pub const fn as_size(self) -> Size;
-// centering helpers (USE THESE instead of manual math)
-pub fn centered_horizontally(self, c: Constraint) -> Self;
-pub fn centered_vertically(self, c: Constraint) -> Self;
-pub fn centered(self, h: Constraint, v: Constraint) -> Self;
-// layout shortcut
-pub fn layout<const N: usize>(self, layout: &Layout) -> [Self; N];
-pub fn layout_vec(self, layout: &Layout) -> Vec<Self>;
+// fragment
+// Rect { x, y, width, height }, all u16. (0, 0) is the top-left cell; y grows DOWNWARD
+Rect::new(x, y, width, height)  // clamps so right()/bottom() fit in u16; a `Rect { .. }` literal does not. Also Rect::ZERO, Rect::MAX
+rect.area() -> u32  // never `width * height`: that overflows u16
+rect.is_empty() -> bool
+rect.left() / right() / top() / bottom() -> u16  // right() and bottom() are EXCLUSIVE
+rect.inner(Margin)  // shrink by margin (per side): USE THIS for padding. By value; too large -> empty rect
+rect.outer(Margin)  // grow; may leave the buffer: .clamp(area) it
+rect.offset(Offset);  rect.resize(Size);  rect + Offset;  rect - Offset  // moves saturate at the u16 edges; never `rect + -offset`
+rect.union(other);  rect.intersection(other)  // each RETURNS a Rect: the bounding box / the overlap
+rect.clamp(other)  // move inside `other`, shrinking only if too big
+rect.intersects(other) -> bool;  rect.contains(Position) -> bool  // USE THESE for overlap and hit tests
+rect.rows() / columns() / positions()  // iterators: 1-high Rects / 1-wide Rects / every Position
+rect.as_position() -> Position;  rect.as_size() -> Size
+rect.centered(h: Constraint, v: Constraint)  // + centered_horizontally(c), centered_vertically(c): USE THESE
+rect.layout::<N>(&layout) -> [Rect; N];  rect.try_layout::<N>(&layout);  rect.layout_vec(&layout) -> Vec<Rect>
 ```
 
+- `right()` and `bottom()` are the first coordinate outside the rect.
+
 ```rust
-let popup = frame.area().centered(Constraint::Percentage(60), Constraint::Percentage(40));
+// fragment
+for x in rect.left()..=rect.right() { .. }  // WRONG: one column too far
+for x in rect.left()..rect.right() { .. }  // RIGHT (or: for pos in rect.positions() { .. })
 ```
+
+- y grows downward: the top row has the smallest y.
+
+```rust
+// fragment
+let header = Position::new(area.x, area.bottom() - 1);  // WRONG: that is the bottom row
+let header = Position::new(area.x, area.y);  // RIGHT
+```
+
+- A margin is per side: `Margin::new(2, 1)` removes 4 columns and 2 rows.
 
 ### `Size`, `Position`, `Offset`, `Margin`, `Alignment`
 
 ```rust
-pub struct Size { pub width: u16, pub height: u16 }    // new(w,h); area(); ZERO/MAX
-pub struct Position { pub x: u16, pub y: u16 }          // new(x,y); ORIGIN; offset(Offset)
-pub struct Offset { pub x: i32, pub y: i32 }            // signed; new(x,y); ZERO
-pub struct Margin { pub horizontal: u16, pub vertical: u16 }  // new(h,v); From<u16>
-
-pub type Alignment = HorizontalAlignment;               // alias
-pub enum HorizontalAlignment { Left, Center, Right }
-pub enum VerticalAlignment   { Top, Center, Bottom }
+// fragment
+Size { width: u16, height: u16 }  // new(w,h); area() -> u32; ZERO/MAX
+Position { x: u16, y: u16 }  // new(x,y); ORIGIN; offset(Offset)
+Offset { x: i32, y: i32 }  // signed; new(x,y); ZERO
+Margin { horizontal: u16, vertical: u16 }  // new(h,v), per side; From<u16>
+enum HorizontalAlignment { Left, Center, Right }  // the name since 0.30; `Alignment` is the back-compat alias,
+//   but a glob import needs the new name: `use HorizontalAlignment::*;`, never `use Alignment::*;`
+enum VerticalAlignment { Top, Center, Bottom }  // exported, but no ratatui API takes it yet
 ```
 
-`Position`/`Size` convert from/to `(u16,u16)` and from `Rect`; `Offset` supports `Add`/`Sub` with `Position`/`Rect`.
-
----
+`Position`/`Size` convert from/to `(u16,u16)` and from `Rect`; `pos + offset`, `pos - offset`, `rect + offset`, `rect - offset` (and `+=`/`-=`) work, and `offset + pos`/`offset + rect` too; there is no `offset - ..`.
 
 ## 7. Style
 
@@ -457,227 +429,187 @@ From `ratatui-core::style` (`ratatui::style`).
 ### `Style`
 
 ```rust
-pub struct Style {
-    pub fg: Option<Color>,
-    pub bg: Option<Color>,
-    pub underline_color: Option<Color>,  // feature underline-color
-    pub add_modifier: Modifier,
-    pub sub_modifier: Modifier,
-}
-pub const fn new() -> Self;          // empty
-pub const fn reset() -> Self;        // resets everything
-pub const fn fg(self, c: Color) -> Self;
-pub const fn bg(self, c: Color) -> Self;
-pub const fn underline_color(self, c: Color) -> Self;
-pub const fn add_modifier(self, m: Modifier) -> Self;
-pub const fn remove_modifier(self, m: Modifier) -> Self;
-pub const fn has_modifier(self, m: Modifier) -> bool;
-pub fn patch<S: Into<Style>>(self, other: S) -> Self;   // layer styles
+// fragment
+// fields: fg, bg, underline_color (feature underline-color): Option<Color>; add_modifier, sub_modifier: Modifier. Use the builders, never a `Style { .. }` literal
+Style::new()  // empty: patching it changes nothing (same as Style::default())
+Style::reset()  // associated fn: resets everything. There is no `some_style.reset()`
+.fg(Color)  .bg(Color)  .underline_color(Color)
+.add_modifier(Modifier)  .remove_modifier(Modifier)  // several at once: Modifier::BOLD | Modifier::ITALIC
+.has_modifier(Modifier) -> bool
+.patch(impl Into<Style>)  // layer styles
+// + every `Stylize` shorthand as an inherent const fn (0.30; no import needed): Style::new().red().on_black().bold()
 // From: Color, (Color,Color), Modifier, and tuples up to (Color,Color,Modifier,Modifier)
 ```
+
+- A `Style` is a partial change. `patch` (and every `patch_style`) overwrites only the fields the new style sets and merges its modifiers; the rest survives.
+
+```rust
+// fragment
+let base = Style::new().yellow().bold();
+let cell = base.patch(Style::new().on_red());  // yellow + BOLD + red background. WRONG to expect fg and BOLD gone
+let plain = base.patch(Style::reset());  // RIGHT way to drop what came before
+```
+
+- Turn a modifier off with `.remove_modifier(Modifier::BOLD)` or `.not_bold()`: a bare `Style::new()` cannot.
+- Every style parameter is `impl Into<Style>`: pass `Color::Red` or `(Color::Red, Modifier::BOLD)` directly, and type your own style parameters the same way.
 
 ### `Color`
 
 ```rust
+// fragment
 pub enum Color {
     Reset,
     Black, Red, Green, Yellow, Blue, Magenta, Cyan, Gray, DarkGray,
     LightRed, LightGreen, LightYellow, LightBlue, LightMagenta, LightCyan, White,
-    Rgb(u8, u8, u8),     // 24-bit truecolor
-    Indexed(u8),         // 256-color palette index
+    Rgb(u8, u8, u8),  // 24-bit truecolor: needs a truecolor terminal, prefer named or Indexed colors
+    Indexed(u8),  // 256-color palette index
 }
-pub const fn from_u32(u: u32) -> Self;   // 0x00RRGGBB
-pub fn from_hsl(hsl: palette::Hsl) -> Self;       // feature palette
-pub fn from_hsluv(h: palette::Hsluv) -> Self;     // feature palette
+// Gray is the ordinary light gray (ANSI 37); White is BRIGHT white (ANSI 97)
+pub const fn from_u32(u: u32) -> Self;  // 0x00RRGGBB
+// feature palette: Color::from_hsl(palette::Hsl), Color::from_hsluv(palette::Hsluv)
 // FromStr ("red", "#ff8800", ...); From<[u8;3]>, From<(u8,u8,u8)>, +alpha variants
 ```
 
-Bundled palettes (constants under `style::palette`):
-- `style::palette::tailwind::{SLATE, RED, BLUE, EMERALD, ...}`: each a `Palette` with shade fields.
-- `style::palette::material::{RED, BLUE, GRAY, ...}`: Material design swatches.
+Bundled palettes (constants under `style::palette`): `tailwind::{SLATE, RED, BLUE, EMERALD, ...}` (each a `Palette` with shade fields) and `material::{RED, BLUE, GRAY, ...}`.
 
 ### `Modifier` (Bitflags)
 
 ```rust
-pub struct Modifier: u16;   // bitflags
-Modifier::{ BOLD, DIM, ITALIC, UNDERLINED, SLOW_BLINK, RAPID_BLINK, REVERSED, HIDDEN, CROSSED_OUT }
+// fragment
+Modifier::{ BOLD, DIM, ITALIC, UNDERLINED, SLOW_BLINK, RAPID_BLINK, REVERSED, HIDDEN, CROSSED_OUT }  // bitflags over u16
 ```
 
 ### `Stylize` Trait: The Ergonomic Shorthand
 
-`Stylize` is implemented for `&str`, `String`, `Cow<str>`, `Span`, `Line`, `Text`, every widget, etc. It returns the styled value, so you chain it.
+`Stylize` is implemented for `&str`, `String`, `Cow<str>`, `Span`, `Line`, `Text` and every built-in widget except `Clear`, `Scrollbar`, `Canvas`, `Monthly`, `RatatuiLogo` and `RatatuiMascot` (those are not `Styled`). It returns the styled value, so you chain it.
 
-```rust
-// core methods
-fn fg<C: Into<Color>>(self, c: C) -> T;
-fn bg<C: Into<Color>>(self, c: C) -> T;
-fn reset(self) -> T;
-fn add_modifier(self, m: Modifier) -> T;
-fn remove_modifier(self, m: Modifier) -> T;
-fn style<S: Into<Style>>(self, s: S) -> T;   // set whole style
-```
+Core methods: `fg(impl Into<Color>)`, `bg(impl Into<Color>)`, `reset()`, `add_modifier(Modifier)`, `remove_modifier(Modifier)`.
 
-**Generated color shorthands** (foreground + `on_` background):
+**Generated shorthands**: colors (foreground + `on_` background) and modifiers (each has a `not_` negation):
 
 ```
 black/red/green/yellow/blue/magenta/cyan/gray/dark_gray/
-light_red/light_green/light_yellow/light_blue/light_magenta/light_cyan/white
-// + on_black, on_red, ... on_white
-```
-
-**Generated modifier shorthands** (each has a `not_` negation):
-
-```
-bold/dim/italic/underlined/slow_blink/rapid_blink/reversed/hidden/crossed_out
-// + not_bold, not_dim, ...
+light_red/light_green/light_yellow/light_blue/light_magenta/light_cyan/white  // + on_black, on_red, ... on_white
+bold/dim/italic/underlined/slow_blink/rapid_blink/reversed/hidden/crossed_out  // + not_bold, not_dim, ...
 ```
 
 **USE THIS instead of hand-rolling `Style::new().fg(...).add_modifier(...)`:**
 
 ```rust
-use ratatui::style::Stylize;
-let s = "ERROR".red().bold().on_white();        // Span with style
-let title = "Title".light_blue().italic();
+use ratatui::{style::Stylize, text::Span, widgets::Block};
+
+let s = "ERROR".red().bold().on_white();  // Span with style
 let warn = Span::raw("careful").yellow().underlined();
-// any widget: Block::bordered().blue(); Paragraph::new("x").on_dark_gray();
+let block = Block::bordered().blue();  // any `Styled` widget
 ```
 
-`Styled` trait (low-level): `style()` getter + `set_style()`; `Stylize` is the blanket impl over it.
+- Import `Stylize` from `ratatui::style`, never crossterm's (`ratatui::crossterm::style::Stylize`): with both in scope the calls are ambiguous.
+- A shorthand consumes a `String`: write `s.clone().red()` when `s` is used again.
 
----
+`Styled` trait (low-level): `style()` getter + `set_style()` (the whole-style setter: `Stylize` has no `style` method); `Stylize` is the blanket impl over it.
 
 ## 8. Text
 
 From `ratatui-core::text` (`ratatui::text`). Hierarchy: `Text` (multi-line) → `Line` (one row of spans) → `Span` (a styled string).
 
-### `Span<'a>`: Styled String Fragment
-
 ```rust
-pub fn raw<T: Into<Cow<'a,str>>>(content: T) -> Self;
-pub fn styled<T: Into<Cow<'a,str>>, S: Into<Style>>(content: T, style: S) -> Self;
-pub fn content<T: Into<Cow<'a,str>>>(self, content: T) -> Self;
-pub fn style<S: Into<Style>>(self, style: S) -> Self;
-pub fn patch_style<S: Into<Style>>(self, style: S) -> Self;
-pub fn reset_style(self) -> Self;
-pub fn width(&self) -> usize;
-pub fn into_centered_line(self) -> Line<'a>;   // + left/right aligned variants
-// From<&str>, From<String>, From<Cow<str>>; Add<Span> -> Line; Stylize; Widget
+// fragment
+// Span<'a>, a styled string fragment
+Span::raw(content)  // no style argument
+Span::styled(content, impl Into<Style>)
+.content(impl Into<Cow<str>>)  .style(..)  .patch_style(..)  .reset_style()
+span.width() -> usize
+span.into_left_aligned_line() / into_centered_line() / into_right_aligned_line() -> Line  // the to_* names are deprecated
+// From<&str>, From<String>, From<Cow<str>>; Add<Span> -> Line
+
+// Line<'a>, one terminal row: a Vec<Span> + alignment
+Line::raw(content)  Line::styled(content, impl Into<Style>)  Line::from(..)
+.spans(iter)  .style(..)  .patch_style(..)
+.alignment(Alignment)  .left_aligned()  .centered()  .right_aligned()  // USE centered() for centered titles/lines
+line.width() -> usize;  line.push_span(span);  line.iter()
+// From<&str>, From<String>, From<Span>, From<Vec<Span>>; Add<Span>, Add<Line>
+
+// Text<'a>, a multi-line block: a Vec<Line>
+Text::raw(content)  Text::styled(content, impl Into<Style>)  Text::from(..)  // string content is split on '\n'
+.style(..)  .patch_style(..)  .alignment(Alignment)  .left_aligned()  .centered()  .right_aligned()
+text.width() -> usize;  text.height() -> usize  // widest line in terminal columns; number of lines
+text.push_line(line);  text.push_span(span)  // push_span appends to the LAST line
+// From<&str>/<String>/<Span>/<Line>/<Vec<Line>>; Add. All three implement Widget and Stylize
 ```
 
-### `Line<'a>`: One Terminal Row, a `Vec<Span>` + Alignment
+- A `Line` is exactly one row. A `\n` inside it never starts a new row, and a line longer than its area is cut, not wrapped (wrapping is `Paragraph::wrap`).
 
 ```rust
-pub fn raw<T: Into<Cow<'a,str>>>(content: T) -> Self;
-pub fn styled<T, S>(content: T, style: S) -> Self;
-pub fn spans<I: IntoIterator<Item: Into<Span<'a>>>>(self, spans: I) -> Self;
-pub fn style<S: Into<Style>>(self, style: S) -> Self;
-pub fn alignment(self, a: Alignment) -> Self;
-pub fn left_aligned(self) -> Self;
-pub fn centered(self) -> Self;            // USE THIS for centered titles/lines
-pub fn right_aligned(self) -> Self;
-pub fn width(&self) -> usize;
-pub fn patch_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T);
-pub fn iter(&self) -> impl Iterator<Item=&Span>;
-// From<&str>, From<String>, From<Span>, From<Vec<Span>>; Add<Span>, Add<Line>; Widget; Stylize
+// fragment
+Text::from(Line::from("row1\nrow2"))  // WRONG: still one row
+Text::from(vec![Line::from("row1"), Line::from("row2")])  // RIGHT (or Text::from("row1\nrow2"))
 ```
 
-### `Text<'a>`: Multi-Line Block, a `Vec<Line>`
+- `.style(s)` replaces the whole style; `.patch_style(s)` adds to it. Same on `Span`, `Line` and `Text`.
 
 ```rust
-pub fn raw<T: Into<Cow<'a,str>>>(content: T) -> Self;     // splits on '\n'
-pub fn styled<T, S>(content: T, style: S) -> Self;
-pub fn style<S: Into<Style>>(self, style: S) -> Self;
-pub fn alignment(self, a: Alignment) -> Self;
-pub fn left_aligned/centered/right_aligned(self) -> Self;
-pub fn width(&self) -> usize;
-pub const fn height(&self) -> usize;
-pub fn push_line<T: Into<Line<'a>>>(&mut self, line: T);
-pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T);
-// From<&str>/<String>/<Span>/<Line>/<Vec<Line>>; Add; Widget; Stylize
+// fragment
+Line::styled("text", (Color::Yellow, Modifier::ITALIC)).style(Color::Red)  // WRONG: ITALIC is lost
+Line::styled("text", (Color::Yellow, Modifier::ITALIC)).patch_style(Color::Red)  // RIGHT: red + ITALIC
 ```
 
-### `Masked<'a>`: Render a String as Repeated Mask Chars
+- Styles nest widget → `Text` → `Line` → `Span`: the outer style is the base and the inner one wins, field by field. Alignment: a `Line`'s own wins. A `Paragraph` starts from its `Text`'s alignment, and a later `.alignment(..)` on the paragraph replaces that.
 
 ```rust
-pub fn new(s: impl Into<Cow<'a,str>>, mask_char: char) -> Self;
-pub fn mask_char(&self) -> char;
-pub fn value(&self) -> Cow<'a, str>;
-// Into<Text>, Into<Cow<str>>  (e.g. password fields)
+// fragment
+Text::from(Line::from("hi").blue()).red()  // WRONG to expect red: the Line's blue wins
+Text::from(Line::from("hi")).red()  // RIGHT: the Line sets no color, so it takes the Text's
 ```
 
-**USE THESE `From`/builder ergonomics instead of hand-constructing structs:**
+- `Spans` was removed in 0.24: the type is `Line`.
 
 ```rust
-let line: Line = "plain text".into();                  // From<&str>
-let line = Line::from(vec!["a".red(), " b".green()]);   // From<Vec<Span>>
-let title = Line::from("Title").centered().bold();
-let text: Text = "line1\nline2".into();                 // auto-splits newlines
-let span: Span = "hi".bold().into();
+// fragment
+let row = Spans::from(vec![Span::raw("Hello ")]);  // WRONG: does not compile
+let row = Line::from(vec![Span::raw("Hello ")]);  // RIGHT; into a buffer: buf.set_line(x, y, &row, width), never set_spans
 ```
 
-`ToLine` / `ToSpan` / `ToText` traits give `.to_line()` / `.to_span()` / `.to_text()` on any `Display`. `StyledGrapheme<'a>` is the per-grapheme styled unit produced by `styled_graphemes()`.
+- Pass `&str`/`String` wherever text is expected. Build a `Span`, `Line` or `Text` only when a part needs its own style.
+- Measure `Text` with `.width()` and `.height()` (display columns, line count); a `Span` or `Line` has only `.width()`. Never `str::len()` or `chars().count()`.
+- A `Line { .. }` struct literal needs `..Default::default()` (the `style` field, 0.26), and its `alignment` is an `Option`: use the constructors instead.
+- `.clone()` on a `Span`/`Line`/`Text` keeps its borrow: build stored text (`Line<'static>`) from owned `String`s.
 
----
+`Masked::new(impl Into<Cow<str>>, mask_char: char)` renders a string as repeated mask chars (password fields): `.mask_char()`, `.value()`; `Into<Text>`, `Into<Cow<str>>`. `{}` prints the mask, `{:?}` the SECRET: never Debug-log it.
+
+**USE THESE `From`/builder ergonomics instead of hand-constructing structs:** `Line::from(vec!["a".red(), " b".green()])`, `Line::from("Title").centered().bold()`, `let text: Text = "line1\nline2".into();` (import `ratatui::style::Stylize`). The `ratatui::text` traits `ToLine` / `ToSpan` / `ToText` give `.to_line()` / `.to_span()` / `.to_text()` on any `Display`.
+
+`StyledGrapheme<'a>` (from `span.styled_graphemes(base_style)`) is a render-time unit: build text from `Span`s, never from graphemes.
 
 ## 9. Buffer & Cell
 
 From `ratatui-core::buffer` (`ratatui::buffer`). The buffer is the 2-D grid of `Cell`s the terminal diffs.
 
-### `Buffer`
-
 ```rust
-pub fn empty(area: Rect) -> Self;
-pub fn filled(area: Rect, cell: Cell) -> Self;
-pub fn with_lines<'a, I: IntoIterator<Item: Into<Line<'a>>>>(lines: I) -> Self;  // tests
-pub fn area(&self) -> &Rect;
-pub fn content(&self) -> &[Cell];
-// cell access
-pub fn cell<P: Into<Position>>(&self, pos: P) -> Option<&Cell>;
-pub fn cell_mut<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell>;
-// also: buf[Position] / buf[(x,y)] via Index/IndexMut
-// writing
-pub fn set_string<T: AsRef<str>, S: Into<Style>>(&mut self, x: u16, y: u16, s: T, style: S);
-pub fn set_stringn<...>(&mut self, x, y, s, max_width, style) -> (u16, u16);
-pub fn set_line(&mut self, x: u16, y: u16, line: &Line, max_width: u16) -> (u16, u16);
-pub fn set_span(&mut self, x: u16, y: u16, span: &Span, max_width: u16) -> (u16, u16);
-pub fn set_style<S: Into<Style>>(&mut self, area: Rect, style: S);
-// lifecycle
-pub fn resize(&mut self, area: Rect);
-pub fn reset(&mut self);
-pub fn merge(&mut self, other: &Self);
-pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)>;
-pub fn diff_iter<'p,'n>(&'p self, other: &'n Self) -> BufferDiff<'p,'n>;  // lazy
+// fragment
+// Buffer { pub area: Rect, pub content: Vec<Cell> }
+Buffer::empty(area)  Buffer::filled(area, cell: Cell)
+Buffer::with_lines(lines)  // tests; the size comes from the lines
+buf.cell(pos) -> Option<&Cell>;  buf.cell_mut(pos) -> Option<&mut Cell>  // pos: impl Into<Position>, e.g. (x, y)
+buf[(x, y)]  buf[Position]  // Index/IndexMut: PANICS outside the area
+buf.set_string(x, y, s, style)  // returns (). Start inside the area (buf.area.contains(..)): an outside y PANICS
+buf.set_stringn(x, y, s, max_width, style) / set_line(x, y, &line, max_width) / set_span(x, y, &span, max_width) -> (u16, u16)
+buf.set_style(area, style)
+buf.resize(area);  buf.reset();  buf.merge(&other);  buf.diff(&other) -> Vec<(u16, u16, &Cell)>
+buf.diff_iter(&other) -> BufferDiff  // lazy; PANICS unless both buffers share x, y and width
+
+// Cell
+Cell::EMPTY  Cell::new(symbol: &'static str) // runtime text: Cell::default(), then cell.set_symbol(&s)
+cell.symbol() -> &str
+cell.set_symbol(&str)  .set_char(char)  .set_fg(Color)  .set_bg(Color)  .set_style(impl Into<Style>)  // each -> &mut Cell
+cell.style() -> Style;  cell.reset()
+cell.set_diff_option(CellDiffOption)  // { None, Skip, AlwaysUpdate, ForcedWidth(NonZeroU16) }
+cell.merge_symbol(&str, MergeStrategy)  // join border glyphs
+// deprecated: set_skip(bool) and the `skip` field -> set_diff_option(CellDiffOption::Skip). From<char>
 ```
 
-### `Cell`
-
-```rust
-pub const EMPTY: Self;
-pub const fn new(symbol: &'static str) -> Self;
-pub fn symbol(&self) -> &str;
-pub fn set_symbol(&mut self, s: &str) -> &mut Self;
-pub fn set_char(&mut self, c: char) -> &mut Self;
-pub const fn set_fg(&mut self, c: Color) -> &mut Self;
-pub const fn set_bg(&mut self, c: Color) -> &mut Self;
-pub fn set_style<S: Into<Style>>(&mut self, s: S) -> &mut Self;
-pub const fn style(&self) -> Style;
-pub const fn set_skip(&mut self, skip: bool) -> &mut Self;        // skip in diff
-pub const fn set_diff_option(&mut self, o: CellDiffOption) -> &mut Self;
-pub fn reset(&mut self);
-// From<char>; CellDiffOption { None, Skip, AlwaysUpdate, ForcedWidth(NonZeroU16) }
-```
-
-Custom-widget direct writing:
-
-```rust
-fn render(self, area: Rect, buf: &mut Buffer) {
-    buf.set_string(area.x, area.y, "X", Style::new().red());
-    if let Some(c) = buf.cell_mut((area.x, area.y)) { c.set_bg(Color::Blue); }
-}
-```
-
----
+- `buf.get(x, y)` / `get_mut` are deprecated. Index with `buf[(x, y)]` only where the position is known to be inside; otherwise `buf.cell((x, y))` / `cell_mut`.
+- Draw text by rendering a `Span`/`Line`/`Text` (`line.render(area, buf)`, with `Widget` in scope): it clips to the buffer and honours alignment, which `set_line` ignores.
+- After writing a double-width symbol with `set_symbol`, reset the cell to its right: `if let Some(c) = buf.cell_mut((x + 1, y)) { c.reset(); }` (indexing panics at the edge).
 
 ## 10. Symbols
 
@@ -685,63 +617,70 @@ From `ratatui-core::symbols` (`ratatui::symbols`). String/char constants + `Set`
 
 | Module | Contents |
 |---|---|
-| `symbols::border` | `Set` + `PLAIN, ROUNDED, DOUBLE, THICK, *_DASHED, QUADRANT_*, ONE_EIGHTH_*, PROPORTIONAL_*, FULL, EMPTY` |
-| `symbols::line` | `Set` + `NORMAL, ROUNDED, DOUBLE, THICK, *_DASHED`; raw glyphs `VERTICAL, HORIZONTAL, CROSS, TOP_LEFT, ...` |
-| `symbols::block` | `FULL, SEVEN_EIGHTHS … ONE_EIGHTH`; `Set` + `THREE_LEVELS, NINE_LEVELS` |
-| `symbols::bar` | same eighths as block; `Set` + `THREE_LEVELS, NINE_LEVELS` (sparkline/barchart) |
-| `symbols::braille` | `BRAILLE: [char; 256]` (canvas Braille marker) |
-| `symbols::half_block` | `UPPER='▀'`, `LOWER='▄'`, `FULL='█'` |
-| `symbols::shade` | `EMPTY, LIGHT, MEDIUM, DARK, FULL` |
-| `symbols::scrollbar` | `Set` + `VERTICAL, HORIZONTAL, DOUBLE_VERTICAL, DOUBLE_HORIZONTAL` |
-| `symbols::pixel` | `QUADRANTS[16]`, `SEXTANTS[64]`, `OCTANTS[256]` (high-density canvas) |
-| `symbols::merge` | `MergeStrategy { Replace, Exact, Fuzzy }` for border-joining |
-| `symbols::Marker` | canvas/braille marker (see below) |
-
-### `Marker` (Re-Exported as `symbols::Marker`)
+| `border` | `Set` + `PLAIN, ROUNDED, DOUBLE, THICK, *_DASHED, QUADRANT_*, ONE_EIGHTH_*, PROPORTIONAL_*, FULL, EMPTY` |
+| `line` | `Set` + `NORMAL, ROUNDED, DOUBLE, THICK, *_DASHED`; raw glyphs `VERTICAL, HORIZONTAL, CROSS, TOP_LEFT, ...` |
+| `block`, `bar` | `FULL, SEVEN_EIGHTHS … ONE_EIGHTH`; `Set` + `THREE_LEVELS, NINE_LEVELS` |
+| `braille`, `pixel`, `half_block`, `shade` | glyph tables: `BRAILLE: [char; 256]`, `QUADRANTS[16]`, `SEXTANTS[64]`, `OCTANTS[256]`; `UPPER='▀', LOWER='▄', FULL='█'`; `EMPTY, LIGHT, MEDIUM, DARK, FULL` |
+| `scrollbar` | `Set` + `VERTICAL, HORIZONTAL, DOUBLE_VERTICAL, DOUBLE_HORIZONTAL` |
+| `merge` | `MergeStrategy { Replace, Exact, Fuzzy }` for border-joining |
 
 ```rust
-pub enum Marker { Dot, Block, Bar, Braille, HalfBlock, Quadrant, Sextant, Octant, Custom(char) }
+// fragment
+#[non_exhaustive]
+pub enum Marker { Dot, Block, Bar, Braille, HalfBlock, Quadrant, Sextant, Octant, Custom(char) }  // symbols::Marker
 ```
 
-Used by `Canvas::marker(...)` and `Dataset::marker(...)`. `Braille` = highest resolution.
+Used by `Canvas::marker(...)` and `Dataset::marker(...)`. `Braille` and `Octant` both give the highest per-cell resolution (2x4); `Sextant` is 2x3, `Quadrant` 2x2. They need font support: fall back to `Dot`, `Block` or `Bar`. `Marker` is `#[non_exhaustive]` (0.30): every `match` on it needs a `_` arm.
 
 ```rust
-use ratatui::widgets::Block;
-use ratatui::symbols;
-let b = Block::bordered().border_set(symbols::border::ROUNDED);
+// fragment
+match marker { Marker::Dot => dots(), Marker::Braille => braille() }  // WRONG: does not compile
+match marker { Marker::Dot => dots(), Marker::Braille => braille(), _ => fallback() }  // RIGHT
 ```
-
----
 
 ## 11. Widget Traits
 
-From `ratatui-core::widgets` (`Widget`, `StatefulWidget`) and `ratatui::widgets` (`WidgetRef`, `StatefulWidgetRef`, `BlockExt`, `FrameExt`).
+From `ratatui-core::widgets` (`Widget`, `StatefulWidget`) and `ratatui::widgets` (`BlockExt`; behind feature `unstable-widget-ref`: `WidgetRef`, `StatefulWidgetRef`, `FrameExt`).
 
 ### `Widget`
 
 ```rust
+// fragment
 pub trait Widget {
     fn render(self, area: Rect, buf: &mut Buffer) where Self: Sized;
 }
 ```
 
-Built-in blanket impls: `Widget for &str`, `for String`, `for Option<W: Widget>`.
+Built-in blanket impls: `Widget for &str`, `for String`, `for Option<W: Widget>` (`None` draws nothing: no `if let` around an optional child).
 
-**0.30 pattern: implement `Widget for &T` (not `WidgetRef`)** so the widget can render by reference without consuming itself. Every built-in widget implements both `Widget for T` and `Widget for &T`:
+- Implement the trait with exactly that signature. A `Frame` never appears in it.
 
 ```rust
+// fragment
+impl Widget for MyWidget { fn render(&self, f: &mut Frame) { .. } }  // WRONG: does not compile
+impl Widget for &MyWidget { fn render(self, area: Rect, buf: &mut Buffer) { .. } }  // RIGHT
+```
+
+**0.30 pattern: implement `Widget for &T` (not `WidgetRef`)** so the widget can render by reference without consuming itself. Most built-in widgets implement both `Widget for T` and `Widget for &T`; `RatatuiLogo` and `RatatuiMascot` implement it for the owned value only, and `Scrollbar` is `StatefulWidget`-only.
+
+```rust
+use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+
 struct Greeting { name: String }
-impl Widget for &Greeting {                       // render by ref: the modern idiom
+
+impl Widget for &Greeting {  // render by ref: the modern idiom
     fn render(self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, format!("Hi {}", self.name), Style::new());
+        if area.is_empty() { return; }  // guard before any u16 math on the area
+        Line::raw(format!("Hi {}", self.name)).render(area, buf);
     }
 }
-// usage: frame.render_widget(&greeting, area);   // greeting not moved
+// usage: frame.render_widget(&greeting, area);  // greeting not moved
 ```
 
 ### `StatefulWidget`
 
 ```rust
+// fragment
 pub trait StatefulWidget {
     type State: ?Sized;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
@@ -750,329 +689,272 @@ pub trait StatefulWidget {
 
 Used by `List` (`ListState`), `Table` (`TableState`), `Scrollbar` (`ScrollbarState`). Render via `frame.render_stateful_widget(widget, area, &mut state)`.
 
-### `WidgetRef` / `StatefulWidgetRef`: Feature `unstable-widget-ref`
+- Keep the state in the app struct and pass `&mut` to it every frame. A state built inside `draw` resets selection and scroll each frame, and `render_widget` on a `List`/`Table` never applies either. Reset the state when the items are replaced.
 
 ```rust
-pub trait WidgetRef { fn render_ref(&self, area: Rect, buf: &mut Buffer); }
-pub trait StatefulWidgetRef {
-    type State;
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
-}
+// fragment
+terminal.draw(|f| {
+    let mut state = ListState::default();  // WRONG: rebuilt every frame
+    f.render_stateful_widget(list, f.area(), &mut state);
+})?;
+terminal.draw(|f| f.render_stateful_widget(list, f.area(), &mut app.list_state))?;  // RIGHT
 ```
 
-> **Deprecated direction in 0.30.** These are gated behind `unstable-widget-ref` and are being replaced > by the `Widget for &T` pattern. Prefer `impl Widget for &MyWidget`. Use `WidgetRef` only if you need > trait-object boxing (`Box<dyn WidgetRef>`). `FrameExt::render_widget_ref` exists for these.
+- A widget with nothing to remember implements `Widget`, never `StatefulWidget` with `type State = ()`.
 
----
+### `WidgetRef` / `StatefulWidgetRef`: Feature `unstable-widget-ref`
+
+`WidgetRef::render_ref(&self, area, buf)` and `StatefulWidgetRef::render_ref(&self, area, buf, state)`.
+
+> **Deprecated direction in 0.30.** Prefer `impl Widget for &MyWidget`. Use `WidgetRef` only if you need trait-object boxing (`Box<dyn WidgetRef>`). `FrameExt` adds `render_widget_ref` / `render_stateful_widget_ref` for these.
 
 ## 12. Widgets
 
-All from `ratatui-widgets`, re-exported under `ratatui::widgets`. Every widget implements `Widget` + `Widget for &T` (and `Styled`/`Stylize`); stateful ones add `StatefulWidget`.
+All from `ratatui-widgets`, re-exported under `ratatui::widgets`. Most widgets implement `Widget` + `Widget for &T` and `Styled`/`Stylize` (exceptions: §7, §11); stateful ones add `StatefulWidget`.
+
+- Builder setters consume the widget and return it. A setter called as a bare statement changes nothing: chain or rebind. `unused_must_use`
+- Give a widget its border through `.block(..)`: a `Block` and its content rendered separately into one area overlap.
+- Widgets implement `AsRef<Self>` since 0.30.1: when a bare `.as_ref()` argument stops inferring, name the type (`.as_str()` on a `String`).
+
+```rust
+// fragment
+let list = List::new(items);
+list.highlight_symbol(">> ");  // WRONG: the result is dropped
+let list = List::new(items).highlight_symbol(">> ");  // RIGHT
+frame.render_widget(Block::bordered(), area);
+frame.render_widget(paragraph, area);  // WRONG: text draws over the border
+frame.render_widget(paragraph.block(Block::bordered().title("Logs")), area);  // RIGHT
+```
 
 ### Block
 
 ```rust
-pub struct Block<'a>;
-pub const fn new() -> Self;
-pub const fn bordered() -> Self;                  // USE THIS = new().borders(Borders::ALL)
-pub fn title<T: Into<Line<'a>>>(self, t: T) -> Self;
-pub fn title_top<T: Into<Line<'a>>>(self, t: T) -> Self;
-pub fn title_bottom<T: Into<Line<'a>>>(self, t: T) -> Self;
-pub fn title_style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn title_alignment(self, a: Alignment) -> Self;
-pub const fn title_position(self, p: TitlePosition) -> Self;   // Top | Bottom
-pub fn border_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn borders(self, flags: Borders) -> Self;
-pub const fn border_type(self, t: BorderType) -> Self;
-pub const fn border_set(self, set: border::Set<'a>) -> Self;
-pub const fn padding(self, p: Padding) -> Self;
-pub const fn merge_borders(self, strategy: MergeStrategy) -> Self;
-pub fn shadow(self, shadow: Shadow) -> Self;
-pub fn inner(&self, area: Rect) -> Rect;          // the content area inside borders/padding
-
-pub enum TitlePosition { Top, Bottom }
-pub struct Borders: u8;   // bitflags: NONE, TOP, RIGHT, BOTTOM, LEFT, ALL
-pub enum BorderType {
-    Plain, Rounded, Double, Thick,
-    LightDoubleDashed, HeavyDoubleDashed, LightTripleDashed, HeavyTripleDashed,
-    LightQuadrupleDashed, HeavyQuadrupleDashed, QuadrantInside, QuadrantOutside,
-}
+// fragment
+Block::new()  Block::bordered()  // bordered() = new().borders(Borders::ALL): USE THIS
+.title(impl Into<Line>)  .title_top(..)  .title_bottom(..)  .title_style(..)  .title_alignment(Alignment)
+.title_position(TitlePosition)  // Top | Bottom
+.borders(Borders)  // bitflags u8: NONE, TOP, RIGHT, BOTTOM, LEFT, ALL
+.border_type(BorderType)  .border_set(border::Set)  // e.g. symbols::border::ROUNDED; the later call wins
+.border_style(..)  // colors the frame only; .style(..) is the whole block
+.padding(Padding)  .merge_borders(MergeStrategy)  .shadow(Shadow)
+block.inner(area) -> Rect  // the content area inside borders/titles/padding
+// BorderType: Plain, Rounded, Double, Thick, LightDoubleDashed, HeavyDoubleDashed, LightTripleDashed,
+//   HeavyTripleDashed, LightQuadrupleDashed, HeavyQuadrupleDashed, QuadrantInside, QuadrantOutside
+// Padding::new(left, right, top, bottom)  ::ZERO  ::uniform(v)  ::horizontal(v)  ::vertical(v)  ::symmetric(x, y)
+//   ::left(v)  ::right(v)  ::top(v)  ::bottom(v)  ::proportional(v); From<u16>
+// Shadow::overlay() / block() / light_shade() / medium_shade() / dark_shade(), .style(..), .offset(Offset);
+//   dimmed() -> Dimmed effect; Shadow::custom(impl CellEffect): widgets::CellEffect needs Debug + Send + Sync + UnwindSafe + RefUnwindSafe
 ```
 
-Use the title-side helpers + `bordered()`:
+- A title is a `Line`: align the `Line`, pick the edge with `title_top`/`title_bottom`. `block::Title` was removed (0.30), `.title_on_bottom()` (0.26).
+- Take the content area from `block.inner(area)`, never by subtracting the border by hand: titles and padding cost cells too.
+- `Padding::new` takes left, right, top, bottom: not the CSS order.
 
 ```rust
-use ratatui::widgets::{Block, BorderType};
-let block = Block::bordered()
-    .title("Top Left")
-    .title_top(Line::from("Top Right").right_aligned())
-    .title_bottom(Line::from("status").centered())
-    .border_type(BorderType::Rounded)
-    .padding(Padding::uniform(1));
-let content_area = block.inner(area);
+// fragment
+Block::default().title(Title::from("Hi").alignment(Alignment::Center))  // WRONG: does not compile
+Block::bordered().title(Line::from("Hi").centered())  // RIGHT
+let inner = Rect { x: area.x + 1, y: area.y + 1, ..area };  // WRONG: hand-made inner area
+let inner = block.inner(area);  // RIGHT: take it before rendering the block
+Padding::new(1, 2, 3, 4)  // WRONG for top 1, right 2, bottom 3, left 4
+Padding::new(4, 2, 1, 3)  // RIGHT
 ```
-
-#### `Padding`
-
-```rust
-pub const ZERO: Self;
-pub const fn new(left, right, top, bottom: u16) -> Self;
-pub const fn uniform(v: u16) -> Self;        // all sides
-pub const fn horizontal(v) / vertical(v) -> Self;
-pub const fn symmetric(x, y: u16) -> Self;
-pub const fn left/right/top/bottom(v: u16) -> Self;
-pub const fn proportional(v: u16) -> Self;
-// From<u16>
-```
-
-`Shadow` (block drop-shadow): `Shadow::overlay()/block()/light_shade()/medium_shade()/dark_shade()`, `.style(...)`, `.offset(Offset)`; custom via `Shadow::custom(impl CellEffect)`. `dimmed()` → `Dimmed` effect.
 
 ### Paragraph
 
 ```rust
-pub fn new<T: Into<Text<'a>>>(text: T) -> Self;
-pub fn block(self, block: Block<'a>) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn wrap(self, wrap: Wrap) -> Self;
-pub const fn scroll(self, offset: (u16, u16)) -> Self;   // (vertical, horizontal)
-pub const fn alignment(self, a: Alignment) -> Self;
-pub const fn left_aligned/centered/right_aligned(self) -> Self;
-pub fn line_count(&self, width: u16) -> usize;     // feature unstable-rendered-line-info
-pub fn line_width(&self) -> usize;                 // feature unstable-rendered-line-info
-
-pub struct Wrap { pub trim: bool }                 // trim leading whitespace on wrap
+// fragment
+Paragraph::new(impl Into<Text>)
+.block(Block)  .style(..)
+.wrap(Wrap { trim: bool })  // trim: drop leading whitespace of wrapped lines (false keeps indentation)
+.scroll((y, x))  // (vertical, horizontal), u16 each
+.alignment(Alignment)  .left_aligned()  .centered()  .right_aligned()
+// line_count(width) / line_width() need the non-default feature unstable-rendered-line-info
 ```
 
+- A `Paragraph` cuts long lines off unless you call `.wrap(..)`. Its scroll offset is `(y, x)`: lines first.
+
 ```rust
-let p = Paragraph::new("long body text...")
-    .block(Block::bordered().title("Notes"))
-    .wrap(Wrap { trim: true })
-    .scroll((scroll_y, 0));
+// fragment
+Paragraph::new(long_text)  // WRONG if the text can exceed the width: the rest is invisible
+Paragraph::new(long_text).wrap(Wrap { trim: true })  // RIGHT
+Paragraph::new(text).scroll((0, 3))  // WRONG for "3 lines down": this is 3 columns right
+Paragraph::new(text).scroll((3, 0))  // RIGHT
 ```
 
 ### List
 
 ```rust
-pub fn new<T: IntoIterator<Item: Into<ListItem<'a>>>>(items: T) -> Self;
-pub fn items<T>(self, items: T) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-pub fn highlight_symbol<L: Into<Line<'a>>>(self, sym: L) -> Self;   // e.g. ">> "
-pub fn highlight_style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn repeat_highlight_symbol(self, repeat: bool) -> Self;   // on multi-line items
-pub const fn highlight_spacing(self, v: HighlightSpacing) -> Self;
-pub const fn direction(self, d: ListDirection) -> Self;            // TopToBottom | BottomToTop
-pub const fn scroll_padding(self, padding: usize) -> Self;         // keep N rows visible around selection
-pub const fn len(&self) -> usize;
+// fragment
+List::new(items)  // IntoIterator<Item: Into<ListItem>>: &str, String, Line, Text. Or iter.collect::<List>()
+List::default()  // the empty list
+.items(items)  .block(Block)  .style(..)
+.highlight_symbol(impl Into<Line>)  // e.g. ">> "
+.highlight_style(..)  // covers the whole selected item
+.repeat_highlight_symbol(bool)  // on every line of a multi-line item
+.highlight_spacing(HighlightSpacing)  // Always | WhenSelected (default) | Never
+.direction(ListDirection)  // TopToBottom | BottomToTop
+.scroll_padding(usize)  // keep N items visible around the selection
+list.len() -> usize
+ListItem::new(impl Into<Text>)  .style(..);  item.height();  item.width()  // the Text's own style wins over the item's.
+//   No alignment setter on List, ListItem or a table Cell: align the Text inside
 
-pub struct ListItem<'a>;   // new<T: Into<Text>>(content); .style(s); .height(); .width()
-pub enum ListDirection { TopToBottom, BottomToTop }
-pub enum HighlightSpacing { Always, WhenSelected, Never }   // reserve gutter for highlight symbol
+ListState::default()  .with_offset(usize)  .with_selected(Option<usize>)
+state.selected() -> Option<usize>;  state.select(Option<usize>)
+state.select_next() / select_previous() / select_first() / select_last()  // USE THESE, not `selected().unwrap() + 1`
+state.scroll_down_by(u16) / scroll_up_by(u16)
 ```
 
-`ListState` (stateful):
+- The renderer owns `ListState`'s offset: each stateful render rewrites it and clamps an out-of-range selection to the last item. Until then `select_last()` holds `usize::MAX`: read `selected()` after a render.
+- With a highlight symbol on a `List` or `Table`, set `.highlight_spacing(HighlightSpacing::Always)`: otherwise every row shifts sideways when a selection appears.
 
 ```rust
-pub const fn with_offset(self, offset: usize) -> Self;
-pub const fn with_selected(self, selected: Option<usize>) -> Self;
-pub const fn selected(&self) -> Option<usize>;
-pub const fn select(&mut self, index: Option<usize>);
-pub fn select_next/select_previous(&mut self);
-pub const fn select_first/select_last(&mut self);
-pub fn scroll_down_by/scroll_up_by(&mut self, amount: u16);
-```
-
-```rust
-let list = List::new(["a", "b", "c"])
-    .block(Block::bordered())
-    .highlight_symbol(">> ")
-    .highlight_style(Style::new().reversed())
-    .highlight_spacing(HighlightSpacing::Always);
-frame.render_stateful_widget(list, area, &mut state);   // state: ListState
+// fragment
+List::new(items).highlight_symbol(">> ")  // WRONG
+List::new(items).highlight_symbol(">> ").highlight_spacing(HighlightSpacing::Always)  // RIGHT
 ```
 
 ### Table
 
 ```rust
-pub fn new<R, C>(rows: R, widths: C) -> Self
-    where R: IntoIterator<Item: Into<Row<'a>>>, C: IntoIterator<Item: Into<Constraint>>;
-pub fn rows<T: IntoIterator<Item=Row<'a>>>(self, rows: T) -> Self;
-pub fn header(self, h: Row<'a>) -> Self;
-pub fn footer(self, f: Row<'a>) -> Self;
-pub fn widths<I: IntoIterator<Item: Into<Constraint>>>(self, w: I) -> Self;
-pub const fn column_spacing(self, spacing: u16) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-pub fn row_highlight_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn column_highlight_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn cell_highlight_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn highlight_symbol<T: Into<Text<'a>>>(self, sym: T) -> Self;
-pub const fn highlight_spacing(self, v: HighlightSpacing) -> Self;
-pub const fn flex(self, flex: Flex) -> Self;        // distribute leftover column space
-
-pub struct Row<'a>;    // new<T: IntoIterator<Item: Into<Cell>>>(cells); .height(u16);
-                       // .top_margin/.bottom_margin(u16); .style(s)
-pub struct Cell<'a>;   // new<T: Into<Text>>(content); .content(t); .column_span(u16); .style(s)
+// fragment
+Table::new(rows, widths)  // BOTH required. rows: Into<Row> items; widths: Into<Constraint> items (u16 works)
+Table::default()  // the empty table: then .rows(..).widths(..)
+.rows(rows)  .widths(widths)  .header(Row)  .footer(Row)  .column_spacing(u16)
+.block(Block)  .style(..)
+.row_highlight_style(..)  .column_highlight_style(..)  .cell_highlight_style(..)
+.highlight_symbol(impl Into<Text>)  .highlight_spacing(HighlightSpacing)
+.flex(Flex)  // distribute leftover column space
+Row::new(cells)  .style(..)  .height(u16)  // set height(n) for multi-line cells
+.top_margin(u16)  .bottom_margin(u16)  // header spacing: bottom_margin(1), not an empty row
+Cell::new(impl Into<Text>)  .content(..)  .column_span(u16)  .style(..)  // style precedence: Row < Cell < its Text
 ```
 
 `TableState`: like `ListState` plus column/cell selection: `select_column`, `select_cell`, `with_selected_cell`, `selected_column`, `selected_cell`, `scroll_right_by/left_by`, etc.
 
+- `Table::new` takes the widths as its second argument. With no widths every column gets an equal share.
+- `Table::new` and `.widths(..)` PANIC on `Constraint::Percentage(p)` with `p > 100`: validate widths read from config.
+
 ```rust
-let table = Table::new(
-        vec![Row::new(["1", "Alice"]), Row::new(["2", "Bob"])],
-        [Constraint::Length(3), Constraint::Fill(1)],
-    )
-    .header(Row::new(["ID", "Name"]).bold())
-    .row_highlight_style(Style::new().reversed())
-    .highlight_symbol(">");
-frame.render_stateful_widget(table, area, &mut table_state);
+// fragment
+Table::new(rows).widths(&[Constraint::Length(5)])  // WRONG: does not compile (0.25)
+Table::new(rows, [Constraint::Length(5), Constraint::Fill(1)])  // RIGHT
 ```
 
 ### Tabs
 
 ```rust
-pub fn new<I: IntoIterator<Item: Into<Line<'a>>>>(titles: I) -> Self;
-pub fn select<T: Into<Option<usize>>>(self, selected: T) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-pub fn highlight_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn divider<T: Into<Span<'a>>>(self, d: T) -> Self;
-pub fn padding<T,U>(self, left: T, right: U) -> Self;     // + padding_left / padding_right
+// fragment
+Tabs::new(titles)  // required: IntoIterator<Item: Into<Line>>
+Tabs::default().titles(titles)  // titles(..) since 0.29
+.select(impl Into<Option<usize>>)  // 0-based; select(None) deselects (0.29)
+.block(Block)  .style(..)
+.highlight_style(..)  // REPLACES the default reversed look: add .reversed() to keep it
+.divider(impl Into<Span>)  .padding(impl Into<Line>, impl Into<Line>)  .padding_left(..)  .padding_right(..)
+```
+
+- Render `Tabs` with `render_widget`: it is `Widget`-only, so `render_stateful_widget` does not compile.
+- Pass iterators straight in: a `.collect()` argument or an empty `vec![]` does not infer.
+
+```rust
+// fragment
+Tabs::new((0..3).map(|i| format!("{i}")).collect())  // WRONG: does not compile. Same for List::new(vec![])
+Tabs::new((0..3).map(|i| format!("{i}")))  // RIGHT; the empty list is List::default()
 ```
 
 ### Gauge / LineGauge
 
 ```rust
-// Gauge (block bar with % label)
-pub fn percent(self, percent: u16) -> Self;          // 0..=100
-pub fn ratio(self, ratio: f64) -> Self;              // 0.0..=1.0
-pub fn label<T: Into<Span<'a>>>(self, l: T) -> Self;
-pub fn gauge_style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn use_unicode(self, b: bool) -> Self;     // sub-cell resolution
-pub fn block(self, b: Block<'a>) -> Self;
+// fragment
+Gauge::default()  // block bar with % label
+.percent(u16)  // 0..=100; PANICS above
+.ratio(f64)  // 0.0..=1.0; PANICS outside
+.gauge_style(..)  // colors the bar; .style(..) only reaches the background
+.label(impl Into<Span>)  .use_unicode(bool)  .block(Block)  // use_unicode: sub-cell resolution
+LineGauge::default()  // single-line progress: use it, not a Gauge, in a 1-row area. Always 1 row high, label on the left
+.ratio(f64)  .label(impl Into<Line>)
+.filled_symbol(&str)  .unfilled_symbol(&str)  .filled_style(..)  .unfilled_style(..)
+// deprecated on LineGauge: gauge_style (0.27) -> filled_style, line_set (0.30) -> filled_symbol + unfilled_symbol
 
-// LineGauge (single-line progress)
-pub fn ratio(self, ratio: f64) -> Self;
-pub const fn line_set(self, set: symbols::line::Set<'a>) -> Self;
-pub const fn filled_symbol(self, s: &'a str) -> Self;
-pub const fn unfilled_symbol(self, s: &'a str) -> Self;
-pub fn filled_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn unfilled_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn label<T: Into<Line<'a>>>(self, l: T) -> Self;
-```
-
-```rust
-let g = Gauge::default().ratio(0.42).gauge_style(Style::new().green()).use_unicode(true);
+Gauge::default().ratio(42.0)  // WRONG: panics, ratio is a fraction
+Gauge::default().percent(42)  // RIGHT (or .ratio(0.42))
 ```
 
 ### BarChart
 
 ```rust
-pub fn new<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self;
-pub fn vertical(bars: impl Into<Vec<Bar<'a>>>) -> Self;
-pub fn horizontal(bars: impl Into<Vec<Bar<'a>>>) -> Self;
-pub fn grouped<T: Into<Vec<BarGroup<'a>>>>(groups: T) -> Self;
-pub fn data(self, data: impl Into<BarGroup<'a>>) -> Self;     // From<&[(&str,u64)]>
-pub const fn max(self, max: u64) -> Self;
-pub const fn bar_width(self, w: u16) -> Self;
-pub const fn bar_gap(self, gap: u16) -> Self;
-pub const fn group_gap(self, gap: u16) -> Self;
-pub const fn bar_set(self, set: symbols::bar::Set<'a>) -> Self;
-pub fn bar_style/value_style/label_style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn direction(self, d: Direction) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
+// fragment
+BarChart::default()  BarChart::new(bars)  BarChart::vertical(bars)  BarChart::horizontal(bars)  BarChart::grouped(groups)
+.data(impl Into<BarGroup>)  // &[("label", 5)] works (u64 values); each call APPENDS a group
+.max(u64)  // fixed scale; the default scale is the largest value
+.bar_width(u16)  // default 1 cell: set it. In a horizontal chart it is the bar height
+.bar_gap(u16)  .group_gap(u16)  .bar_set(symbols::bar::Set)
+.bar_style(..)  .value_style(..)  .label_style(..)  .direction(Direction)  .block(Block)
+Bar::new(value: u64)  Bar::with_label(label, value)  .value(u64)  .label(impl Into<Line>)  .style(..)  .value_style(..)
+.text_value(impl Into<String>)  // text shown instead of the number, e.g. "10°C"
+BarGroup::new(bars)  BarGroup::with_label(label, bars)  .label(..)  .bars(&[Bar])  // a group with no bars is not drawn
 
-// Bar:  new(value)/with_label(label, value); .value(u64); .label(Line); .style; .value_style; .text_value(String)
-// BarGroup: new(bars)/with_label(label, bars); .label; .bars(&[Bar])
+BarChart::default().data(&[("Mon", 5), ("Tue", 8)])  // WRONG: bars are 1 cell wide
+BarChart::default().data(&[("Mon", 5), ("Tue", 8)]).bar_width(5)  // RIGHT
 ```
 
-```rust
-let bc = BarChart::default()
-    .data(&[("Mon", 5), ("Tue", 8), ("Wed", 3)])   // From<&[(&str,u64)]>
-    .bar_width(5).bar_gap(1).max(10);
-```
+- Bar and group labels are drawn inside the chart's own area: give the chart the height, add no label row beside it.
 
 ### Chart
 
 ```rust
-pub fn new(datasets: Vec<Dataset<'a>>) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
-pub fn x_axis(self, axis: Axis<'a>) -> Self;
-pub fn y_axis(self, axis: Axis<'a>) -> Self;
-pub const fn hidden_legend_constraints(self, c: (Constraint, Constraint)) -> Self;
-pub const fn legend_position(self, p: Option<LegendPosition>) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-
-// Axis: .title(Line); .bounds([f64;2]); .labels(iter of Line); .style; .labels_alignment(Alignment)
-// Dataset: .name(Line); .data(&[(f64,f64)]); .marker(symbols::Marker);
-//          .graph_type(GraphType); .style; .fill_to_y(f64)
-pub enum GraphType { Scatter, Line, Bar, Area }
+// fragment
+Chart::new(datasets: Vec<Dataset>)  // axes are setters, not constructor arguments
+.x_axis(Axis)  .y_axis(Axis)  .block(Block)  .style(..)
+.legend_position(Option<LegendPosition>)  .hidden_legend_constraints((Constraint, Constraint))
+Axis::default()  .title(impl Into<Line>)  .bounds([f64; 2])  .labels(iter)  .style(..)  .labels_alignment(Alignment)
+Dataset::default()  .name(impl Into<Line>)  .data(&[(f64, f64)])  .marker(symbols::Marker)
+.graph_type(GraphType)  .style(..)  .fill_to_y(f64)
+pub enum GraphType { Scatter, Line, Bar, Area }  // default: Scatter
 pub enum LegendPosition { Top, TopRight, TopLeft, Left, Right, Bottom, BottomRight, BottomLeft }
 ```
 
+- Give both axes `.bounds([min, max])` that cover the data: the default bounds are `[0.0, 0.0]` and plot nothing, and points outside the bounds are dropped.
+- Set `.graph_type(GraphType::Line)` for a connected line: the default `Scatter` draws dots only.
+
 ```rust
-let data = [(0.0, 0.0), (1.0, 1.0), (2.0, 0.5)];
-let ds = Dataset::default().name("series").data(&data)
+// fragment
+let chart = Chart::new(vec![Dataset::default().data(&points)]);  // WRONG: no bounds, no graph type
+let series = Dataset::default().name("cpu").data(&points)  // RIGHT
     .marker(symbols::Marker::Braille).graph_type(GraphType::Line).cyan();
-let chart = Chart::new(vec![ds])
-    .x_axis(Axis::default().bounds([0.0, 2.0]).labels(["0", "2"]))
-    .y_axis(Axis::default().bounds([0.0, 1.0]).labels(["0", "1"]));
+let chart = Chart::new(vec![series])
+    .x_axis(Axis::default().bounds([0.0, 10.0]).labels(["0", "5", "10"]))
+    .y_axis(Axis::default().bounds([0.0, 100.0]).labels(["0", "100"]));
 ```
+
+- `.data(..)` borrows a slice (`&points`); points join in slice order: sort a line's points by x. An axis shows labels only when it has two or more. Only named datasets appear in the legend. Color the series on the `Dataset`.
 
 ### Sparkline
 
 ```rust
-pub fn data<T: IntoIterator<Item: Into<SparklineBar>>>(self, data: T) -> Self;
-pub const fn max(self, max: u64) -> Self;
-pub const fn bar_set(self, set: symbols::bar::Set<'a>) -> Self;
-pub const fn direction(self, d: RenderDirection) -> Self;     // LeftToRight | RightToLeft
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-pub fn absent_value_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn absent_value_symbol(self, sym: impl Into<String>) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
-// SparklineBar: From<u64>, From<Option<u64>> (None = absent); .style(Option<Style>)
-pub enum RenderDirection { LeftToRight, RightToLeft }
-```
-
-```rust
-let sl = Sparkline::default().data([1u64, 4, 2, 8, 5, 3]).max(8).green();
+// fragment
+Sparkline::default()
+.data(iter)  // items Into<SparklineBar>: u64, Option<u64> (None = absent), or SparklineBar with .style(Option<Style>)
+.max(u64)  // set it for live data, else every frame rescales to its own maximum
+.bar_set(symbols::bar::Set)  .direction(RenderDirection)  // LeftToRight | RightToLeft
+.style(..)  .absent_value_style(..)  .absent_value_symbol(impl Into<String>)  .block(Block)
 ```
 
 ### Scrollbar
 
 ```rust
-pub const fn new(orientation: ScrollbarOrientation) -> Self;
-pub const fn orientation(self, o: ScrollbarOrientation) -> Self;
-pub const fn thumb_symbol(self, s: &'a str) -> Self;
-pub fn thumb_style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn track_symbol(self, s: Option<&'a str>) -> Self;
-pub fn track_style<S: Into<Style>>(self, s: S) -> Self;
-pub const fn begin_symbol(self, s: Option<&'a str>) -> Self;   // + begin_style
-pub const fn end_symbol(self, s: Option<&'a str>) -> Self;     // + end_style
-pub const fn symbols(self, set: symbols::scrollbar::Set<'a>) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
+// fragment
+Scrollbar::new(ScrollbarOrientation)  // VerticalRight | VerticalLeft | HorizontalBottom | HorizontalTop
+.orientation(..)  .thumb_symbol(&str)  .thumb_style(..)  .track_symbol(Option<&str>)  .track_style(..)
+.begin_symbol(Option<&str>)  .begin_style(..)  .end_symbol(Option<&str>)  .end_style(..)
+.symbols(symbols::scrollbar::Set)  .style(..)
+ScrollbarState::new(content_length: usize)  // ScrollbarState::default() has length 0 and renders NOTHING
+.position(usize)  .content_length(usize)  .viewport_content_length(usize)  // viewport = items visible at once
+state.prev() / next() / first() / last();  state.scroll(ScrollDirection);  state.get_position() -> usize  // Forward | Backward
 
-pub enum ScrollbarOrientation { VerticalRight, VerticalLeft, HorizontalBottom, HorizontalTop }
-pub enum ScrollDirection { Forward, Backward }
-```
-
-`ScrollbarState` (stateful):
-
-```rust
-pub const fn new(content_length: usize) -> Self;
-pub const fn position(self, p: usize) -> Self;
-pub const fn content_length(self, n: usize) -> Self;
-pub const fn viewport_content_length(self, n: usize) -> Self;
-pub const fn prev(&mut self);  pub fn next(&mut self);
-pub const fn first/last(&mut self);
-pub fn scroll(&mut self, direction: ScrollDirection);
-pub const fn get_position(&self) -> usize;
-```
-
-```rust
-let sb = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-    .begin_symbol(Some("↑")).end_symbol(Some("↓"));
-frame.render_stateful_widget(sb, area, &mut scrollbar_state);
+// stateful only, and a separate widget drawn beside the content: no widget draws its own scrollbar
+let sb = Scrollbar::new(ScrollbarOrientation::VerticalRight).begin_symbol(Some("↑")).end_symbol(Some("↓"));
+frame.render_stateful_widget(sb, area.inner(Margin { vertical: 1, horizontal: 0 }), &mut scrollbar_state);
 ```
 
 ### Canvas + Shapes
@@ -1080,197 +962,129 @@ frame.render_stateful_widget(sb, area, &mut scrollbar_state);
 `widgets::canvas` module. Draw arbitrary 2-D shapes onto a Braille/half-block/quadrant grid.
 
 ```rust
+// fragment
 // Canvas<'a, F: Fn(&mut Context)>
 Canvas::default()
-    .block(block)
-    .x_bounds([f64; 2]).y_bounds([f64; 2])
-    .marker(symbols::Marker::Braille)
-    .background_color(Color)
-    .paint(|ctx| { /* ctx.draw(&shape); ctx.print(x, y, line); ctx.layer(); */ });
-
-// Context methods: draw(&impl Shape), print(x,y, Into<Line>), layer(), marker(m)
-// Painter (low-level inside a Shape::draw): get_point(x,y), paint(x,y,Color), bounds()
+.block(Block)  .x_bounds([left, right])  .y_bounds([bottom, top])  // f64; never inverted or zero-width
+.marker(symbols::Marker)  .background_color(Color)
+.paint(|ctx| { .. })  // REQUIRED, last: it fixes the closure type F and does the drawing
+// Context: ctx.draw(&shape), ctx.print(x, y, impl Into<Line>), ctx.layer(), ctx.marker(m)
+// Shapes (canvas::*, all impl Shape): Line::new(x1, y1, x2, y2, color), FilledLine::new(x1, y1, x2, y2, fill_to_y, color),
+//   Rectangle::new(x, y, width, height, color), Circle::new(x, y, radius, color), Points::new(&[(f64, f64)], color),
+//   Map { resolution: MapResolution::{Low, High}, color }. Text: ctx.print (`Label` is not a Shape)
+// Custom shape: impl Shape { fn draw(&self, painter: &mut Painter) }, never Widget. painter.get_point(x, y) is an
+//   Option (None outside the bounds: handle it, never `unwrap` or `expect`); painter.paint(x, y, Color); painter.bounds()
 ```
 
-Shapes (`canvas::*`, all implement `Shape`):
+- Canvas and chart coordinates are math-style: origin bottom-left, y grows upward. A canvas `Rectangle` is placed by its bottom-left corner.
+- `ctx.draw` takes the shape by reference; coordinates are f64 in the bounds' units, not cells.
+- A `Canvas` chain ends with `.paint(..)`: without it the type does not infer and nothing is drawn.
 
 ```rust
-Line::new(x1, y1, x2, y2, color);
-FilledLine::new(x1, y1, x2, y2, fill_to_y, color);
-Rectangle::new(x, y, width, height, color);
-Circle::new(x, y, radius, color);
-Points::new(coords: &[(f64,f64)], color);
-Map { resolution: MapResolution, color }   // MapResolution { Low, High }: world map outline
-Label<'a>                                   // a positioned text label
-```
-
-```rust
-use ratatui::widgets::canvas::{Canvas, Circle, Map, MapResolution};
-let canvas = Canvas::default()
-    .x_bounds([-180.0, 180.0]).y_bounds([-90.0, 90.0])
-    .paint(|ctx| {
-        ctx.draw(&Map { resolution: MapResolution::High, color: Color::Green });
-        ctx.draw(&Circle { x: 0.0, y: 0.0, radius: 10.0, color: Color::Red });
-    });
+// fragment
+let canvas = Canvas::default().x_bounds([-180.0, 180.0]).y_bounds([-90.0, 90.0]);  // WRONG: no .paint(..), does not compile
+let canvas = Canvas::default().x_bounds([-180.0, 180.0]).y_bounds([-90.0, 90.0]).paint(|ctx| {  // RIGHT
+    ctx.draw(Circle::new(0.0, 0.0, 10.0, Color::Red));  // WRONG: by value
+    ctx.draw(&Circle::new(0.0, 0.0, 10.0, Color::Red));  // RIGHT
+    ctx.draw(&canvas::Line::new(-180.0, 90.0, 180.0, 90.0, Color::White));  // y = 90.0 is the TOP edge
+    ctx.draw(&Map { resolution: MapResolution::High, color: Color::Green });
+});
 ```
 
 ### Clear
 
-```rust
-pub struct Clear;   // resets every cell in `area`: render BEFORE a popup
-```
+`pub struct Clear;` resets every cell in `area`: render it BEFORE a popup, or the earlier widgets show through. It does not wipe what the terminal showed before the first frame: that is `terminal.clear()?`.
 
 ```rust
-frame.render_widget(Clear, popup_area);     // wipe behind a modal
-frame.render_widget(popup, popup_area);
+// fragment
+frame.render_widget(popup, popup_area);  // WRONG: old content bleeds through
+frame.render_widget(Clear, popup_area);  // RIGHT: wipe behind a modal,
+frame.render_widget(popup, popup_area);  //   then draw it
 ```
 
 ### Fill
 
-```rust
-pub fn new<S: Into<Cow<'a,str>>>(symbol: S) -> Self;   // fill area with a repeated symbol
-pub fn symbol<S: Into<Cow<'a,str>>>(self, s: S) -> Self;
-pub fn style<S: Into<Style>>(self, s: S) -> Self;
-```
+`Fill::new(impl Into<Cow<str>>)` fills an area with a repeated symbol (`.symbol(..)`, `.style(..)`): use it instead of a cell loop.
 
 ### Calendar
 
-Feature `widget-calendar` (in default `all-widgets`). `widgets::calendar` module. Backed by the `time` crate (`time::Date`).
+Feature `widget-calendar` (in default `all-widgets`). `widgets::calendar` module. Takes `time::Date`: add `time = "0.3"` to `Cargo.toml` (ratatui does not re-export it).
 
 ```rust
-pub struct Monthly<'a, DS: DateStyler>;
-pub const fn new(display_date: Date, events: DS) -> Self;
-pub fn show_surrounding<S: Into<Style>>(self, s: S) -> Self;
-pub fn show_weekdays_header<S: Into<Style>>(self, s: S) -> Self;
-pub fn show_month_header<S: Into<Style>>(self, s: S) -> Self;
-pub fn default_style<S: Into<Style>>(self, s: S) -> Self;
-pub fn block(self, b: Block<'a>) -> Self;
-
-pub trait DateStyler { /* style(&self, date) -> Style */ }
-pub struct CalendarEventStore(pub HashMap<Date, Style>);
-//   CalendarEventStore::today(style); .add(date, style)
+// fragment
+Monthly::new(display_date: Date, events: DS)  // DS: DateStyler
+.show_surrounding(..)  .show_weekdays_header(..)  .show_month_header(..)  // each takes a style; ALL off by default
+.default_style(..)  .block(Block)
+trait DateStyler { fn get_style(&self, date: Date) -> Style; }
+CalendarEventStore(pub HashMap<Date, Style>)  // ::today(style); .add(date, style)
 ```
 
 ### RatatuiLogo / RatatuiMascot
 
-```rust
-// RatatuiLogo (text logo)
-pub const fn new(size: RatatuiLogoSize) -> Self;   // Size { Tiny, Small } -> re-exported as RatatuiLogoSize
-pub const fn tiny() -> Self;
-pub const fn small() -> Self;
-pub const fn size(self, size: Size) -> Self;
-
-// RatatuiMascot (the rat)
-pub fn new() -> Self;
-pub const fn set_eye(self, color: MascotEyeColor) -> Self;   // Default | Red
-```
-
-```rust
-frame.render_widget(RatatuiLogo::tiny(), area);
-```
-
----
+`RatatuiLogo::tiny()`, `::small()`, `::new(RatatuiLogoSize)` (`Tiny | Small`), `.size(..)`. `RatatuiMascot::new().set_eye(MascotEyeColor)` (`Default | Red`). Both render by value only.
 
 ## 13. Macros
 
-Feature `macros` (default). `use ratatui::macros::*;`, from `ratatui-macros`.
+Feature `macros` (default). `use ratatui::{macros::*, style::Stylize};`, from `ratatui-macros`. Sugar only: the builder APIs do the same without the feature.
 
 | Macro | Builds | Example |
 |---|---|---|
 | `span!` | `Span` | `span!("plain")`, `span!("count: {}", n)`, `span!(Style::new().red(); "x")` (style, then `;`) |
-| `line!` | `Line` | `line!["hello", "world".bold()]`, `line!["x"; 3]` |
-| `text!` | `Text` | `text!["row1", "row2".red()]`, `text!["x"; 2]` |
-| `row!` | table `Row` | `row!["id", "name"]` |
-| `constraint!` | one `Constraint` | `constraint!(== 5)` → Length, `constraint!(>= 3)` → Min, `constraint!(<= 3)` → Max, `constraint!(== 10 %)` → Percentage, `constraint!(== 1 / 3)` → Ratio, `constraint!(*= 1)` → Fill |
+| `line!` / `text!` / `row!` | `Line` / `Text` / table `Row` | `line!["hello", "world".bold()]`, `line!["x"; 3]`, `text!["row1", "row2".red()]`, `text!["x"; 2]`, `row!["id", "name"]` |
+| `constraint!` | one `Constraint` | `(== 5)` → Length, `(>= 3)` → Min, `(<= 3)` → Max, `(== 10 %)` → Percentage, `(== 1 / 3)` → Ratio, `(*= 1)` → Fill |
 | `constraints!` | `[Constraint; N]` | `constraints![== 3, *= 1, == 1]` |
-| `vertical!` | vertical `Layout` | `vertical![== 3, *= 1]` |
-| `horizontal!` | horizontal `Layout` | `horizontal![>= 10, == 5]` |
-
-Operator legend: `==` Length, `== N %` Percentage, `== a / b` Ratio, `>=` Min, `<=` Max, `*=` Fill.
-
-```rust
-use ratatui::macros::{line, vertical};
-let line = line!["hello".red(), " world".bold()];
-let [top, bottom] = vertical![== 3, *= 1].areas(frame.area());   // Length(3), Fill(1)
-```
-
-> The macros are sugar; the builder APIs (`Line::from`, `Layout::vertical`, `Constraint::Length`) do > the same thing without the feature.
-
----
+| `vertical!` / `horizontal!` | a `Layout` | `let [top, bottom] = vertical![== 3, *= 1].areas(area);`, `horizontal![>= 10, == 5]` |
 
 ## 14. Events / crossterm Re-Export
 
-Ratatui does **not** ship its own event/input system. It re-exports the chosen backend's crate so you read events from there. With the default crossterm backend (crossterm 0.29):
+Ratatui does **not** ship its own event/input system. It re-exports the chosen backend's crate so you read events from there. With the default crossterm backend (crossterm 0.29): `ratatui::crossterm` == the `crossterm` crate (`event`, `terminal`, `cursor`, `style`, ...). `event::read()` blocks until an event arrives (the §3 loop); `event::poll(timeout)?` returns `true` once one is ready. A loop that ticks reads input on a thread or task instead: `app-loop.md`.
+
+- There is no `ratatui::event`: import `ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind}`.
+- Act on a key only when `key.kind == KeyEventKind::Press`: Windows also sends the release, so an unchecked handler runs twice. Edition 2024 (Rust 1.88+) writes the check as one let chain; older editions keep the nested `if`. `clippy::collapsible_if`
 
 ```rust
-ratatui::crossterm;   // == the `crossterm` crate (event, terminal, cursor, style, ...)
-```
-
-```rust
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
-
-if event::poll(std::time::Duration::from_millis(50))? {
-    if let Event::Key(key) = event::read()? {
-        if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-            // quit
-        }
-    }
+// fragment
+if let Event::Key(key) = event::read()? { handle(key.code) }  // WRONG: fires on press AND release
+if let Event::Key(key) = event::read()? && key.kind == KeyEventKind::Press { handle(key.code) }  // RIGHT: edition 2024
+if let Event::Key(key) = event::read()? {
+    if key.kind == KeyEventKind::Press { handle(key.code) }  // RIGHT on older editions
 }
 ```
 
-Backend-specific style bridges: `IntoCrossterm`/`FromCrossterm` (and termion/termwiz equivalents) convert ratatui `Color`/`Style`/`Modifier` to the backend's types.
+**Mouse events are opt-in.** `ratatui::init()`/`run()` do not enable mouse capture. Call `ratatui::crossterm::execute!(std::io::stdout(), event::EnableMouseCapture)?` before reading, and `event::DisableMouseCapture` on teardown. Once enabled, clicks/hover/drag arrive as `Event::Mouse(MouseEvent)`.
 
-**Mouse events are opt-in.** `ratatui::init()`/`run()` do not enable mouse capture. Call `crossterm::execute!(stdout, event::EnableMouseCapture)` before reading, and `event::DisableMouseCapture` on teardown. Once enabled, clicks/hover/drag arrive as `Event::Mouse(MouseEvent)`.
+**Sync vs async event loop.** `event::poll`/`event::read` are blocking/sync. For `tokio::select!`, add a direct `crossterm` dependency at ratatui's version (0.29) with feature `event-stream` and use `ratatui::crossterm::event::EventStream`, a `Stream<Item = io::Result<Event>>`. `Terminal::draw` stays synchronous either way.
 
-**Sync vs async event loop.** `event::poll`/`event::read` above are blocking/sync. For `tokio::select!` over crossterm events plus other async streams, enable crossterm's `event-stream` feature and use `crossterm::event::EventStream`, a `Stream<Item = io::Result<Event>>`. `Terminal::draw` itself stays synchronous either way.
+**Detecting Shift+Enter / Ctrl+Enter distinctly.** Default terminals send many Ctrl/Shift+key combos as the same bytes as plain keys, so a stock `KeyEvent` can't tell them apart. Needs the Kitty keyboard protocol: `ratatui::crossterm::execute!(std::io::stdout(), event::PushKeyboardEnhancementFlags(event::KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?` / `event::PopKeyboardEnhancementFlags`, terminal support varies. Push on init, pop on teardown, in the guard that restores the terminal.
 
-**Detecting Shift+Enter / Ctrl+Enter distinctly.** Default terminals collapse many Ctrl/Shift+key combos to identical bytes as plain keys, so a stock `KeyEvent` can't tell them apart. Needs the Kitty keyboard protocol: `crossterm::execute!(stdout, PushKeyboardEnhancementFlags(..))` / `PopKeyboardEnhancementFlags`, terminal support varies. Push on init, pop on teardown, paired with the same guard that restores the terminal.
+## 15. 0.30-Specific Notes: Stale Forms
 
----
+Each left-hand form is removed (does not compile) or deprecated (warns): write the right-hand form. Stale forms marked `WRONG` or `deprecated` at their API (§1, §4 to §9, §11, §12) are not repeated.
 
-## 15. 0.30-Specific Notes
-
-- **Workspace crate split.** `ratatui` is now an umbrella over `ratatui-core`, `ratatui-widgets`, `ratatui-crossterm`/`-termion`/`-termwiz`, and `ratatui-macros`. Keep depending only on `ratatui`; the split is transparent through re-exports.
-- **`ratatui::init()` / `restore()` / `run()` + `DefaultTerminal`.** The blessed lifecycle. `init()` enables raw mode + alternate screen and installs a panic hook that restores the terminal. `run()` wraps a whole closure. No more hand-written `enable_raw_mode()` + `execute!(EnterAlternateScreen)`.
-- **`Widget for &T` is the migration target away from `WidgetRef`.** Implement `impl Widget for &MyWidget` to render by reference. `WidgetRef`/`StatefulWidgetRef` are gated behind `unstable-widget-ref` and on the way out (keep them only for `Box<dyn WidgetRef>` trait objects). `FrameExt::render_widget_ref` is the method for those.
-- **`Flex`** controls leftover-space distribution in `Layout` (`Start/End/Center/SpaceBetween/SpaceEvenly/SpaceAround`, plus `Legacy`). `Table::flex` exposes the same for columns. `Rect::centered*` are convenience wrappers.
-- **`Constraint::Fill(weight)`**: proportional grow constraint (use instead of `Min(0)` hacks).
-- **`Layout::areas::<N>()`** returns a fixed `[Rect; N]` you can destructure; `split()` returns the `Rc<[Rect]>`-backed `Rects`. Prefer `areas`.
-- **HorizontalAlignment / VerticalAlignment** split out; `Alignment` is now an alias for `HorizontalAlignment`.
-- **Border dashing + merging.** Many new `BorderType` dashed variants and `Block::merge_borders` (`MergeStrategy`) for joining adjacent block borders. `Block::shadow` adds drop shadows.
-- **High-density canvas markers**: `Marker::{Quadrant, Sextant, Octant}` (alongside `Braille`, `HalfBlock`).
-- **Backend writer pin**: crossterm 0.29 is default; `crossterm_0_28` selectable.
-
----
+| Stale form | Current form | Since |
+|---|---|---|
+| `List::start_corner(Corner::..)` | `List::direction(ListDirection::..)` | 0.27 |
+| `area.inner(&Margin { .. })` | `area.inner(Margin { .. })` | 0.27 |
+| `Padding::zero()` | `Padding::ZERO` | 0.27 |
+| `Table::highlight_style` | `row_highlight_style` (+ column/cell variants) | 0.29 |
 
 ## 16. Cheat-Sheet: Commonly Hand-Rolled Things ratatui Already Provides
 
-| You might write by hand… | Use this instead |
-|---|---|
-| `enable_raw_mode()` + `EnterAlternateScreen` + panic hook + restore | `ratatui::init()` / `ratatui::run(|t| ...)` / `ratatui::restore()` |
-| `Terminal<CrosstermBackend<Stdout>>` typedef | `ratatui::DefaultTerminal` |
-| `Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)` | `"text".red().bold()` (`Stylize`) |
-| `Style::new().bg(Color::Blue)` on a widget | `widget.on_blue()` (`Stylize`) |
-| `Block::new().borders(Borders::ALL)` | `Block::bordered()` |
-| manual `layout.split(area)` then `splits[0]`, `splits[1]` | `let [a, b] = Layout::vertical([...]).areas(area);` |
-| computing centered popup x/y/w/h by hand | `Layout::…flex(Flex::Center)` or `Rect::centered(h, v)` / `centered_horizontally` / `centered_vertically` |
-| `Min(0)` to make a region grow | `Constraint::Fill(1)` |
-| building `Constraint` vecs in a loop | `Constraint::from_lengths/from_fills/from_percentages/...` |
-| `Line { spans: vec![Span::raw(s)], ..}` literals | `Line::from(s)` / `Line::from(vec![..])` / `line!` macro |
-| `Span { content, style }` literals | `Span::raw` / `Span::styled` / `"s".into()` / `span!` |
-| splitting `"a\nb"` into lines yourself for `Text` | `Text::from("a\nb")` (auto-splits) |
-| centering/aligning a title | `Line::from("t").centered()` + `Block::title_top(...)` |
-| reserving space inside a block for content | `block.inner(area)` (handles borders + padding) |
-| wiping cells behind a modal | `frame.render_widget(Clear, area)` |
-| reimplementing `WidgetRef` to avoid moving a widget | `impl Widget for &MyWidget` |
-| iterating cells of a `Rect` | `rect.positions()` / `rect.rows()` / `rect.columns()` |
-| your own scroll-position math for a list | `ListState::select_next/previous` + `scroll_padding` |
-| password masking | `Masked::new(secret, '*')` |
-| your own event loop input types | `ratatui::crossterm::event::{read, poll, Event, KeyCode}` |
-| comparing rendered output in tests | `TestBackend` + `assert_buffer_lines([...])` |
-| repeated-symbol background fill | `Fill::new("░")` |
-| a progress bar | `Gauge` (block) or `LineGauge` (single line) |
+Every row now sits at its API as a `USE THIS` note, a `WRONG`/`RIGHT` pair or the API's own entry: see §3, §5 to §8, §11, §12 and §14.
 
----
+## 17. Checklist
 
-*Generated from ratatui source `ratatui-v0.30.1`. Signatures are real (extracted from source); private/`pub(crate)` items omitted. Items gated by non-default features are noted inline.*
+Run this over your own diff before reporting:
+
+- [ ] Every ratatui name is in this file or was checked in live docs; no stale form from §15 or from a `WRONG` line.
+- [ ] Lifecycle: `ratatui::run`, or `init` + `restore` with no `?` between them.
+- [ ] One `terminal.draw` per loop pass renders every widget; areas derive from `frame.area()`.
+- [ ] Layouts: `Layout::vertical`/`horizontal` + `.areas()` with N = constraint count; the growing region is `Fill`.
+- [ ] No hand math on a `Rect` (`inner`, `centered`, `contains`, `positions()`); `right()`/`bottom()` treated as exclusive; content areas via `block.inner(..)`.
+- [ ] Every builder setter result is used; borders via `.block(..)`.
+- [ ] Stateful widgets: `render_stateful_widget` with a state stored outside `draw`.
+- [ ] `Paragraph` wraps where text can overflow and scrolls `(y, x)`; `Chart` axes have bounds; `Gauge` gets `percent` or a 0–1 `ratio`.
+- [ ] A popup renders `Clear` first; key handlers check `KeyEventKind::Press` and quit on Ctrl-C.
+- [ ] No `deprecated` or `unused_must_use` warning on a ratatui call.
+
+*Private/`pub(crate)` items omitted. Items gated by non-default features are noted inline.*
