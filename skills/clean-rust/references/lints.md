@@ -245,7 +245,7 @@ On one module: `#[warn(clippy::indexing_slicing)] mod parser;`.
 ## Suppressing One Finding
 
 - Fix the code first. Suppress only a finding that is wrong at that site.
-- Delete `assert!(true)`; `assert!(false)` becomes `panic!("why")` or `unreachable!("why")`. `clippy::assertions_on_constants`
+- Delete `assert!(true)`; `assert!(false)` becomes `panic!("why")` (a state that must not happen) or `unreachable!("why")` (a branch the logic rules out); `assert!(CONST)` on a named `const` moves into `const { assert!(CONST) }` (1.79+). `clippy::assertions_on_constants`
 - Write `#[expect(lint, reason = "...")]` on the smallest item that needs it, never `#![allow(..)]` at the crate root for one site (Rust 1.81+); `allow_attributes` misses that form. `clippy::allow_attributes`, `clippy::allow_attributes_without_reason`
 - `rust-version` below 1.81: every suppression is a plain `#[allow(lint)]`. `#[expect]` and `reason` need 1.81; clippy holds both lints back below it.
 - A lint that fires on some targets only (`unused_mut` on a binding only one platform mutates): `#[expect]` warns on the targets where the lint stays silent. When one `cfg` names exactly the targets it fires on: `#[cfg_attr(not(windows), expect(unused_mut, reason = "only Windows mutates it"))]`. When none does, keep `#[allow]` and list `clippy::allow_attributes` with it: `#[allow(clippy::allow_attributes, unused_mut, reason = "only modified on some platforms")]`.
