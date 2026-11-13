@@ -221,9 +221,9 @@ Repos evaluated as skill or agent sources. Adopted ones are marked; the rest wer
 <details>
 <summary>show the list</summary>
 
-- `wshobson/agents`: adopted. source of the shell skills and the `-pro` agents, all rewritten and debloated.
+- `wshobson/agents`: adopted. source of the shell skills and the `-pro` agents, all rewritten and debloated. a re-check folded the `ship-mate` plugin's rule of naming each E2E check by its acceptance criterion into `webapp-tester`.
 - `obra/superpowers`: linked external, see [External skills](#external-skills).
-- `anthropics/skills`: `webapp-testing` vendored (Apache-2.0).
+- `anthropics/skills`: `webapp-testing` vendored (Apache-2.0). re-checked; the other skills stay upstream.
 - `vercel-labs/skills`: adopted as the `npx skills` installer, not a content source.
 - `VoltAgent/awesome-claude-code-subagents`: 100+ subagent index, generic, nothing worth vendoring.
 - `0xfurai/claude-code-subagents`: `playwright-expert` too thin, wrote own `webapp-tester`.
@@ -232,7 +232,7 @@ Repos evaluated as skill or agent sources. Adopted ones are marked; the rest wer
 - `rshah515/claude-code-subagents`: browsed, generic bulk.
 - `contains-studio/agents`: `frontend-developer` compared, redundant.
 - `lodetomasi/agents-claude-code`: `playwright-pro` fetched, redundant.
-- `darcyegb/ClaudeCodeAgents`: `qa-engineer` link 404'd, dead.
+- `darcyegb/ClaudeCodeAgents`: its `karen` completion checker partly overlaps `prober` and the testers.
 - `leonardomso/rust-skills`: vendored once then delisted. one fat `SKILL.md`, not modular enough. its standout rules were later re-authored into the first-party `clean-rust`.
 - `actionbook/rust-skills`: competing rust system, passed over.
 - `vercel-labs/open-plugin-spec`: spec only, nothing implements it.
@@ -252,6 +252,27 @@ Repos evaluated as skill or agent sources. Adopted ones are marked; the rest wer
 - `gemini-cli-extensions/security`: gemini-specific.
 - `Piebald-AI/claude-code-system-prompts`: system-prompt mirror, reference only.
 - `agentskills/agentskills`: spec site, not content.
+- `ruvnet/ruflo`: orchestration platform (swarms, memory store, background workers); its agent defs are short persona stubs, nothing adopted.
+- `davepoon/buildwithclaude`: plugin marketplace, sampled; persona agents, nothing adopted.
+- `hesreallyhim/a-list-of-claude-code-agents`: four persona defs, no license.
+- `stretchcloud/claude-code-unified-agents`: 53 persona defs padded with invented sample code.
+- `Dicklesworthstone/claude_code_agent_farm`: MIT with a rider that grants no rights to OpenAI, Anthropic, their affiliates or anyone acting for them, not adoptable.
+- `zhsama/claude-sub-agent`: persona pipeline with invented 0-100 gate scores; no license file.
+- `disler/infinite-agentic-loop`: generation loop that runs until context runs out, with no review step.
+- `agent-sh/agentsys`: workflow plugins; its skill-invocation check already exists in `bin/lint-agents.ts`.
+- `Dimillian/Claude`: persona defs, no license.
+- `aniketkarne/ClaudeNightsWatch`: unattended daemon that skips permission prompts.
+- `NicholasSpisak/claude-code-subagents`: persona defs, no license.
+- `FradSer/dotclaude`: plugin collection, much of it vendored from other repos; nothing adopted.
+- `vizra-ai/claude-code-agents`: 59 thin role defs with no method or gate.
+- `ayush-that/sub-agents.directory`: directory of 166 persona defs.
+- `bijutharakan/multi-agent-squad`: persona agents and agile-process scaffolding.
+- `gtrusler/claude-code-heavy`: parallel-research shell script, machinery only.
+- `blas0/UnseveredMemory`: memory hooks and templates, mostly machinery; nothing adopted.
+- `multica-ai/andrej-karpathy-skills`: one guidelines skill restating model defaults.
+- `mattpocock/skills`: adopted in part. its unique-tag rule for debug prints folded into `root-cause-investigator`; the rest stays upstream.
+- `7onez/cti-expert`: threat-intelligence skill, outside this catalog's scope.
+- `scriptbyai.com` Claude Code resource list: link index, used for discovery.
 
 About 30 more were surveyed in a separate trending/growth analysis, not as adoption candidates, and are omitted here.
 
