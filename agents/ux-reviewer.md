@@ -35,7 +35,7 @@ The brief must carry the task's request text verbatim; without it, return the re
    - status and error messages with no live region, a spinner with no accessible name, a modal that does not take or restore focus, a field with no programmatic tie to its error
    - state conveyed by color alone
 4. Run the ten-heuristic pass in the skill's §9 as a second sweep. A defect that spans every state (no undo, a step that demands recall, no path for a repeat end user) survives a per-state read.
-5. Sweep past the target in four fixed steps: the callers of each changed symbol; sibling surfaces that render the same data; the user-facing entry, driven once by a run your rules allow, else traced by reading and listed under **Not run**; docs and config naming the changed identifiers.
+5. Sweep past the target in four fixed steps: the callers of each changed symbol; sibling surfaces that render the same data; the user-facing entry, driven once by a run your rules allow (none on an outside contributor's diff), else traced by reading and listed under **Not run**; docs and config naming the changed identifiers.
 6. Verify each finding against the actual code before reporting it. Search the component with `rg` through Bash, read the call site, confirm the path is unhandled. A missing state is an absence claim, so prove it: search for the component the repo would have used.
 
 ## Output Contract
