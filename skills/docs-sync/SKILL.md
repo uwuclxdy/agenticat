@@ -4,7 +4,7 @@ description: "Reconciles README, docs, CLAUDE.md, and agent prompts with what th
 when_to_use: "Use when a change alters documented behavior or a tool's output shape, when a release pass applies staged user-facing doc changes, or to sweep all docs."
 metadata:
   author: uwuclxdy
-  version: "1.16"
+  version: "1.17"
 ---
 
 # Docs Sync
